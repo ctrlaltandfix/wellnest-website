@@ -1,0 +1,10 @@
+# robots.txt for WellNest — https://wellnest.services
+# All crawlers, including AI assistants, are welcome to crawl the public site.
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: *
+Allow: /
+
+Sitemap: https://wellnest.services/sitemap.xml

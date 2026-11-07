@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <script id="dashboard-boot-guard">
+      // SPA hosting can return the pre-rendered homepage for dashboard requests.
+      // Hide that fallback before the browser parses or paints its content.
+      if (/^\/(?:dashboard(?:-beta)?|chronic-pain|asthma|epilepsy|medications|appointments|care-circle|exercises|reflection|expenses|emergency-plan|achievements|settings)\/?$/i.test(window.location.pathname)) {
+        document.documentElement.setAttribute('data-dashboard-boot', '');
+      }
+    </script>
+    <style>html[data-dashboard-boot],html[data-dashboard-boot] body{background:#081e1b}html[data-dashboard-boot] #root{visibility:hidden}</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"></noscript>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seizure Diary App for Epilepsy | WellNest</title>
+    <meta name="description" content="Keep a seizure diary with type, duration, possible triggers and recovery notes. Export a dated PDF for your neurologist. Try WellNest." />
+    <meta name="apple-itunes-app" content="app-id=6759418128, app-argument=https://wellnest.services/" />
+    <meta name="author" content="WellNest" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <link rel="canonical" href="https://wellnest.services/seizure-diary" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="WellNest" />
+    <meta property="og:title" content="Seizure Diary App for Epilepsy | WellNest" />
+    <meta property="og:description" content="Keep a seizure diary with type, duration, possible triggers and recovery notes. Export a dated PDF for your neurologist. Try WellNest." />
+    <meta property="og:url" content="https://wellnest.services/seizure-diary" />
+    <meta property="og:locale" content="en_AU" />
+    <meta property="og:image" content="/imported/0d9da0b388-ec6274ee3_generated_image.png" />
+    <meta property="og:image:alt" content="WellNest — chronic health tracking app on a warm cream background" />
+    <meta name="twitter:image" content="/imported/0d9da0b388-ec6274ee3_generated_image.png" />
+    <meta name="geo.region" content="AU" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Seizure Diary App for Epilepsy | WellNest" />
+    <meta name="twitter:description" content="Keep a seizure diary with type, duration, possible triggers and recovery notes. Export a dated PDF for your neurologist. Try WellNest." />
+    <script>
+      // Retire older offline app shells. Wait for cleanup before the one-time
+      // refresh, otherwise a phone can reload while its old worker still owns it.
+      (function () {
+        if (!('serviceWorker' in navigator)) return;
+        var hadController = !!navigator.serviceWorker.controller;
+        navigator.serviceWorker.getRegistrations().then(async function (regs) {
+          if (!regs.length && !hadController) return;
+          await Promise.all(regs.map(function (registration) { return registration.unregister(); }));
+          if (typeof caches !== 'undefined') {
+            var keys = await caches.keys();
+            await Promise.all(keys.map(function (key) { return caches.delete(key); }));
+          }
+          try {
+            if (sessionStorage.getItem('wn-current-ui-refresh-v1')) return;
+            sessionStorage.setItem('wn-current-ui-refresh-v1', '1');
+          } catch (error) { return; }
+          window.location.reload();
+        }).catch(function () { /* Offline cleanup must not block the app. */ });
+      })();
+    </script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GTN93JL5LQ"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LCBB6YZSNL"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-GTN93JL5LQ');
+      gtag('config', 'G-LCBB6YZSNL');
+    </script>
+    <script async data-cfasync="false" type="text/javascript" src="https://cdn.seoplatform.io/injector.js?websiteId=28120"></script>
+    <script type="module" crossorigin src="/assets/index-calendar-20261107.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-BCiCTKAo.js">
+    <link rel="modulepreload" crossorigin href="/assets/jsx-runtime-Cl3nUQcN.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-Cj0oiCRe.css">
+  <script id="wn-static-page-identity" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://wellnest.services/#organization","name":"WellNest","url":"https://wellnest.services/","logo":{"@type":"ImageObject","url":"https://wellnest.services/favicon.svg"}},{"@type":"WebPage","@id":"https://wellnest.services/seizure-diary#webpage","url":"https://wellnest.services/seizure-diary","name":"Seizure Diary App for Epilepsy | WellNest","description":"Keep a seizure diary with type, duration, possible triggers and recovery notes. Export a dated PDF for your neurologist. Try WellNest.","isPartOf":{"@id":"https://wellnest.services/#website"},"publisher":{"@id":"https://wellnest.services/#organization"}}]}</script></head>
+  <body>
+    <div id="root"><div class="cp-page"><style>
+.cp-page{background:#f4f1ea;color:#0d1f17;font-family:&#x27;Geist&#x27;,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+.cp-page *,.cp-page *::before,.cp-page *::after{box-sizing:border-box;margin:0;padding:0}
+.cp-page a{text-decoration:none}
+.cp-page .cp-nav{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;background:#0d1f17;border-radius:100px;padding:0px 16px 0px 0px;height:62px;display:flex;align-items:center;gap:28px;box-shadow:0 8px 32px rgba(13,31,23,.25);animation:cpNavIn .6s .2s both;white-space:nowrap;max-width:calc(100vw - 32px);transition:background .3s ease}
+@keyframes cpNavIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.cp-page .cp-nav.scrolled{background:rgba(13,31,23,.15);backdrop-filter:blur(12px)}
+.cp-page .cp-nav-logo{display:flex;align-items:center;gap:4px;color:#f4f1ea;font-weight:700;font-size:1rem;letter-spacing:-.02em}
+.cp-page .cp-nav-logo .nest{color:#00cc66;margin-left:-.15em}
+.cp-page .cp-nav-logo img{width:52px;height:52px;object-fit:contain;transform:translateY(6px);margin-right:-8px}
+.cp-page .cp-nav-links{display:flex;align-items:center;gap:24px;list-style:none;margin-right:8px}
+.cp-page .cp-nav-links a{color:rgba(244,241,234,.7);font-size:.875rem;transition:color .2s}
+.cp-page .cp-nav-links a:hover{color:#f4f1ea}
+.cp-page .cp-nav-cta{background:#00cc66;color:#0d1f17!important;font-weight:600!important;padding:10px 18px;border-radius:100px;font-size:.85rem!important;flex-shrink:0}
+.cp-page .cp-nav-cta:hover{background:#c8f76b}
+.cp-page .cp-hero{padding:160px 32px 40px;max-width:920px;margin:0 auto;text-align:center}
+.cp-page .cp-back{position:absolute;top:104px;left:32px;z-index:5;display:inline-flex;align-items:center;gap:8px;padding:9px 16px 9px 12px;border-radius:999px;border:1px solid rgba(13,31,23,.18);background:#fff;color:#0d1f17;font-size:14px;font-weight:600;text-decoration:none;transition:background .15s,border-color .15s}
+.cp-page .cp-back:hover{background:#f4f1ea;border-color:rgba(13,31,23,.35)}
+.cp-page .cp-back:focus-visible{outline:3px solid #118c56;outline-offset:3px}
+.cp-page .cp-h1{font-size:clamp(2.2rem,5.5vw,4rem);font-weight:800;line-height:1.02;letter-spacing:-.04em;margin-bottom:24px}
+.cp-page .cp-intro{font-size:1.15rem;line-height:1.6;color:#2d3b32;max-width:62ch;margin:0 auto}
+.cp-page .cp-hero-actions{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;margin:24px auto 10px}
+.cp-page .cp-hero-trial{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 24px;border-radius:999px;background:#0d1f17;color:#f4f1ea;font-size:.92rem;font-weight:700;transition:background .2s}
+.cp-page .cp-hero-trial:hover{background:#20523b}
+.cp-page .cp-hero-demo{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:11px 22px;border-radius:999px;border:1px solid rgba(13,31,23,.22);color:#0d1f17;font-size:.92rem;font-weight:650}
+.cp-page .cp-hero-demo:hover{border-color:#0d1f17;background:rgba(13,31,23,.04)}
+.cp-page .cp-trial-disclosure{font-size:.78rem;color:#526458;line-height:1.45;margin:0 auto;max-width:68ch}
+.cp-page .cp-section-link{display:inline-flex;margin-top:15px;align-items:center;gap:6px;color:#0d5a35;font-weight:750;font-size:.98rem;text-decoration:underline!important;text-underline-offset:4px}
+.cp-page .cp-section-link:hover{color:#073d23}
+.cp-page .cp-hero-actions a:focus-visible,.cp-page .cp-section-link:focus-visible{outline:3px solid #118c56;outline-offset:3px}
+.cp-page .cp-shot-section{padding:10px 32px 30px;max-width:1100px;margin:0 auto}
+.cp-page .cp-shot-frame{background:#0d1f17;border-radius:24px;padding:10px;box-shadow:0 24px 60px rgba(13,31,23,.18)}
+.cp-page .cp-shot{width:100%;height:auto;display:block;border-radius:16px}
+.cp-page .cp-proof{margin-top:25px}
+.cp-page .cp-proof-heading{text-align:center;font-size:clamp(1.2rem,2.8vw,1.7rem);letter-spacing:-.025em;margin:0 0 8px}
+.cp-page .cp-proof-sub{text-align:center;color:#405849;font-size:.9rem;line-height:1.55;margin:0 auto 18px;max-width:64ch}
+.cp-page .cp-proof-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.cp-page .cp-proof-item{margin:0;background:#fff;border-radius:15px;padding:8px;border:1px solid #d1dccf;min-width:0}
+.cp-page .cp-proof-item img{width:100%;height:auto;aspect-ratio:2048/1486;object-fit:contain;display:block;border-radius:9px;background:#172a25}
+.cp-page .cp-proof-item figcaption{padding:10px 5px 4px;font-size:.84rem;line-height:1.45;font-weight:600;color:#253e30}
+.cp-page .cp-proof-actions{text-align:center;margin:20px 0 0}
+.cp-page .cp-proof-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 18px;border-radius:999px;border:1px solid #214c35;color:#214c35;font-size:.9rem;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.cp-page .cp-proof-actions a:focus-visible{outline:3px solid #118c56;outline-offset:3px}
+.cp-page .cp-content{padding:80px 32px}
+.cp-page .cp-kit{padding-top:0}
+.cp-page .cp-alt{background:#ede8dc}
+.cp-page .cp-content-inner{max-width:820px;margin:0 auto}
+.cp-page .cp-h2{font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:700;letter-spacing:-.03em;line-height:1.1;margin-bottom:16px}
+.cp-page .cp-p{font-size:1.05rem;line-height:1.65;color:#2d3b32}
+.cp-page .cp-related{display:flex;gap:12px;flex-wrap:wrap}
+.cp-page .cp-related a{padding:14px 22px;border:1px solid rgba(13,31,23,.2);border-radius:100px;font-weight:500;font-size:.92rem;color:#0d1f17;transition:all .2s}
+.cp-page .cp-related a:hover{background:#0d1f17;color:#f4f1ea;border-color:#0d1f17}
+.cp-page .cp-small{font-size:.8rem;color:#6b7770;line-height:1.5}
+.cp-page .cp-learn{color:#0d1f17;font-weight:600;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(13,31,23,.3)}
+.cp-page .cp-faq{background:#ede8dc;padding:80px 32px}
+.cp-page .cp-faq-title{font-family:&#x27;Instrument Serif&#x27;,serif;font-style:italic;font-size:clamp(2rem,4.5vw,3rem);letter-spacing:-.02em;text-align:center;margin-bottom:48px}
+.cp-page .faq-list{max-width:820px;margin:0 auto;border-top:1px solid rgba(13,31,23,.2)}
+.cp-page .faq-item{border-bottom:1px solid rgba(13,31,23,.1)}
+.cp-page .faq-item summary{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:24px 0;cursor:pointer;font-weight:600;font-size:1.05rem;list-style:none}
+.cp-page .faq-item summary::-webkit-details-marker{display:none}
+.cp-page .faq-icon{width:28px;height:28px;border-radius:50%;border:1px solid rgba(13,31,23,.2);flex-shrink:0;position:relative;transition:all .3s}
+.cp-page .faq-icon::before,.cp-page .faq-icon::after{content:&#x27;&#x27;;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#0d1f17;transition:transform .3s}
+.cp-page .faq-icon::before{width:12px;height:1.5px}
+.cp-page .faq-icon::after{width:1.5px;height:12px}
+.cp-page .faq-item[open] .faq-icon::after{transform:translate(-50%,-50%) scaleY(0)}
+.cp-page .faq-item[open] .faq-icon{background:#0d1f17}
+.cp-page .faq-item[open] .faq-icon::before,.cp-page .faq-item[open] .faq-icon::after{background:#f4f1ea}
+.cp-page .faq-a{padding:0 44px 28px 0;font-size:.98rem;line-height:1.65;color:#2d3b32;max-width:64ch}
+.cp-page .cp-cta{background:#0d1f17;color:#f4f1ea;text-align:center;padding:100px 32px;position:relative;overflow:hidden}
+.cp-page .cp-cta-heading{font-size:clamp(2.2rem,5.5vw,4rem);font-weight:700;line-height:.95;letter-spacing:-.04em;margin-bottom:24px}
+.cp-page .cta-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.cp-page .btn-primary{display:inline-flex;align-items:center;gap:12px;padding:18px 32px;background:#00cc66;color:#0d1f17;border-radius:100px;font-weight:600;font-size:.95rem;transition:background .2s}
+.cp-page .btn-primary:hover{background:#c8f76b}
+.cp-page .btn-secondary{display:inline-flex;align-items:center;gap:10px;padding:18px 28px;background:transparent;color:#f4f1ea;border:1px solid rgba(244,241,234,.3);border-radius:100px;font-weight:500;font-size:.95rem;transition:all .25s}
+.cp-page .btn-secondary:hover{background:#f4f1ea;color:#0d1f17;border-color:#f4f1ea}
+.cp-page .cta-note{margin-top:28px;font-size:.85rem;color:rgba(244,241,234,.5)}
+.cp-page .cp-footer{background:#0d1f17;color:#f4f1ea;padding:40px 32px 30px;border-top:1px solid rgba(244,241,234,.1)}
+.cp-page .cp-footer-inner{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:28px}
+.cp-page .cp-footer-logo{display:flex;align-items:center;color:#f4f1ea;font-weight:700;font-size:1rem;line-height:1}
+.cp-page .cp-footer-logo img{width:72px;height:72px;object-fit:contain}
+.cp-page .cp-footer-logo .nest{color:#00cc66;margin-left:-.1em}
+.cp-page .footer-heading{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(244,241,234,.5);margin-bottom:10px;font-weight:600}
+.cp-page .footer-links{list-style:none;display:flex;flex-direction:column;gap:8px}
+.cp-page .footer-links-row{flex-direction:row;gap:24px}
+.cp-page .footer-links a{color:rgba(244,241,234,.6);font-size:.85rem;transition:color .2s}
+.cp-page .footer-links a:hover{color:#f4f1ea}
+.cp-page .footer-store{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:8px 16px;border:1px solid rgba(244,241,234,.25);border-radius:100px;color:#f4f1ea;font-size:.78rem;font-weight:600;transition:all .2s}
+.cp-page .footer-store:hover{border-color:#00cc66;color:#00cc66}
+.cp-page .cp-disclaimer{max-width:1280px;margin:28px auto 8px;font-size:.78rem;line-height:1.5;color:rgba(244,241,234,.45)}
+.cp-page .cp-copy{font-size:.8rem;color:rgba(244,241,234,.4);text-align:center}
+.cp-page .reveal{opacity:0;transform:translateY(40px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.cp-page .reveal.visible{opacity:1;transform:translateY(0)}
+@media(max-width:900px){
+.cp-page .cp-nav{position:fixed;top:0;left:0;right:0;transform:none;width:100%;max-width:none;border-radius:0;height:56px;padding:0 16px;gap:0;justify-content:space-between;align-items:center;overflow:hidden;animation:none}
+.cp-page .cp-nav-logo img{width:48px;height:48px;transform:translateY(4px);margin-right:-6px}
+.cp-page .cp-nav-links{display:flex!important;position:static;transform:none;gap:0;margin-right:0}
+.cp-page .cp-nav-links li:not(:last-child){display:none}
+.cp-page .cp-nav-cta{display:inline-flex!important;padding:8px 14px!important;font-size:.8rem!important}
+.cp-page .cp-hero{padding:100px 20px 30px}
+.cp-page .cp-back{top:76px;left:16px;font-size:13px;padding:7px 14px 7px 10px}
+.cp-page .cp-back + .cp-hero{padding-top:144px}
+.cp-page .cp-content,.cp-page .cp-faq{padding:50px 20px}
+.cp-page .cp-shot-section{padding:0 16px 24px}
+.cp-page .cp-proof-grid{grid-template-columns:1fr;gap:12px}
+.cp-page .cp-proof-item{max-width:620px;margin:0 auto;width:100%}
+.cp-page .cp-cta{padding:60px 20px}
+.cp-page .faq-a{padding-right:0}
+}
+/* Home-style header for the chronic illness tracker only.
+   Keep the exact cream header, logo arrangement, green trial pill and
+   white Log in pill from the landing page, without altering other pages. */
+.cp-page .cp-nav.cp-nav-landing{
+  position:fixed;top:0;left:0;right:0;transform:none;z-index:100;
+  width:100%;max-width:none;height:68px;padding:0 32px;
+  display:flex;align-items:center;gap:28px;overflow:visible;
+  border:0;border-bottom:1px solid rgba(22,36,28,.09);border-radius:0;
+  background:rgba(255,254,250,.86);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:none;animation:none;white-space:nowrap;
+  transition:background .3s ease,box-shadow .3s ease;
+}
+.cp-page .cp-nav.cp-nav-landing.scrolled{
+  background:rgba(255,254,250,.95);
+  border-bottom-color:rgba(22,36,28,.09);
+  box-shadow:0 4px 24px rgba(13,31,23,.08);
+}
+.cp-page .cp-nav-landing .cp-nav-logo{
+  color:#16241c;font-size:1rem;letter-spacing:0;gap:0;
+}
+.cp-page .cp-nav-landing .cp-nav-logo .nest{color:#00a854;margin-left:-.02em}
+.cp-page .cp-nav-landing .cp-landing-logo-mark{
+  width:52px;height:52px;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;margin-right:-8px;overflow:visible;
+}
+.cp-page .cp-nav-landing .cp-landing-logo-mark img{
+  width:100%;height:100%;display:block;object-fit:contain;
+  transform:translateY(10px);margin:0;
+}
+.cp-page .cp-nav-landing .cp-landing-logo-word{
+  display:inline-block;transform:translateY(6px);margin-left:-2px;
+}
+.cp-page .cp-nav-landing .cp-nav-links{
+  position:absolute;right:32px;display:flex;align-items:center;gap:32px;
+  list-style:none;margin-right:8px;
+}
+.cp-page .cp-nav-landing .cp-nav-links a{
+  color:#6f7a72;font-size:.875rem;font-weight:400;
+  white-space:nowrap;display:inline-flex;align-items:center;
+  transition:color .2s,background .2s,border-color .2s;
+}
+.cp-page .cp-nav-landing .cp-nav-links a:hover{color:#16241c}
+.cp-page .cp-nav-landing .cp-nav-links .cp-nav-cta{
+  display:inline-flex;align-items:center;background:#00cc66;
+  color:#16241c!important;font-weight:600!important;
+  padding:10px 18px;border-radius:100px;font-size:.85rem!important;
+  flex-shrink:0;transition:all .2s!important;
+}
+.cp-page .cp-nav-landing .cp-nav-links .cp-nav-cta:hover{
+  background:#c8f76b;transform:scale(1.03);
+}
+.cp-page .cp-nav-landing .cp-nav-links .cp-nav-login{
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid rgba(22,36,28,.18);border-radius:100px;
+  padding:9px 17px;font-size:.85rem!important;
+  font-weight:600!important;color:#16241c!important;
+  background:rgba(255,255,255,.72);
+}
+.cp-page .cp-nav-landing .cp-nav-links .cp-nav-login:hover{
+  background:#fff;border-color:#0f5c34;
+}
+.cp-page .cp-nav-landing .cp-nav-links a:focus-visible{
+  outline:3px solid #0f8c50;outline-offset:3px;
+}
+@media(max-width:900px){
+  .cp-page .cp-nav.cp-nav-landing{
+    top:0;left:0;right:0;transform:none;width:100%;max-width:none;
+    border-radius:0;height:56px;padding:0 16px;gap:0;
+    justify-content:space-between;align-items:center;
+    overflow:hidden;animation:none;opacity:1;
+  }
+  .cp-page .cp-nav-landing .cp-landing-logo-mark{
+    width:52px;height:52px;margin-right:-10px;
+  }
+  .cp-page .cp-nav-landing .cp-landing-logo-mark img{
+    transform:translateY(5px);
+  }
+  .cp-page .cp-nav-landing .cp-nav-logo{
+    font-size:1rem;gap:2px;letter-spacing:-.01em;margin-left:-8px;
+  }
+  .cp-page .cp-nav-landing .cp-landing-logo-word{transform:translateY(0)}
+  .cp-page .cp-nav-landing .cp-nav-links{
+    display:flex!important;position:static;transform:none;
+    gap:8px;margin-right:0;
+  }
+  .cp-page .cp-nav-landing .cp-nav-links li:not(:last-child):not(.cp-nav-login-item){
+    display:none;
+  }
+  .cp-page .cp-nav-landing .cp-nav-links .cp-nav-login{
+    padding:7px 11px;font-size:.8rem!important;
+  }
+  .cp-page .cp-nav-landing .cp-nav-links .cp-nav-cta{
+    display:inline-flex!important;padding:8px 14px!important;font-size:.8rem!important;
+  }
+}
+@media(max-width:500px){
+  .cp-page .cp-nav.cp-nav-landing{padding:0 10px;gap:0}
+  .cp-page .cp-nav-landing .cp-landing-logo-mark{
+    width:42px;height:42px;margin-right:-9px;
+  }
+  .cp-page .cp-nav-landing .cp-nav-logo{
+    font-size:.9rem;margin-left:-6px;
+  }
+  .cp-page .cp-nav-landing .cp-nav-links{gap:5px}
+  .cp-page .cp-nav-landing .cp-nav-links .cp-nav-login{
+    padding:7px 9px;font-size:.73rem!important;
+  }
+  .cp-page .cp-nav-landing .cp-nav-links .cp-nav-cta{
+    padding:8px 9px!important;font-size:.73rem!important;
+  }
+}
+      </style><nav id="wn-cp-nav" class="cp-nav" aria-label="Primary navigation"><a class="cp-nav-logo" href="/"><img src="/imported/5b8791d9c9-560935dfd_ChatGPTImageFeb82026at07_05_31PM.png" alt="WellNest"/>Well<span class="nest">Nest</span></a><details class="wn-mobile-site-menu"><summary aria-label="Site navigation"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu" aria-hidden="true"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></summary><nav aria-label="Mobile site navigation"><a href="/">Home</a><a href="/#hb-features">Features</a><a href="/guides">Guides</a><a href="/free-tools.html">Free tools</a><a href="/Pricing">Pricing</a><a href="/dashboard">Log in / Dashboard</a></nav></details><ul class="cp-nav-links"><li><a href="/#hb-features">Features</a></li><li><a href="/guides">Guides</a></li><li><a href="/free-tools.html">Free tools</a></li><li><a href="/start?focus=epilepsy" class="cp-nav-cta">Start free trial</a></li></ul></nav><section class="cp-hero"><h1 class="cp-h1">Seizure diary app for recording epilepsy events and preparing PDF reports</h1><p class="cp-intro">Keep a dated record of seizures, possible triggers, medication notes and recovery details in one place. WellNest is an iPhone and web seizure diary that lets you organise entries and export a PDF to discuss with your neurologist. It records what you enter; it does not detect, predict or alert others about seizures.</p><div class="cp-hero-actions"><a href="/start?focus=epilepsy" class="cp-hero-trial">Start free for 30 days →</a><a href="/chronic-pain-diary.html?tracker=seizure" class="cp-hero-demo">Try a free preview</a></div><p class="cp-trial-disclosure">30 days of Premium free, no card · Free plan after that · Web and iPhone</p></section><div class="cp-shot-section"><div class="cp-shot-frame"><img src="/landing/clarity-04.webp" alt="WellNest epilepsy seizure diary with seizure type and duration" class="cp-shot" loading="lazy" width="2048" height="1486"/></div></div><section class="cp-content  reveal"><div class="cp-content-inner"><h2 class="cp-h2">Try a free seizure diary report before subscribing</h2><p class="cp-p">You can use the blank WellNest interactive preview to enter an example seizure duration or notes and generate a dated sample PDF. The preview runs without creating an account or adding a payment card. Continuing to keep a private diary requires a free WellNest account; every account gets 30 days of Premium with no card needed, and logging stays free afterwards.</p><a class="cp-section-link" href="/chronic-pain-diary">Try the free seizure diary report preview<!-- --> →</a></div></section><section class="cp-content cp-alt reveal"><div class="cp-content-inner"><h2 class="cp-h2">Record every seizure in detail</h2><p class="cp-p">Date, time and duration; seizure type and severity; warning signs or aura; possible triggers such as missed sleep, stress, illness, alcohol or missed medication; whether rescue medication was taken; notes from anyone who witnessed it.</p></div></section><section class="cp-content  reveal"><div class="cp-content-inner"><h2 class="cp-h2">Stay on top of medications</h2><p class="cp-p">Dose reminders sit in the same place as your seizure log, making it easier to spot links between missed doses and seizures.</p></div></section><section class="cp-content cp-alt reveal"><div class="cp-content-inner"><h2 class="cp-h2">An emergency plan your carers can open in one tap</h2><p class="cp-p">Keep your seizure first-aid steps in WellNest&#x27;s Emergency Plan and share them with family, friends, teachers or colleagues.</p></div></section><section class="cp-content  reveal"><div class="cp-content-inner"><h2 class="cp-h2">One diary, alongside other health records</h2><p class="cp-p">If you also manage chronic pain, asthma or other conditions, keep your seizure history alongside medications, appointments and care-team contacts in WellNest. A separate condition section keeps each type of record clear.</p><a class="cp-section-link" href="/chronic-illness-tracker.html">Explore the multi-condition health tracker<!-- --> →</a></div></section><section class="cp-content cp-alt reveal"><div class="cp-content-inner"><h2 class="cp-h2">Share your seizure log</h2><p class="cp-p">Export a PDF report of seizures, medications and appointments for your neurologist or epilepsy nurse.</p></div></section><section class="cp-content  reveal"><div class="cp-content-inner"><h2 class="cp-h2">What your neurologist will usually want to know</h2><p class="cp-p">For each seizure: the date and time, what happened, how long it lasted, any warning signs or aura beforehand, how long recovery took, and whether rescue medication was used. Possible triggers matter too, such as missed medication, lack of sleep, illness, alcohol or stress.</p></div></section><section class="cp-content cp-alt reveal"><div class="cp-content-inner"><h2 class="cp-h2">Fill in what you can&#x27;t remember</h2><p class="cp-p">Many people don&#x27;t remember their own seizures clearly. If someone was with you, ask what they saw (movements, how long it lasted, how you were afterwards) and add it to that entry&#x27;s notes while it&#x27;s fresh.</p></div></section><section class="cp-content  reveal"><div class="cp-content-inner"><h2 class="cp-h2">Track medication changes alongside seizures</h2><p class="cp-p">When a dose or medication changes, your neurologist will want to know whether seizures became less frequent afterwards. Logging seizures and medication changes in the same app makes that comparison easy and accurate.</p></div></section><section class="cp-content reveal"><div class="cp-content-inner"><p class="cp-small">Learn more: <a href="/seizure-first-aid-and-diary" class="cp-learn">Seizure first aid, and what to record afterwards</a></p></div></section><section class="cp-faq"><div class="cp-content-inner"><h2 class="cp-faq-title">FAQ</h2><div class="faq-list"><details class="faq-item"><summary>What should a seizure diary include?<span class="faq-icon"></span></summary><p class="faq-a">Date, time, duration, seizure type, warning signs, possible triggers, recovery and medication taken. WellNest has a field for each.</p></details><details class="faq-item"><summary>Can a carer log a seizure for me?<span class="faq-icon"></span></summary><p class="faq-a">They can record details on your phone. Many people ask a witness to add notes after a seizure.</p></details><details class="faq-item"><summary>Can I try the seizure diary without an account?<span class="faq-icon"></span></summary><p class="faq-a">Yes. The free interactive preview includes an epilepsy example and lets you export a sample PDF without an account or payment details. Every WellNest account gets 30 days of Premium free with no card, and logging stays free after that.</p></details><details class="faq-item"><summary>Does WellNest detect seizures?<span class="faq-icon"></span></summary><p class="faq-a">No. WellNest is a diary and record-keeping tool, not a seizure detection, prediction, monitoring or emergency alert device.</p></details></div></div></section><section class="cp-content reveal"><div class="cp-content-inner"><h2 class="cp-h2">Related guides</h2><div class="cp-related"><a href="/symptom-diary-guide">How to keep a symptom diary</a><a href="/appointment-prep-checklist">Specialist appointment checklist</a></div></div></section><section class="cp-content cp-kit"><div class="cp-content-inner"><section class="fk-box" aria-labelledby="fk-heading"><style>
+        .fk-box{margin:40px 0 8px;padding:24px;border-radius:20px;background:#EAF2EC;border:1px solid rgba(47,122,66,.25);text-align:left}
+        .fk-kicker{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2F7A42;margin:0 0 6px}
+        .fk-box h2{font-size:clamp(20px,2.4vw,24px)!important;line-height:1.2!important;margin:0 0 8px!important;color:#14231A;letter-spacing:-.01em}
+        .fk-box p.fk-desc{font-size:15px;line-height:1.55;color:#3F4C43;margin:0 0 12px}
+        .fk-list{margin:0 0 14px;padding:0;list-style:none;display:grid;gap:6px}
+        .fk-list li{font-size:14px;color:#14231A;display:flex;gap:8px;align-items:flex-start;margin:0}
+        .fk-list li::before{content:&quot;✓&quot;;color:#2F7A42;font-weight:700}
+        .fk-row{display:flex;gap:8px;flex-wrap:wrap}
+        .fk-row input[type=email]{flex:1 1 220px;min-width:0;height:46px;border:1px solid #BFC9C1;border-radius:12px;padding:0 14px;font-size:15px;background:#fff;color:#14231A}
+        .fk-row button{height:46px;padding:0 20px;border:0;border-radius:12px;background:#14231A;color:#fff;font-weight:700;font-size:15px;cursor:pointer;white-space:nowrap}
+        .fk-row button:disabled{opacity:.6;cursor:not-allowed}
+        .fk-box input:focus-visible,.fk-box button:focus-visible{outline:3px solid #2A8A4F;outline-offset:2px}
+        .fk-consent{display:flex;gap:8px;align-items:flex-start;margin:10px 0 0;font-size:12.5px;line-height:1.45;color:#4E5B52}
+        .fk-consent input{margin-top:2px;width:15px;height:15px;accent-color:#16763D;flex-shrink:0}
+        .fk-consent a{color:#136435;text-decoration:underline}
+        .fk-msg{margin:12px 0 0!important;font-size:14px!important;font-weight:600}
+        .fk-msg.success{color:#136435}.fk-msg.error{color:#9A2633}
+        .fk-honey{position:absolute!important;left:-9999px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+        @media(max-width:560px){.fk-box{padding:18px}.fk-row button{width:100%}}
+      </style><p class="fk-kicker">Free · no account needed</p><h2 id="fk-heading">Get the free appointment-prep kit</h2><p class="fk-desc">Everything you need for your next specialist visit, sent straight to your inbox:</p><ul class="fk-list"><li>Printable 0–10 pain scale chart</li><li>Words that help you describe pain to your doctor</li><li>Specialist appointment checklist</li><li>Free one-page symptom summary maker</li></ul><form><div class="fk-row"><input type="email" required="" maxLength="254" autoComplete="email" placeholder="Your email address" aria-label="Your email address" value=""/><button type="submit" disabled="">Email me the kit</button></div><label class="fk-consent"><input type="checkbox" required=""/><span>Email me the kit and occasional WellNest tips. Unsubscribe anytime. No health information is asked for. See our <a href="/PrivacyPolicy">Privacy Policy</a>.</span></label><div class="fk-honey" aria-hidden="true"><label>Website<input type="text" tabindex="-1" autoComplete="off" value=""/></label></div></form></section></div></section><section class="cp-cta"><h2 class="cp-cta-heading">Ready when<br/>you are.</h2><div class="cta-row"><a href="/start?focus=epilepsy" class="btn-primary"><span>Start free for 30 days</span></a><a href="/chronic-pain-diary" class="btn-secondary">Try a no-signup preview</a><a href="https://apps.apple.com/au/app/wellnest/id6759418128" target="_blank" rel="noopener noreferrer" class="btn-secondary"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"></path></svg>Download on the App Store</a></div><p class="cta-note">30 days free · No card needed · Built with care in Australia</p></section><footer class="cp-footer"><div class="cp-footer-inner"><a href="/" class="cp-footer-logo"><img src="/imported/5b8791d9c9-560935dfd_ChatGPTImageFeb82026at07_05_31PM.png" alt="WellNest"/><span>Well<span class="nest">Nest</span></span></a><div><div class="footer-heading">Conditions</div><ul class="footer-links"><li><a href="/symptom-tracker-app.html">Symptom tracker app</a></li><li><a href="/chronic-illness-tracker.html">Chronic illness tracker</a></li><li><a href="/chronic-pain-diary">Chronic Pain</a></li><li><a href="/crps-tracker">CRPS</a></li><li><a href="/asthma-tracker">Asthma</a></li><li><a href="/seizure-diary">Epilepsy</a></li><li><a href="/fibromyalgia-tracker">Fibromyalgia</a></li></ul></div><div><div class="footer-heading">Features</div><ul class="footer-links"><li><a href="/medication-tracker">Medication tracker</a></li><li><a href="/emergency-action-plan">Emergency action plan</a></li><li><a href="/medical-expense-tracker">Medical expense tracker</a></li></ul></div><div><div class="footer-heading">Guides</div><ul class="footer-links"><li><a href="/guides">All guides</a></li><li><a href="/chronic-health-tracker-guide.html">Choosing a chronic health tracker</a></li><li><a href="/best-chronic-illness-tracker-apps.html">Best chronic illness tracker apps</a></li><li><a href="/flare-up-diary-guide">Chronic illness flare-up diary guide</a></li><li><a href="/symptom-diary-guide">Symptom diary guide</a></li><li><a href="/appointment-prep-checklist">Appointment prep checklist</a></li><li><a href="/asthma-action-plan-guide">Asthma action plans</a></li><li><a href="/seizure-first-aid-and-diary">Seizure first aid &amp; diary</a></li><li><a href="/crps-symptoms-guide">CRPS symptoms guide</a></li><li><a href="/wellnest-vs-bearable">WellNest vs Bearable</a></li><li><a href="/wellnest-vs-manage-my-pain">WellNest vs Manage My Pain</a></li><li><a href="/wellnest-vs-careclinic">WellNest vs CareClinic</a></li><li><a href="/free-tools.html">All free tools</a></li><li><a href="/free-medication-list.html">Free printable medication list</a></li><li><a href="/free-symptom-summary-maker.html">Free appointment summary maker</a></li><li><a href="/pain-scale-chart">Printable pain scale chart</a></li><li><a href="/how-to-describe-pain-to-your-doctor">How to describe pain to your doctor</a></li><li><a href="/chronic-pain-diary">Try the interactive preview</a></li></ul></div><div><div class="footer-heading">Company</div><ul class="footer-links"><li><a href="/about">About WellNest</a></li><li><a href="/for-clinicians">For clinicians</a></li><li><a href="/contact">Contact</a></li><li><a href="/press">Press</a></li></ul><a class="footer-store" href="https://apps.apple.com/au/app/wellnest/id6759418128" target="_blank" rel="noopener noreferrer"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"></path></svg>App Store</a></div><ul class="footer-links footer-links-row"><li><a href="/Pricing">Pricing</a></li><li><a href="/PrivacyPolicy">Privacy Policy</a></li><li><a href="/TermsOfService">Terms of Service</a></li></ul></div><p class="cp-disclaimer">WellNest is a record-keeping tool. It does not diagnose, treat or monitor any condition and is not an emergency service. In an emergency call 000.</p><p class="cp-copy">© 2026 WellNest. Built with care in Australia.</p></footer></div></div>
+    <noscript><style>.reveal{opacity:1!important;transform:none!important}</style><p>Interactive tracking, printable tools and checkout require JavaScript.</p></noscript>
+  </body>
+</html>

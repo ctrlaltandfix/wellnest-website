@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <script id="dashboard-boot-guard">
+      // SPA hosting can return the pre-rendered homepage for dashboard requests.
+      // Hide that fallback before the browser parses or paints its content.
+      if (/^\/(?:dashboard(?:-beta)?|chronic-pain|asthma|epilepsy|medications|appointments|care-circle|exercises|reflection|expenses|emergency-plan|achievements|settings)\/?$/i.test(window.location.pathname)) {
+        document.documentElement.setAttribute('data-dashboard-boot', '');
+      }
+    </script>
+    <style>html[data-dashboard-boot],html[data-dashboard-boot] body{background:#081e1b}html[data-dashboard-boot] #root{visibility:hidden}</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"></noscript>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact WellNest – Support, Clinics &amp; Press | WellNest</title>
+    <meta name="description" content="Email the WellNest team about support, subscriptions, clinic flyers or press enquiries. We usually reply within one or two business days." />
+    <meta name="apple-itunes-app" content="app-id=6759418128, app-argument=https://wellnest.services/" />
+    <meta name="author" content="WellNest" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <link rel="canonical" href="https://wellnest.services/contact" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="WellNest" />
+    <meta property="og:title" content="Contact WellNest – Support, Clinics &amp; Press | WellNest" />
+    <meta property="og:description" content="Email the WellNest team about support, subscriptions, clinic flyers or press enquiries. We usually reply within one or two business days." />
+    <meta property="og:url" content="https://wellnest.services/contact" />
+    <meta property="og:locale" content="en_AU" />
+    <meta property="og:image" content="/imported/0d9da0b388-ec6274ee3_generated_image.png" />
+    <meta property="og:image:alt" content="WellNest — chronic health tracking app on a warm cream background" />
+    <meta name="twitter:image" content="/imported/0d9da0b388-ec6274ee3_generated_image.png" />
+    <meta name="geo.region" content="AU" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Contact WellNest – Support, Clinics &amp; Press | WellNest" />
+    <meta name="twitter:description" content="Email the WellNest team about support, subscriptions, clinic flyers or press enquiries. We usually reply within one or two business days." />
+    <script>
+      // Retire older offline app shells. Wait for cleanup before the one-time
+      // refresh, otherwise a phone can reload while its old worker still owns it.
+      (function () {
+        if (!('serviceWorker' in navigator)) return;
+        var hadController = !!navigator.serviceWorker.controller;
+        navigator.serviceWorker.getRegistrations().then(async function (regs) {
+          if (!regs.length && !hadController) return;
+          await Promise.all(regs.map(function (registration) { return registration.unregister(); }));
+          if (typeof caches !== 'undefined') {
+            var keys = await caches.keys();
+            await Promise.all(keys.map(function (key) { return caches.delete(key); }));
+          }
+          try {
+            if (sessionStorage.getItem('wn-current-ui-refresh-v1')) return;
+            sessionStorage.setItem('wn-current-ui-refresh-v1', '1');
+          } catch (error) { return; }
+          window.location.reload();
+        }).catch(function () { /* Offline cleanup must not block the app. */ });
+      })();
+    </script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GTN93JL5LQ"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LCBB6YZSNL"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-GTN93JL5LQ');
+      gtag('config', 'G-LCBB6YZSNL');
+    </script>
+    <script async data-cfasync="false" type="text/javascript" src="https://cdn.seoplatform.io/injector.js?websiteId=28120"></script>
+    <script type="module" crossorigin src="/assets/index-calendar-20261107.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-BCiCTKAo.js">
+    <link rel="modulepreload" crossorigin href="/assets/jsx-runtime-Cl3nUQcN.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-Cj0oiCRe.css">
+  <script id="wn-static-page-identity" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://wellnest.services/#organization","name":"WellNest","url":"https://wellnest.services/","logo":{"@type":"ImageObject","url":"https://wellnest.services/favicon.svg"}},{"@type":"WebPage","@id":"https://wellnest.services/contact#webpage","url":"https://wellnest.services/contact","name":"Contact WellNest – Support, Clinics & Press | WellNest","description":"Email the WellNest team about support, subscriptions, clinic flyers or press enquiries. We usually reply within one or two business days.","isPartOf":{"@id":"https://wellnest.services/#website"},"publisher":{"@id":"https://wellnest.services/#organization"}}]}</script></head>
+  <body>
+    <div id="root"><div class="gp-page"><style>
+.gp-page{background:#f4f1ea;color:#0d1f17;font-family:&#x27;Geist&#x27;,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh;position:relative}
+.gp-page *,.gp-page *::before,.gp-page *::after{box-sizing:border-box;margin:0;padding:0}
+.gp-page a{text-decoration:none}
+.gp-page .gp-nav{position:fixed;top:0;left:0;right:0;transform:none;z-index:100;background:rgba(255,254,250,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(13,31,23,.12);border-radius:0;padding:0 32px;height:68px;display:flex;align-items:center;gap:28px;box-shadow:none;animation:none;white-space:nowrap;max-width:none;transition:background .3s ease,box-shadow .3s ease}
+.gp-page .gp-nav.scrolled{background:rgba(255,254,250,.95);border-bottom-color:rgba(13,31,23,.12);box-shadow:0 4px 24px rgba(13,31,23,.08)}
+.gp-page .gp-nav:hover{background:rgba(255,254,250,.95);box-shadow:none}
+.gp-page .gp-nav-logo{display:flex;align-items:center;gap:0;color:#16241c;font-weight:700;font-size:1rem;letter-spacing:0}
+.gp-page .gp-nav-logo .nest{color:#00a854;margin-left:-.02em}
+.gp-page .gp-nav-logo-mark{width:52px;height:52px;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:0;margin-right:-8px;overflow:visible}
+.gp-page .gp-nav-logo-mark img{width:100%;height:100%;display:block;object-fit:contain;transform:translateY(10px)}
+.gp-page .gp-nav-logo-word{display:inline-block;transform:translateY(6px);margin-left:-2px}
+.gp-page .gp-nav-links{position:absolute;right:32px;display:flex;align-items:center;gap:32px;list-style:none;margin-right:8px}
+.gp-page .gp-nav-links a{color:#6f7a72;text-decoration:none;font-size:.875rem;font-weight:400;transition:color .2s;white-space:nowrap;display:inline-block}
+.gp-page .gp-nav-links a:hover{color:#16241c}
+.gp-page .gp-nav-cta{background:#00cc66;color:#16241c!important;font-weight:600!important;padding:10px 18px;border-radius:100px;font-size:.85rem!important;transition:all .2s!important;flex-shrink:0}
+.gp-page .gp-nav-cta:hover{background:#c8f76b;transform:scale(1.03)}
+.gp-page .gp-hero{padding:150px 32px 30px;max-width:920px;margin:0 auto;text-align:center}
+.gp-page .gp-back{position:absolute;top:104px;left:32px;z-index:5;display:inline-flex;align-items:center;gap:8px;padding:9px 16px 9px 12px;border-radius:999px;border:1px solid rgba(13,31,23,.18);background:#fff;color:#0d1f17;font-size:14px;font-weight:600;text-decoration:none;transition:background .15s,border-color .15s}
+.gp-page .gp-back:hover{background:#f4f1ea;border-color:rgba(13,31,23,.35)}
+.gp-page .gp-h1{font-size:clamp(2rem,5vw,3.6rem);font-weight:800;line-height:1.05;letter-spacing:-.04em;margin-bottom:16px}
+.gp-page .gp-byline{font-size:.85rem;color:#6b7770;margin-bottom:20px}
+.gp-page .gp-intro{font-size:1.1rem;line-height:1.6;color:#2d3b32;max-width:60ch;margin:0 auto}
+.gp-page .gp-article{max-width:720px;margin:0 auto;padding:20px 20px 40px}
+.gp-page .gp-guide-choice{max-width:760px;margin:8px auto 20px;padding:23px 25px;background:#e9f3e9;border:1px solid #b6d3bc;border-radius:19px;color:#163927}
+.gp-page .gp-guide-choice h2{font-size:clamp(1.25rem,2.6vw,1.55rem);line-height:1.25;margin:0 0 7px;letter-spacing:-.025em}
+.gp-page .gp-guide-choice p{font-size:.91rem;line-height:1.65;margin:0 0 13px;color:#385341}
+.gp-page .gp-guide-choice-links{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:0 0 11px}
+.gp-page .gp-guide-choice-links a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid #164b30;border-radius:999px;background:#164b30;color:#fff;font-size:.87rem;font-weight:750}
+.gp-page .gp-guide-choice-links a+a{background:transparent;color:#164b30}
+.gp-page .gp-guide-choice-links a:focus-visible{outline:3px solid #118c56;outline-offset:3px}
+.gp-page .gp-guide-choice .gp-guide-choice-terms{font-size:.79rem;margin:0;color:#45614d}
+.gp-page .gp-wide{max-width:1040px}
+.gp-page .gp-notice{background:rgba(0,204,102,.08);border:1px solid rgba(0,204,102,.35);border-radius:16px;padding:20px 24px;font-size:.95rem;line-height:1.6;color:#2d3b32;margin-bottom:8px;font-weight:500}
+.gp-page .gp-notice-alert{background:rgba(255,107,74,.09);border-color:rgba(255,107,74,.45)}
+.gp-page .gp-p a{color:#0d1f17;font-weight:600;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(13,31,23,.3)}
+.gp-page .gp-sources{margin-top:48px;padding-top:24px;border-top:1px solid rgba(13,31,23,.15)}
+.gp-page .gp-sources-note{font-size:.85rem;color:#6b7770;line-height:1.55;margin-bottom:16px}
+.gp-page .gp-sources-title{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7770;margin-bottom:12px}
+.gp-page .gp-source-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.gp-page .gp-source-list a{color:#0d1f17;font-size:.92rem;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(13,31,23,.3)}
+.gp-page .gp-source-list a:hover{color:#0f5c34}
+.gp-page .gp-h2{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:700;letter-spacing:-.03em;line-height:1.15;margin:48px 0 16px}
+.gp-page .gp-p{font-size:1.02rem;line-height:1.7;color:#2d3b32;margin-bottom:16px}
+.gp-page .gp-ul{list-style:none;display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
+.gp-page .gp-ul li{position:relative;padding-left:26px;font-size:1.02rem;line-height:1.6;color:#2d3b32}
+.gp-page .gp-ul li::before{content:&#x27;&#x27;;position:absolute;left:0;top:.55em;width:12px;height:12px;border-radius:50%;background:#00cc66}
+.gp-page .gp-author-box{display:flex;align-items:center;gap:18px;background:rgba(255,255,255,.65);border:1px solid rgba(13,31,23,.1);border-radius:24px;padding:24px;margin-top:48px}
+.gp-page .gp-author-box img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #0d1f17;flex-shrink:0}
+.gp-page .gp-author-box p{font-size:.95rem;line-height:1.55;color:#2d3b32}
+.gp-page .gp-photo{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #0d1f17;margin-bottom:16px}
+.gp-page .gp-table-wrap{display:none;margin-bottom:8px}
+.gp-page .gp-table{width:100%;border-collapse:collapse;font-size:.92rem}
+.gp-page .gp-table th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#6b7770;padding:12px 14px;border-bottom:2px solid rgba(13,31,23,.2)}
+.gp-page .gp-table td{padding:14px;border-bottom:1px solid rgba(13,31,23,.1);vertical-align:top;line-height:1.5;color:#2d3b32}
+.gp-page .gp-table td:first-child{font-weight:700;color:#0d1f17;white-space:nowrap}
+.gp-page .gp-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:8px}
+.gp-page .gp-card{background:rgba(255,255,255,.65);border:1px solid rgba(13,31,23,.1);border-radius:16px;padding:18px 20px}
+.gp-page .gp-card b{display:block;margin-bottom:6px}
+.gp-page .gp-card span{font-size:.8rem;color:#6b7770;display:block;margin-bottom:8px}
+.gp-page .gp-card p{font-size:.92rem;line-height:1.55;color:#2d3b32}
+.gp-page .gp-small{font-size:.78rem;color:#6b7770;line-height:1.5}
+@media(min-width:700px){.gp-page .gp-table-wrap{display:block}.gp-page .gp-cards{display:none}}
+.gp-page .gp-hub-grid{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.gp-page .gp-hub-card{background:rgba(255,255,255,.65);border:1px solid rgba(13,31,23,.1);border-radius:16px;padding:18px 24px;display:flex;align-items:center;gap:18px;transition:all .3s;color:inherit}
+.gp-page .gp-hub-card:hover{border-color:rgba(0,204,102,.5);box-shadow:0 16px 40px rgba(13,31,23,.08)}
+.gp-page .gp-hub-tag{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#0d1f17;background:#00cc66;border-radius:100px;padding:4px 10px;flex-shrink:0}
+.gp-page .gp-hub-tag-cond{background:#b8d4f0}
+.gp-page .gp-hub-tag-feat{background:#ffb89c}
+.gp-page .gp-hub-card h3{font-size:1.05rem;font-weight:700;letter-spacing:-.02em;line-height:1.25;white-space:nowrap}
+.gp-page .gp-hub-card p{font-size:.85rem;line-height:1.5;color:#2d3b32;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:900px){
+  .gp-page .gp-hub-card{flex-direction:column;align-items:flex-start;gap:8px}
+  .gp-page .gp-hub-card h3,.gp-page .gp-hub-card p{white-space:normal;overflow:visible;text-overflow:clip}
+}
+.gp-page .gp-faq{background:#ede8dc;padding:80px 32px}
+.gp-page .gp-faq-title{font-family:&#x27;Instrument Serif&#x27;,serif;font-style:italic;font-size:clamp(2rem,4.5vw,3rem);letter-spacing:-.02em;text-align:center;margin-bottom:48px}
+.gp-page .faq-list{max-width:820px;margin:0 auto;border-top:1px solid rgba(13,31,23,.2)}
+.gp-page .faq-item{border-bottom:1px solid rgba(13,31,23,.1)}
+.gp-page .faq-item summary{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:24px 0;cursor:pointer;font-weight:600;font-size:1.05rem;list-style:none}
+.gp-page .faq-item summary::-webkit-details-marker{display:none}
+.gp-page .faq-icon{width:28px;height:28px;border-radius:50%;border:1px solid rgba(13,31,23,.2);flex-shrink:0;position:relative;transition:all .3s}
+.gp-page .faq-icon::before,.gp-page .faq-icon::after{content:&#x27;&#x27;;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#0d1f17;transition:transform .3s}
+.gp-page .faq-icon::before{width:12px;height:1.5px}
+.gp-page .faq-icon::after{width:1.5px;height:12px}
+.gp-page .faq-item[open] .faq-icon::after{transform:translate(-50%,-50%) scaleY(0)}
+.gp-page .faq-item[open] .faq-icon{background:#0d1f17}
+.gp-page .faq-item[open] .faq-icon::before,.gp-page .faq-item[open] .faq-icon::after{background:#f4f1ea}
+.gp-page .faq-a{padding:0 44px 28px 0;font-size:.98rem;line-height:1.65;color:#2d3b32;max-width:64ch}
+.gp-page .gp-cta{background:#0d1f17;color:#f4f1ea;text-align:center;padding:100px 32px;position:relative;overflow:hidden}
+.gp-page .gp-cta-heading{font-size:clamp(2.2rem,5.5vw,4rem);font-weight:700;line-height:.95;letter-spacing:-.04em;margin-bottom:24px}
+.gp-page .cta-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.gp-page .btn-primary{display:inline-flex;align-items:center;gap:12px;padding:18px 32px;background:#00cc66;color:#0d1f17;border-radius:100px;font-weight:600;font-size:.95rem;transition:background .2s}
+.gp-page .btn-primary:hover{background:#c8f76b}
+.gp-page .btn-secondary{display:inline-flex;align-items:center;gap:10px;padding:18px 28px;background:transparent;color:#f4f1ea;border:1px solid rgba(244,241,234,.3);border-radius:100px;font-weight:500;font-size:.95rem;transition:all .25s}
+.gp-page .btn-secondary:hover{background:#f4f1ea;color:#0d1f17;border-color:#f4f1ea}
+.gp-page .cta-note{margin-top:28px;font-size:.85rem;color:rgba(244,241,234,.5)}
+.gp-page .gp-footer{background:#0d1f17;color:#f4f1ea;padding:40px 32px 30px;border-top:1px solid rgba(244,241,234,.1)}
+.gp-page .gp-footer-inner{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:28px}
+.gp-page .gp-footer-logo{display:flex;align-items:center;color:#f4f1ea;font-weight:700;font-size:1rem;line-height:1}
+.gp-page .gp-footer-logo img{width:72px;height:72px;object-fit:contain}
+.gp-page .gp-footer-logo .nest{color:#00cc66;margin-left:-.1em}
+.gp-page .footer-heading{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(244,241,234,.5);margin-bottom:10px;font-weight:600}
+.gp-page .footer-links{list-style:none;display:flex;flex-direction:column;gap:8px}
+.gp-page .footer-links-row{flex-direction:row;gap:24px}
+.gp-page .footer-links a{color:rgba(244,241,234,.6);font-size:.85rem;transition:color .2s}
+.gp-page .footer-links a:hover{color:#f4f1ea}
+.gp-page .footer-store{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:8px 16px;border:1px solid rgba(244,241,234,.25);border-radius:100px;color:#f4f1ea;font-size:.78rem;font-weight:600;transition:all .2s}
+.gp-page .footer-store:hover{border-color:#00cc66;color:#00cc66}
+.gp-page .gp-disclaimer{max-width:1280px;margin:28px auto 8px;font-size:.78rem;line-height:1.5;color:rgba(244,241,234,.45)}
+.gp-page .gp-copy{font-size:.8rem;color:rgba(244,241,234,.4);text-align:center}
+.gp-page .reveal{opacity:0;transform:translateY(40px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.gp-page .reveal.visible{opacity:1;transform:translateY(0)}
+@media(max-width:900px){
+/* Mobile nav matches the landing page: logo + &quot;Start free trial&quot; only */
+.gp-page .gp-nav{position:fixed;top:0;left:0;right:0;transform:none;width:100%;max-width:none;border-radius:0;height:56px;padding:0 16px;gap:0;justify-content:space-between;align-items:center;overflow:hidden;animation:none}
+.gp-page .gp-nav-logo{font-size:1rem;gap:2px;letter-spacing:-.01em;margin-left:-8px}
+.gp-page .gp-nav-logo-mark{display:flex!important;width:52px!important;height:52px!important;margin-top:0!important;margin-right:-10px!important}
+.gp-page .gp-nav-links{display:flex!important;position:static;transform:none;gap:0;margin-right:0}
+.gp-page .gp-nav-links li:not(:last-child){display:none}
+.gp-page .gp-nav-cta{display:inline-flex!important;padding:8px 14px!important;font-size:.8rem!important}
+.gp-page .gp-nav-logo-mark img{transform:translateY(5px)}
+.gp-page .gp-nav-logo-word{transform:translateY(0)}
+.gp-page .gp-hero{padding:100px 20px 20px}
+.gp-page .gp-back{top:76px;left:16px;font-size:13px;padding:7px 14px 7px 10px}
+.gp-page .gp-back + .gp-hero{padding-top:128px}
+.gp-page .gp-article{padding:10px 16px 30px}
+.gp-page .gp-faq{padding:50px 20px}
+.gp-page .gp-cta{padding:60px 20px}
+.gp-page .faq-a{padding-right:0}
+}
+      </style><nav id="wn-gp-nav" class="gp-nav"><a class="gp-nav-logo" href="/"><div class="gp-nav-logo-mark"><img src="/imported/5b8791d9c9-560935dfd_ChatGPTImageFeb82026at07_05_31PM.png" alt="WellNest"/></div><span class="gp-nav-logo-word">Well<span class="nest">Nest</span></span></a><details class="wn-mobile-site-menu"><summary aria-label="Site navigation"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu" aria-hidden="true"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></summary><nav aria-label="Mobile site navigation"><a href="/">Home</a><a href="/#hb-features">Features</a><a href="/guides">Guides</a><a href="/free-tools.html">Free tools</a><a href="/Pricing">Pricing</a><a href="/dashboard">Log in / Dashboard</a></nav></details><ul class="gp-nav-links"><li><a href="/#hb-features">Features</a></li><li><a href="/#hb-conditions">Conditions</a></li><li><a href="/#hb-how">How it works</a></li><li><a href="/guides">Guides</a></li><li><a href="/free-tools.html">Free tools</a></li><li><a href="/start" class="gp-nav-cta">Start free trial</a></li></ul></nav><section class="gp-hero"><h1 class="gp-h1">Get in touch</h1><p class="gp-intro">Questions about WellNest, your subscription, clinic flyers or press — email us and we&#x27;ll get back to you, usually within one or two business days.</p></section><article class="gp-article "><section class="reveal"><h2 class="gp-h2">Email us</h2><p class="gp-p">The fastest way to reach the team is <a href="mailto:support@wellnest.com.au">support@wellnest.com.au</a>.</p></section><section class="reveal"><h2 class="gp-h2">Give feedback on the free WellNest preview</h2><p class="gp-p">We are speaking with people who have tried our <a href="/chronic-pain-diary">free interactive preview</a> to learn which parts are helpful and what is confusing. If you would like to share feedback in a brief conversation, you can email us voluntarily. There is no requirement to register or subscribe.</p><p class="gp-p"><a href="mailto:support@wellnest.com.au?subject=WellNest%20free%20preview%20feedback&amp;body=Hello%20WellNest%20team%2C%0A%0AI%20tried%20the%20free%20WellNest%20preview%20and%20I%20am%20open%20to%20sharing%20feedback%0Aabout%20the%20experience.%20Please%20let%20me%20know%20how%20to%20arrange%20a%20brief%20chat.%0A%0AI%20understand%20this%20is%20optional%20and%20does%20not%20require%20a%20subscription.%0A%0AThank%20you">Offer product feedback by email →</a></p><p class="gp-p gp-small">Please do not email symptoms, diagnoses, medication lists, medical records or personal health information. Your email app opens, but no message is sent without your action.</p></section><section class="reveal"><h2 class="gp-h2">Support and subscriptions</h2><p class="gp-p">For help with your account, billing or using the app, email <a href="mailto:support@wellnest.com.au">support@wellnest.com.au</a> with as much detail as possible — your account email and what you were trying to do helps us sort things quickly.</p></section><section class="reveal"><h2 class="gp-h2">Clinics and community organisations</h2><p class="gp-p">For waiting-room flyers or a one-page information sheet about WellNest, email <a href="mailto:support@wellnest.com.au">support@wellnest.com.au</a> with &quot;Clinic flyers&quot; in the subject line and we&#x27;ll post them out.</p></section><section class="reveal"><h2 class="gp-h2">Press and media</h2><p class="gp-p">See the <a href="/press">media kit</a> for descriptions, quotes and downloadable assets, or email <a href="mailto:support@wellnest.com.au">support@wellnest.com.au</a> with &quot;Press&quot; in the subject line.</p></section></article><section class="gp-cta"><h2 class="gp-cta-heading">Ready when<br/>you are.</h2><div class="cta-row"><a href="/start" class="btn-primary"><span>Start free for 30 days</span></a><a href="/chronic-pain-diary" class="btn-secondary">Try a no-signup preview</a><a href="https://apps.apple.com/au/app/wellnest/id6759418128" target="_blank" rel="noopener noreferrer" class="btn-secondary"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"></path></svg>Download on the App Store</a></div><p class="cta-note">30 days free · No card needed · Built with care in Australia</p></section><footer class="gp-footer"><div class="gp-footer-inner"><a href="/" class="gp-footer-logo"><img src="/imported/5b8791d9c9-560935dfd_ChatGPTImageFeb82026at07_05_31PM.png" alt="WellNest"/><span>Well<span class="nest">Nest</span></span></a><div><div class="footer-heading">Conditions</div><ul class="footer-links"><li><a href="/symptom-tracker-app.html">Symptom tracker app</a></li><li><a href="/chronic-illness-tracker.html">Chronic illness tracker</a></li><li><a href="/chronic-pain-diary">Chronic Pain</a></li><li><a href="/crps-tracker">CRPS</a></li><li><a href="/asthma-tracker">Asthma</a></li><li><a href="/seizure-diary">Epilepsy</a></li><li><a href="/fibromyalgia-tracker">Fibromyalgia</a></li></ul></div><div><div class="footer-heading">Features</div><ul class="footer-links"><li><a href="/medication-tracker">Medication tracker</a></li><li><a href="/emergency-action-plan">Emergency action plan</a></li><li><a href="/medical-expense-tracker">Medical expense tracker</a></li></ul></div><div><div class="footer-heading">Guides</div><ul class="footer-links"><li><a href="/guides">All guides</a></li><li><a href="/chronic-health-tracker-guide.html">Choosing a chronic health tracker</a></li><li><a href="/best-chronic-illness-tracker-apps.html">Best chronic illness tracker apps</a></li><li><a href="/flare-up-diary-guide">Chronic illness flare-up diary guide</a></li><li><a href="/symptom-diary-guide">Symptom diary guide</a></li><li><a href="/appointment-prep-checklist">Appointment prep checklist</a></li><li><a href="/asthma-action-plan-guide">Asthma action plans</a></li><li><a href="/seizure-first-aid-and-diary">Seizure first aid &amp; diary</a></li><li><a href="/crps-symptoms-guide">CRPS symptoms guide</a></li><li><a href="/wellnest-vs-bearable">WellNest vs Bearable</a></li><li><a href="/wellnest-vs-manage-my-pain">WellNest vs Manage My Pain</a></li><li><a href="/wellnest-vs-careclinic">WellNest vs CareClinic</a></li><li><a href="/free-tools.html">All free tools</a></li><li><a href="/free-medication-list.html">Free printable medication list</a></li><li><a href="/free-symptom-summary-maker.html">Free appointment summary maker</a></li><li><a href="/pain-scale-chart">Printable pain scale chart</a></li><li><a href="/how-to-describe-pain-to-your-doctor">How to describe pain to your doctor</a></li><li><a href="/chronic-pain-diary">Try the interactive preview</a></li></ul></div><div><div class="footer-heading">Company</div><ul class="footer-links"><li><a href="/about">About WellNest</a></li><li><a href="/for-clinicians">For clinicians</a></li><li><a href="/contact">Contact</a></li><li><a href="/press">Press</a></li></ul><a class="footer-store" href="https://apps.apple.com/au/app/wellnest/id6759418128" target="_blank" rel="noopener noreferrer"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"></path></svg>App Store</a></div><ul class="footer-links footer-links-row"><li><a href="/Pricing">Pricing</a></li><li><a href="/PrivacyPolicy">Privacy Policy</a></li><li><a href="/TermsOfService">Terms of Service</a></li></ul></div><p class="gp-disclaimer">WellNest is a record-keeping tool. It does not diagnose, treat or monitor any condition and is not an emergency service. In an emergency call 000.</p><p class="gp-copy">© 2026 WellNest. Built with care in Australia.</p></footer></div></div>
+    <noscript><style>.reveal{opacity:1!important;transform:none!important}</style><p>Interactive tracking, printable tools and checkout require JavaScript.</p></noscript>
+  </body>
+</html>

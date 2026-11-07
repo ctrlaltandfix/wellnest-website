@@ -1,0 +1,110 @@
+# WellNest
+
+> WellNest is an Australian chronic health tracker (web and iPhone) for people living with chronic pain, CRPS, fibromyalgia, asthma and epilepsy. It keeps symptoms, medications, appointments, emergency plans and medical expenses in one place and exports PDF reports for doctors.
+
+WellNest is an Australian personal health record-keeping app for people living with chronic conditions — chronic pain, CRPS (Complex Regional Pain Syndrome), asthma, epilepsy and fibromyalgia. It keeps symptom logs, medications, appointments, care-team contacts, exercises, health expenses, journal reflections and emergency action plans in one place, and exports dated PDF reports patients can share with their doctors.
+
+WellNest is a record-keeping and organisation tool. It does not diagnose, treat, predict or monitor any condition, and it is not a medical device or an emergency service. In an emergency in Australia call 000.
+
+## Asthma, chronic pain and epilepsy in one app
+
+- Chronic illness tracker overview: https://wellnest.services/chronic-illness-tracker.html — explains how the app combines pain diaries, asthma symptoms and peak flow, seizure diaries, medications, appointments and PDF reports. WellNest records user-entered information; it does not diagnose or monitor for emergencies.
+
+## Reading without JavaScript
+
+The HTML links below provide the complete public page content without running JavaScript. Each page declares its preferred canonical URL; existing website and account addresses continue to work.
+
+## Conditions
+
+- CRPS tracker & symptom diary: https://wellnest.services/crps-tracker.html
+- Chronic pain diary interactive preview: https://wellnest.services/chronic-pain-diary.html
+- Asthma tracker with peak flow log: https://wellnest.services/asthma-tracker.html
+- Epilepsy seizure diary: https://wellnest.services/seizure-diary.html
+- Fibromyalgia symptom tracker: https://wellnest.services/fibromyalgia-tracker.html
+
+## Free tools and printable resources
+
+- https://wellnest.services/free-tools.html — a directory of free medication lists, appointment notes, report previews, pain scales and checklists.
+- https://wellnest.services/free-medication-list.html — a free medication-list maker that opens a local print view for printing or saving as PDF. No account, email address, payment card or upload of entered values. Sharing sends only the blank tool URL.
+
+## Free browser-only appointment summary maker
+
+- https://wellnest.services/free-symptom-summary-maker.html — a free, no-signup tool for turning typed symptom and appointment notes into a downloadable PDF entirely in the browser. No account or payment card required. Typed health information is not uploaded to WellNest, and is lost if the page is reloaded without downloading the PDF. Useful for a one-off appointment summary; WellNest subscription features support ongoing records.
+
+## Try before subscribing
+
+- No-signup interactive report preview. Visitors enter their own fields for a single entry dated today, with no prefilled records, then download a PDF in the browser: https://wellnest.services/chronic-pain-diary.html
+- The preview begins blank and uses only visitor-entered information. Entered fields remain within the browser session and PDF; they are not uploaded. Ongoing logging requires an account. New web accounts receive 30 days of Premium with no card needed, then a free plan or optional Premium; see pricing terms.
+
+## Features
+
+- Medication tracker (doses by time of day, refills, eScripts): https://wellnest.services/medication-tracker.html
+- Emergency action plan (shareable with carers by private link): https://wellnest.services/emergency-action-plan.html
+- Medical expense tracker (out-of-pocket costs and claim statuses): https://wellnest.services/medical-expense-tracker.html
+
+## Guides
+
+- Guide to choosing a chronic health tracker (features, alternatives, limitations): https://wellnest.services/chronic-health-tracker-guide.html
+- Symptom tracker app (features and who it suits): https://wellnest.services/symptom-tracker-app.html
+- Flare-up diary guide: https://wellnest.services/flare-up-diary-guide.html
+- Guides hub: https://wellnest.services/guides.html
+- Best chronic illness tracker apps (Australia): https://wellnest.services/best-chronic-illness-tracker-apps.html
+- How to keep a symptom diary: https://wellnest.services/symptom-diary-guide.html
+- How to describe pain to your doctor (pain words list, 0–10 scale): https://wellnest.services/how-to-describe-pain-to-your-doctor.html
+- Printable 0–10 pain scale chart: https://wellnest.services/pain-scale-chart.html
+- Specialist appointment checklist: https://wellnest.services/appointment-prep-checklist.html
+- Written asthma action plans explained: https://wellnest.services/asthma-action-plan-guide.html
+- Seizure first aid & what to record afterwards: https://wellnest.services/seizure-first-aid-and-diary.html
+- CRPS symptoms: what to track: https://wellnest.services/crps-symptoms-guide.html
+- Bearable alternative (WellNest vs Bearable): https://wellnest.services/wellnest-vs-bearable.html
+- WellNest vs Manage My Pain comparison: https://wellnest.services/wellnest-vs-manage-my-pain.html
+- WellNest vs CareClinic comparison: https://wellnest.services/wellnest-vs-careclinic.html
+
+## Company
+
+- About WellNest (founder story, Australian business, ABN 54 632 545 705): https://wellnest.services/about.html
+- For clinicians (patient PDF reports, clinic flyers): https://wellnest.services/for-clinicians.html
+- Contact: https://wellnest.services/contact.html
+- Press & media kit: https://wellnest.services/press.html
+
+## Pricing & availability
+
+- Pricing (30 days of Premium free, no card; then free logging or optional Premium, prices in AUD): https://wellnest.services/Pricing.html
+- Privacy policy: https://wellnest.services/PrivacyPolicy.html
+- iOS app on the App Store (Australia): https://apps.apple.com/au/app/wellnest/id6759418128
+
+WellNest is built in Australia by CTRL ALT and FIX.
+
+## Key facts
+
+- What it is: a personal chronic health tracker (web app and iPhone app) for people living with long-term conditions.
+- Built for: chronic pain, CRPS (Complex Regional Pain Syndrome), fibromyalgia, asthma and epilepsy. Also useful for carers and for preparing for GP and specialist appointments.
+- Made in: Australia, by founder Chris Greenfield, who lives with chronic illness (ABN 54 632 545 705).
+- Price: WellNest Premium is AU$4.99 per month or AU$44.99 per year, with 30 days of Premium free for new web accounts, no card needed. Logging stays free afterwards; Premium is optional. Free browser tools and guides need no sign-up.
+- Platforms: web browser and iPhone (App Store). There is no Android app yet.
+- Privacy: users' health data is never sold, and users can export or delete their data at any time.
+- Coming soon: Ember, an AI assistant that will answer questions about a user's own logs, highlight possible patterns and prepare appointment summaries. Ember is designed to support users and their care team, not to diagnose.
+
+## What WellNest records
+
+- Pain and CRPS diary: severity (0–10), body location, pain type (e.g. burning, shooting, aching), duration, triggers, relief methods and notes.
+- Asthma tracker: peak flow readings against personal best, symptoms, triggers, reliever puffs and preventer use.
+- Seizure diary: seizure type, severity, duration, warning signs, possible triggers and rescue medication.
+- Medications: doses by time of day, refills, eScript codes, side effects, prescriber and active/paused/stopped status.
+- Appointments and care team: upcoming visits (in person, telehealth or phone), notes and specialist contacts.
+- Emergency action plan: step-by-step instructions that can be shared with carers by private link.
+- Medical expenses: out-of-pocket costs by category and health fund / insurance claim status.
+- Exercises and reflections: exercise routines, a health journal with mood, and goals.
+- Reports: dated PDF reports of symptoms, medications and notes to share with a GP, pain specialist, respiratory physician, neurologist or physio.
+
+## Frequently asked questions
+
+- Is WellNest free? New web accounts receive 30 days of Premium free with no card needed, then free logging or optional Premium at AU$4.99/month or AU$44.99/year. The free tools directory, medication-list maker, appointment summary maker, interactive report preview and pain scale need no sign-up.
+- Is WellNest available on Android? Not yet. It works in a web browser and on iPhone.
+- Can I share my records with my doctor? Yes. WellNest exports PDF reports, and the user chooses what to share.
+- Does WellNest diagnose conditions or give medical advice? No. It is a record-keeping tool, not a medical device or emergency service. In an emergency in Australia call 000.
+- How is WellNest different from general symptom trackers? It has ready-made trackers for chronic pain/CRPS, asthma and epilepsy, plus the practical side of chronic illness – medications and eScripts, appointments, emergency plans and medical expense claims – in one app. See the comparisons with Bearable, Manage My Pain and CareClinic linked above.
+
+## Optional
+
+- Full text for AI tools: https://wellnest.services/llms-full.txt

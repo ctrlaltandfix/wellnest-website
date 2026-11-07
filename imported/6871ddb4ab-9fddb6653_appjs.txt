@@ -1,0 +1,1625 @@
+/* ---------- storage ---------- */
+const DB={
+  pain:'wn-pain', asthma:'wn-asthma', ep:'wn-epilepsy', meds:'wn-meds',
+  medlog:'wn-medlog', appts:'wn-appts', contacts:'wn-contacts', exercises:'wn-exercises', reflection:'wn-reflection',
+  refReminders:'wn-ref-reminders', refTips:'wn-ref-tips', expenses:'wn-expenses', emergency:'wn-emergency', settings:'wn-settings',
+  asthmaPlan:'wn-asthma-plan', billing:'wn-billing', emergCheck:'wn-emerg-check', hospBag:'wn-hosp-bag'
+};
+const load=k=>{try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return[]}};
+const loadObj=k=>{try{return JSON.parse(localStorage.getItem(k))||{}}catch(e){return{}}};
+const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc=s=>(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+
+/* ---------- helpers ---------- */
+const fmtDate=d=>new Date(d).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+const fmtShort=d=>new Date(d).toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+const today=()=>new Date().toISOString().slice(0,10);
+const daysSince=d=>Math.floor((Date.now()-new Date(d))/864e5);
+/* ---------- medication time-of-day routine ---------- */
+const TIME_SLOTS=[
+  {key:'morning',label:'Morning',icon:'☀',sub:'5am – 12pm'},
+  {key:'afternoon',label:'Afternoon',icon:'☼',sub:'12pm – 5pm'},
+  {key:'evening',label:'Evening',icon:'☾',sub:'5pm – 9pm'},
+  {key:'night',label:'Night',icon:'✦',sub:'9pm – 5am'}
+];
+const slotLabel=k=>(TIME_SLOTS.find(s=>s.key===k)||{}).label||k;
+const slotIcon=k=>(TIME_SLOTS.find(s=>s.key===k)||{}).icon||'⊕';
+function currentSlot(){
+  const h=new Date().getHours();
+  if(h>=5&&h<12)return'morning';
+  if(h>=12&&h<17)return'afternoon';
+  if(h>=17&&h<21)return'evening';
+  return'night';
+}
+function toast(msg){const t=document.getElementById('toast');t.innerHTML='✓ '+msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400);}
+
+/* ---------- navigation ---------- */
+const TITLES={dashboard:['Welcome back',''],
+  pain:['Chronic Pain',''], asthma:['Asthma',''],
+  epilepsy:['Epilepsy',''], meds:['Medications',''],
+  appts:['Appointments',''], contacts:['Contacts',''], exercises:['Exercises',''], reflection:['Reflection',''],
+  expenses:['Expenses',''], emergency:['Emergency Plan',''], settings:['Settings','']};
+
+/* Page accent colors for orbs */
+const pageColors={dashboard:'var(--green)',pain:'var(--coral)',asthma:'var(--sky)',
+  epilepsy:'var(--violet)',meds:'var(--teal)',appts:'var(--amber)',
+  contacts:'var(--teal)',exercises:'var(--green)',reflection:'var(--violet)',expenses:'var(--amber)',emergency:'var(--coral)',settings:'var(--green)'};
+
+function updateOrbColors(page){
+  const color=pageColors[page];
+  if(!color)return;
+  document.querySelectorAll('.orb').forEach(orb=>orb.style.background=color);
+}
+
+function go(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('eyebrow').textContent=TITLES[p][0];
+  document.getElementById('pageTitle').textContent=TITLES[p][1];
+  document.getElementById('backBtn').classList.toggle('show',p!=='dashboard');
+  updateOrbColors(p);
+  if(p==='dashboard')applyGreeting();
+  window.scrollTo(0,0); renderAll();
+}
+
+/* ---------- modal engine ---------- */
+function modal(html){document.getElementById('modal').innerHTML=html;document.getElementById('overlay').classList.add('open');}
+function closeModal(){document.getElementById('overlay').classList.remove('open');}
+document.getElementById('overlay').onclick=e=>{if(e.target.id==='overlay')closeModal();};
+
+/* =================== PAIN =================== */
+const PAIN_LOC=['Lower back','Neck','Head','Shoulders','Hips','Knees','Legs','Feet','Joints','Abdomen'];
+function openPain(id){
+  const items=load(DB.pain); const e=id?items.find(x=>x.id===id):{};
+  const locs=e.locations||[];
+  const customLoc=locs.find(l=>!PAIN_LOC.includes(l))||'';
+  const standardLocs=locs.filter(l=>PAIN_LOC.includes(l));
+  modal(`<h4>${id?'Edit':'Log'} pain</h4><div class="msub">How are you feeling right now?</div>
+    <div class="field"><label>Intensity — <span id="pv">${e.level??5}</span>/10</label>
+      <div class="range-wrap"><input type="range" min="0" max="10" value="${e.level??5}" id="f-level" class="pain-range" style="--thumb:${painColor(e.level??5)}"><span class="range-val" id="pvv">${painFace(e.level??5)}</span></div></div>
+    <div class="field"><label>Location</label><div class="tag-select" id="f-loc">
+      ${PAIN_LOC.map(l=>`<span class="tag-opt ${standardLocs.includes(l)?'on':''}" onclick="this.classList.toggle('on')">${l}</span>`).join('')}</div>
+    <input type="text" id="f-custom-loc" placeholder="Or enter custom location" value="${esc(customLoc)}" style="margin-top:10px;width:100%;padding:11px 13px;border-radius:11px;background:rgba(var(--tint),.05);border:1px solid var(--card-line);color:var(--ink);font-size:14px;font-family:inherit;transition:.16s"></div>
+    <div class="field-row"><div class="field"><label>Date</label><input type="date" id="f-date" value="${e.date||today()}"></div>
+      <div class="field"><label>Type</label><select id="f-type">
+        ${['Aching','Sharp','Burning','Throbbing','Stabbing','Stiff','Numb'].map(t=>`<option ${e.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
+    <div class="field"><label>Triggers / notes</label><textarea id="f-notes" placeholder="Weather, activity, stress, what helped…">${esc(e.notes)}</textarea></div>
+    <div class="field"><label>Photo</label>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <button onclick="document.getElementById('f-photo-camera').click()" class="file-btn">📷 Take Photo</button>
+      <label for="f-photo" class="file-btn">📸 Select Photo</label>
+      <input type="file" id="f-photo" accept="image/*" style="display:none">
+      <input type="file" id="f-photo-camera" accept="image/*" capture="environment" style="display:none">
+      <span id="f-photo-name" style="color:var(--ink-dim);font-size:13.5px;height:42px;display:inline-flex;align-items:center;line-height:1">No photo selected</span>
+    </div>
+    <div id="photo-preview" style="margin-top:8px"></div></div>
+    <div class="modal-actions">${id?`<button class="btn danger" onclick="delPain('${id}')">Delete</button>`:''}
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="savePain('${id||''}')">Save</button></div>`);
+  document.getElementById('f-level').oninput=function(){const v=this.value;document.getElementById('pv').textContent=v;document.getElementById('pvv').textContent=painFace(v);this.style.setProperty('--thumb',painColor(v));};
+  // photo upload handler
+  if(e.photo){const prev=document.getElementById('photo-preview');prev.innerHTML=`<img src="${e.photo}" style="max-width:100%;max-height:180px;border-radius:11px;border:1px solid var(--card-line);">`;}
+  const photoHandler=function(ev){
+    if(!this.files.length)return;
+    const fname=this.files[0].name;
+    document.getElementById('f-photo-name').textContent=fname;
+    const r=new FileReader();r.onload=()=>{
+      const prev=document.getElementById('photo-preview');
+      const d=r.result;
+      prev.innerHTML=`<img src="${d}" style="max-width:100%;max-height:180px;border-radius:11px;border:1px solid var(--card-line);"><div style="font-size:12px;color:var(--ink-dim);margin-top:6px">${(this.files[0].size/1024).toFixed(0)}KB</div>`;
+      document.getElementById('f-photo')._base64=d;
+    };r.readAsDataURL(this.files[0]);
+  };
+  document.getElementById('f-photo').onchange=photoHandler;
+  document.getElementById('f-photo-camera').onchange=photoHandler;
+}
+function savePain(id){
+  const items=load(DB.pain);
+  const locs=[...document.querySelectorAll('#f-loc .tag-opt.on')].map(x=>x.textContent);
+  const custom=document.getElementById('f-custom-loc').value.trim();
+  if(custom)locs.push(custom);
+  const o={id:id||uid(),level:+document.getElementById('f-level').value,
+    locations:locs,
+    date:document.getElementById('f-date').value,type:document.getElementById('f-type').value,
+    notes:document.getElementById('f-notes').value,
+    photo:document.getElementById('f-photo')._base64||''};
+  if(id){const i=items.findIndex(x=>x.id===id);items[i]={...items[i],...o};}else items.push(o);
+  save(DB.pain,items);closeModal();toast('Pain entry saved');renderAll();
+}
+function delPain(id){save(DB.pain,load(DB.pain).filter(x=>x.id!==id));closeModal();toast('Entry deleted');renderAll();}
+function showPhoto(id){
+  const item=load(DB.pain).find(x=>x.id===id);
+  if(!item||!item.photo)return;
+  modal(`<div style="text-align:center"><h4>${item.type} pain — ${fmtDate(item.date)}</h4><div style="margin-top:16px"><img src="${item.photo}" style="max-width:100%;max-height:70vh;border-radius:11px;border:1px solid var(--card-line);"></div>
+    <div style="margin-top:16px;display:flex;gap:12px"><button class="btn" onclick="closeModal()">Close</button><button class="btn primary" onclick="openPain('${id}')">Edit entry</button></div></div>`);
+}
+function painColor(l){return l>=7?'var(--coral)':l>=4?'var(--amber)':'var(--green)';}
+function painFace(v){const E=['😄','😊','🙂','😐','😕','😠','😣','😖','😫','😡','🤬'];return E[Math.max(0,Math.min(10,Math.round(+v)))];}
+function renderPain(){
+  const items=load(DB.pain).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const last7=items.slice(0,7);
+  const latest=items[0];
+  document.getElementById('p-latest').innerHTML=latest?`${latest.level}<small>/10</small>`:'—';
+  const avg=last7.length?(last7.reduce((s,x)=>s+x.level,0)/last7.length).toFixed(1):null;
+  document.getElementById('p-avg').innerHTML=avg?`${avg}<small>/10</small>`:'—';
+  document.getElementById('p-count').textContent=items.length;
+  const list=document.getElementById('p-list');
+  if(!items.length){list.innerHTML=emptyState('✦','No pain entries yet','Log your first entry to start spotting patterns.');return;}
+  list.innerHTML=items.map(e=>`<div class="row">
+    <div class="chip-ic" style="background:${painColor(e.level)};color:#03130a;font-weight:800;font-size:15px">${e.level}</div>
+    <div class="main-txt"><b>${e.type} pain ${e.locations.length?'· '+esc(e.locations.join(', ')):''}</b>
+      <span>${esc(e.notes)||'No notes'}</span></div>
+    <div class="meta">${fmtShort(e.date)}</div>
+    ${e.photo?`<div class="actions" style="padding:0;margin:0;width:50px;overflow:hidden"><img src="${e.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:8px;cursor:pointer;" onclick="showPhoto('${e.id}')"></div>`:''}
+    <div class="actions"><div class="icon-btn" onclick="openPain('${e.id}')">✎</div></div></div>`).join('');
+}
+
+/* =================== ASTHMA =================== */
+function openAsthma(id){
+  const items=load(DB.asthma); const e=id?items.find(x=>x.id===id):{};
+  modal(`<h4>${id?'Edit':'Add'} reading</h4><div class="msub">Log your peak flow and symptoms</div>
+    <div class="field-row"><div class="field"><label>Peak flow (L/min)</label><input type="number" id="f-pf" value="${e.pf||''}" placeholder="e.g. 420"></div>
+      <div class="field"><label>Date</label><input type="date" id="f-date" value="${e.date||today()}"></div></div>
+    <div class="field"><label>Symptoms</label><div class="tag-select" id="f-sym">
+      ${['Wheeze','Cough','Tightness','Breathless','Night waking','None'].map(s=>`<span class="tag-opt ${(e.symptoms||[]).includes(s)?'on':''}" onclick="this.classList.toggle('on')">${s}</span>`).join('')}</div></div>
+    <div class="field-row"><div class="field"><label>Reliever puffs</label><input type="number" id="f-rel" value="${e.reliever||0}" min="0"></div>
+      <div class="field"><label>Trigger</label><select id="f-trig">
+        ${['None','Exercise','Cold air','Dust','Pollen','Pets','Smoke','Illness','Stress'].map(t=>`<option ${e.trigger===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
+    <div class="modal-actions">${id?`<button class="btn danger" onclick="delAsthma('${id}')">Delete</button>`:''}
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveAsthma('${id||''}')">Save</button></div>`);
+}
+function saveAsthma(id){
+  const items=load(DB.asthma);
+  const o={id:id||uid(),pf:+document.getElementById('f-pf').value||0,date:document.getElementById('f-date').value,
+    symptoms:[...document.querySelectorAll('#f-sym .tag-opt.on')].map(x=>x.textContent),
+    reliever:+document.getElementById('f-rel').value||0,trigger:document.getElementById('f-trig').value};
+  if(id){const i=items.findIndex(x=>x.id===id);items[i]=o;}else items.push(o);
+  save(DB.asthma,items);closeModal();toast('Reading saved');renderAll();
+}
+function delAsthma(id){save(DB.asthma,load(DB.asthma).filter(x=>x.id!==id));closeModal();toast('Reading deleted');renderAll();}
+function asthmaControl(items){
+  const last7=items.filter(x=>daysSince(x.date)<=7);
+  const rel=last7.reduce((s,x)=>s+x.reliever,0);
+  const sym=last7.filter(x=>x.symptoms.length&&!x.symptoms.includes('None')).length;
+  if(!last7.length)return{label:'No data',c:'var(--ink-dim)',rel:0};
+  if(rel<=2&&sym<=1)return{label:'Well controlled',c:'var(--green)',rel};
+  if(rel<=6&&sym<=3)return{label:'Partly controlled',c:'var(--amber)',rel};
+  return{label:'Needs attention',c:'var(--coral)',rel};
+}
+function renderAsthma(){
+  const items=load(DB.asthma).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const ctrl=asthmaControl(items);
+  document.getElementById('as-pf').innerHTML=items[0]?.pf?`${items[0].pf}<small> L/min</small>`:'—';
+  const st=document.getElementById('as-status');st.textContent=ctrl.label;st.style.color=ctrl.c;
+  document.getElementById('as-reliever').textContent=ctrl.rel;
+  const list=document.getElementById('as-list');
+  renderAsthmaPlan();
+  if(!items.length){list.innerHTML=emptyState('≈','No readings yet','Add a peak flow reading to track your control.');return;}
+  list.innerHTML=items.map(e=>`<div class="row">
+    <div class="chip-ic tint">≈</div>
+    <div class="main-txt"><b>${e.pf?e.pf+' L/min':'No peak flow'} ${e.trigger!=='None'?'· '+e.trigger:''}</b>
+      <span>${e.symptoms.length?esc(e.symptoms.join(', ')):'No symptoms'} · ${e.reliever} reliever puff${e.reliever===1?'':'s'}</span></div>
+    <div class="meta">${fmtShort(e.date)}</div>
+    <div class="actions"><div class="icon-btn" onclick="openAsthma('${e.id}')">✎</div></div></div>`).join('');
+}
+
+/* ---- Australian Asthma Action Plan ---- */
+function openAsthmaPlan(){
+  const p=loadObj(DB.asthmaPlan);
+  modal(`<h4>Asthma action plan</h4><div class="msub">Based on the National Asthma Council Australia plan. Complete this with your doctor.</div>
+    <div class="field-row"><div class="field"><label>Completed with (doctor)</label><input id="ap-doctor" value="${esc(p.doctor)}" placeholder="Dr Sarah Lee"></div>
+      <div class="field"><label>Next review</label><input type="date" id="ap-review" value="${p.review||''}"></div></div>
+    <div class="field"><label>My best peak flow (L/min)</label><input type="number" id="ap-best" value="${p.best||''}" placeholder="e.g. 450"></div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-dim);margin:18px 0 4px">My usual medicines (when well)</div>
+    <div class="field"><label>Preventer (daily)</label><input id="ap-preventer" value="${esc(p.preventer)}" placeholder="e.g. Seretide 250, 1 puff twice daily"></div>
+    <div class="field"><label>Reliever (as needed)</label><input id="ap-reliever" value="${esc(p.reliever)}" placeholder="e.g. Ventolin, 2 puffs when needed"></div>
+    <div class="field"><label>Other medicines</label><input id="ap-other" value="${esc(p.other)}" placeholder="e.g. Montelukast, hay fever spray"></div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--green);margin:18px 0 4px">🟢 When well</div>
+    <div class="field"><label>Signs</label><input id="ap-z1s" value="${esc(p.z1s)}" placeholder="Few/no symptoms, sleep undisturbed, normal activity"></div>
+    <div class="field-row"><div class="field"><label>Peak flow</label><input id="ap-z1pf" value="${esc(p.z1pf)}" placeholder="Above 80% of best"></div>
+      <div class="field"><label>Action</label><input id="ap-z1a" value="${esc(p.z1a)}" placeholder="Continue usual medicines"></div></div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--amber);margin:18px 0 4px">🟠 When getting worse</div>
+    <div class="field"><label>Signs</label><input id="ap-z2s" value="${esc(p.z2s)}" placeholder="Waking at night, needing reliever more, symptoms with activity"></div>
+    <div class="field-row"><div class="field"><label>Peak flow</label><input id="ap-z2pf" value="${esc(p.z2pf)}" placeholder="50–80% of best"></div>
+      <div class="field"><label>Action</label><input id="ap-z2a" value="${esc(p.z2a)}" placeholder="Step up preventer / start as advised, see doctor"></div></div>
+
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--coral);margin:18px 0 4px">🔴 Asthma emergency</div>
+    <div class="field"><label>Danger signs</label><input id="ap-z3s" value="${esc(p.z3s)}" placeholder="Very short of breath, reliever not helping, can't speak in sentences, lips blue"></div>
+    <div class="field-row"><div class="field"><label>Peak flow</label><input id="ap-z3pf" value="${esc(p.z3pf)}" placeholder="Below 50% of best"></div>
+      <div class="field"><label>Action</label><input id="ap-z3a" value="${esc(p.z3a)}" placeholder="Asthma first aid + call 000"></div></div>
+
+    <div class="field" style="margin-top:14px"><label>My triggers to avoid</label><textarea id="ap-trig" placeholder="Pollen, cold air, smoke, exercise…">${esc(p.triggers)}</textarea></div>
+
+    <div class="modal-actions">${(p.doctor||p.preventer||p.z1s)?`<button class="btn danger" onclick="delAsthmaPlan()">Clear</button>`:''}
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveAsthmaPlan()">Save plan</button></div>`);
+}
+function saveAsthmaPlan(){
+  const g=id=>document.getElementById(id).value;
+  save(DB.asthmaPlan,{doctor:g('ap-doctor'),review:g('ap-review'),best:g('ap-best'),
+    preventer:g('ap-preventer'),reliever:g('ap-reliever'),other:g('ap-other'),
+    z1s:g('ap-z1s'),z1pf:g('ap-z1pf'),z1a:g('ap-z1a'),
+    z2s:g('ap-z2s'),z2pf:g('ap-z2pf'),z2a:g('ap-z2a'),
+    z3s:g('ap-z3s'),z3pf:g('ap-z3pf'),z3a:g('ap-z3a'),triggers:g('ap-trig')});
+  closeModal();toast('Action plan saved');renderAll();
+}
+function delAsthmaPlan(){localStorage.removeItem(DB.asthmaPlan);closeModal();toast('Action plan cleared');renderAll();}
+
+/* ---- Export action plan as PDF (recreates the NAC Australia template) ---- */
+function exportAsthmaPlanPDF(){
+  const p=loadObj(DB.asthmaPlan);
+  if(!(p.doctor||p.preventer||p.reliever||p.z1s||p.z2s||p.z3s)){toast('Fill in your action plan first');return;}
+  loadJsPDF(()=>buildAsthmaPDF(p),()=>toast('Could not load PDF tool (check connection)'));
+}
+function loadJsPDF(ok,fail){
+  if(window.jspdf&&window.jspdf.jsPDF){ok();return;}
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  s.onload=ok; s.onerror=fail||(()=>{});
+  document.head.appendChild(s);
+}
+function buildAsthmaPDF(p){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const s=loadObj(DB.settings), em=loadObj(DB.emergency);
+  const name=s.name||em.name||'';
+  const M=15, W=210, R=195, CW=180;
+  const GREEN=[46,155,87], AMBER=[230,140,12], RED=[214,68,58], INK=[28,46,36], MUTE=[110,132,118];
+  const tint=(c,f)=>c.map(v=>Math.round(v*f+255*(1-f)));
+  let y=0;
+  const ensure=h=>{if(y+h>284){doc.addPage();y=18;}};
+
+  // header band
+  doc.setFillColor(8,163,82); doc.rect(0,0,W,26,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold').setFontSize(20); doc.text('Asthma Action Plan',M,15);
+  doc.setFont('helvetica','normal').setFontSize(8.5); doc.text('A personal plan — to be completed with your doctor',M,21);
+  doc.setFont('helvetica','bold').setFontSize(13); doc.text('WellNest',R,14,{align:'right'});
+  doc.setFont('helvetica','normal').setFontSize(7.5); doc.text('Health, centered.',R,19,{align:'right'});
+  y=34;
+
+  // detail fields row
+  const field=(label,val,x,w)=>{
+    doc.setTextColor(...MUTE).setFont('helvetica','bold').setFontSize(7);
+    doc.text(label.toUpperCase(),x,y);
+    doc.setTextColor(...INK).setFont('helvetica','normal').setFontSize(10);
+    doc.text(doc.splitTextToSize(val||'—',w),x,y+5);
+    doc.setDrawColor(225,232,228); doc.line(x,y+7.5,x+w-6,y+7.5);
+  };
+  field('Name',name,M,90); field('Date',new Date().toLocaleDateString('en-AU'),M+95,85);
+  y+=15;
+  field('Completed with',p.doctor,M,60); field('Next review',p.review?fmtDate(p.review):'',M+62,55);
+  field('Best peak flow',p.best?p.best+' L/min':'',M+122,58);
+  y+=16;
+
+  // usual medicines box
+  ensure(34);
+  doc.setFillColor(...tint(GREEN,.07)); doc.setDrawColor(...tint(GREEN,.5));
+  const medLines=[['Preventer (daily)',p.preventer],['Reliever (as needed)',p.reliever],['Other medicines',p.other]].filter(m=>m[1]);
+  const medH=12+Math.max(medLines.length,1)*7;
+  doc.roundedRect(M,y,CW,medH,2,2,'FD');
+  doc.setTextColor(...INK).setFont('helvetica','bold').setFontSize(11); doc.text('My usual asthma medicines (when well)',M+4,y+7);
+  let my=y+14;
+  doc.setFontSize(9.5);
+  if(medLines.length)medLines.forEach(m=>{
+    doc.setFont('helvetica','bold').setTextColor(...MUTE); doc.text(m[0]+':',M+4,my);
+    doc.setFont('helvetica','normal').setTextColor(...INK);
+    doc.text(doc.splitTextToSize(m[1],CW-50),M+48,my); my+=7;
+  });
+  else {doc.setFont('helvetica','italic').setTextColor(...MUTE); doc.text('Not recorded',M+4,my);}
+  y+=medH+7;
+
+  // traffic-light heading
+  ensure(10);
+  doc.setTextColor(...INK).setFont('helvetica','bold').setFontSize(12); doc.text('Follow the traffic-light steps',M,y); y+=5;
+
+  // zone helper
+  const zone=(title,color,signs,pf,action)=>{
+    const pad=4, innerW=CW-2*pad-2;
+    doc.setFontSize(9.5);
+    const sLines=signs?doc.splitTextToSize('Signs:  '+signs,innerW):[];
+    const aLines=action?doc.splitTextToSize('Action:  '+action,innerW):[];
+    const h=12+(sLines.length+aLines.length)*4.8+pad;
+    ensure(h+4);
+    doc.setFillColor(...tint(color,.12)); doc.setDrawColor(...color);
+    doc.roundedRect(M,y,CW,h,2,2,'FD');
+    doc.setFillColor(...color); doc.rect(M,y,2.5,h,'F');
+    doc.setFillColor(...color); doc.circle(M+pad+2,y+pad+3,2,'F');
+    doc.setTextColor(...color).setFont('helvetica','bold').setFontSize(11);
+    doc.text(title,M+pad+7,y+pad+4);
+    if(pf){doc.setFont('helvetica','bold').setFontSize(8.5).setTextColor(...color);
+      doc.text(String(pf),R-pad,y+pad+4,{align:'right'});}
+    let by=y+pad+11; doc.setTextColor(40,55,46).setFont('helvetica','normal').setFontSize(9.5);
+    sLines.forEach(l=>{doc.text(l,M+pad+2,by);by+=4.8;});
+    aLines.forEach(l=>{doc.text(l,M+pad+2,by);by+=4.8;});
+    y+=h+4;
+  };
+  zone('When well',GREEN,p.z1s,p.z1pf,p.z1a);
+  zone('When getting worse',AMBER,p.z2s,p.z2pf,p.z2a);
+  zone('Asthma emergency',RED,p.z3s,p.z3pf,p.z3a);
+
+  // first aid box
+  const steps=['Sit the person upright. Stay calm and reassure them.',
+    'Give 4 separate puffs of a blue/grey reliever. Shake, 1 puff into the spacer, 4 breaths. Repeat until 4 puffs given.',
+    'Wait 4 minutes. If there is no improvement, give 4 more puffs.',
+    'If still no improvement, call 000 for an ambulance and say it is an asthma emergency. Keep giving 4 puffs every 4 minutes until help arrives.'];
+  doc.setFontSize(9.5);
+  const stepLines=steps.map(t=>doc.splitTextToSize(t,CW-18));
+  const faH=14+stepLines.reduce((s,l)=>s+l.length*4.8+2,0);
+  ensure(faH+2);
+  doc.setFillColor(...tint(RED,.09)); doc.setDrawColor(...RED);
+  doc.roundedRect(M,y,CW,faH,2,2,'FD');
+  doc.setTextColor(...RED).setFont('helvetica','bold').setFontSize(11); doc.text('Asthma first aid — 4 × 4 × 4',M+4,y+7);
+  let fy=y+13;
+  stepLines.forEach((lines,i)=>{
+    doc.setFillColor(...RED); doc.circle(M+6,fy-1,2.6,'F');
+    doc.setTextColor(255,255,255).setFont('helvetica','bold').setFontSize(9); doc.text(String(i+1),M+6,fy+0.5,{align:'center'});
+    doc.setTextColor(40,55,46).setFont('helvetica','normal').setFontSize(9.5);
+    doc.text(lines,M+12,fy); fy+=lines.length*4.8+2;
+  });
+  y+=faH+6;
+
+  // triggers
+  if(p.triggers){ensure(14);
+    doc.setTextColor(...MUTE).setFont('helvetica','bold').setFontSize(7); doc.text('TRIGGERS TO AVOID',M,y);
+    doc.setTextColor(...INK).setFont('helvetica','normal').setFontSize(9.5);
+    doc.text(doc.splitTextToSize(p.triggers,CW),M,y+5); y+=5+doc.splitTextToSize(p.triggers,CW).length*4.8+4;}
+
+  // footer (last page)
+  const foot='This plan is a record of the asthma action plan agreed with your doctor and does not replace medical advice. '+
+    'Structure based on the National Asthma Council Australia Asthma Action Plan. In an emergency call 000.   '+
+    'Generated by WellNest · '+new Date().toLocaleDateString('en-AU');
+  doc.setDrawColor(225,232,228); doc.line(M,287,R,287);
+  doc.setTextColor(...MUTE).setFont('helvetica','normal').setFontSize(6.8);
+  doc.text(doc.splitTextToSize(foot,CW),M,290);
+
+  doc.save(`asthma-action-plan-${name?name.replace(/\s+/g,'-').toLowerCase()+'-':''}${today()}.pdf`);
+  toast('Action plan PDF exported');
+}
+function exportMedsPDF(){
+  const items=load(DB.meds);
+  if(!items.length){toast('Add medications first');return;}
+  loadJsPDF(()=>buildMedsPDF(items),()=>toast('Could not load PDF tool (check connection)'));
+}
+function buildMedsPDF(items){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const s=loadObj(DB.settings), em=loadObj(DB.emergency);
+  const name=s.name||em.name||'';
+  const M=15, W=210, R=195, CW=180;
+  const TEAL=[12,160,143], INK=[28,46,36], MUTE=[110,132,118];
+  const tint=(c,f)=>c.map(v=>Math.round(v*f+255*(1-f)));
+  let y=0;
+  const ensure=h=>{if(y+h>284){doc.addPage();y=18;drawTableHead();}};
+
+  // header band
+  doc.setFillColor(...TEAL); doc.rect(0,0,W,26,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold').setFontSize(20); doc.text('Medication List',M,15);
+  doc.setFont('helvetica','normal').setFontSize(8.5); doc.text('A current record of medications and schedule',M,21);
+  doc.setFont('helvetica','bold').setFontSize(13); doc.text('WellNest',R,14,{align:'right'});
+  doc.setFont('helvetica','normal').setFontSize(7.5); doc.text('Health, centered.',R,19,{align:'right'});
+  y=34;
+
+  // detail fields
+  const field=(label,val,x,w)=>{
+    doc.setTextColor(...MUTE).setFont('helvetica','bold').setFontSize(7);
+    doc.text(label.toUpperCase(),x,y);
+    doc.setTextColor(...INK).setFont('helvetica','normal').setFontSize(10);
+    doc.text(doc.splitTextToSize(val||'—',w),x,y+5);
+    doc.setDrawColor(225,232,228); doc.line(x,y+7.5,x+w-6,y+7.5);
+  };
+  field('Name',name,M,90); field('Date',new Date().toLocaleDateString('en-AU'),M+95,85);
+  y+=16;
+
+  // column layout
+  const C1=M+3, C2=M+60, C3=M+86, C4=M+124;
+  const W1=54, W2=24, W3=36, W4=54;
+  function drawTableHead(){
+    doc.setFillColor(...tint(TEAL,.14)); doc.roundedRect(M,y,CW,9,1.5,1.5,'F');
+    doc.setTextColor(...TEAL).setFont('helvetica','bold').setFontSize(7.5);
+    doc.text('MEDICATION',C1,y+6); doc.text('DOSE',C2,y+6);
+    doc.text('FREQUENCY',C3,y+6); doc.text('TIME(S)',C4,y+6);
+    y+=12;
+  }
+  drawTableHead();
+
+  // rows
+  items.forEach((m,i)=>{
+    const nameLines=doc.splitTextToSize(m.name||'—',W1);
+    const doseLines=doc.splitTextToSize(m.dose||'—',W2);
+    const freqLines=doc.splitTextToSize(m.freq||'—',W3);
+    const timeLines=doc.splitTextToSize(m.time||'—',W4);
+    const maxLines=Math.max(nameLines.length,doseLines.length,freqLines.length,timeLines.length);
+    const sub=[m.for?'For: '+m.for:'',m.notes||''].filter(Boolean).join('   ·   ');
+    const subLines=sub?doc.splitTextToSize(sub,CW-6):[];
+    const rowH=maxLines*4.6+(subLines.length?subLines.length*3.8+2:0)+5;
+    ensure(rowH+1);
+    if(i%2===0){doc.setFillColor(247,251,250);doc.rect(M,y-2,CW,rowH,'F');}
+    doc.setTextColor(...INK).setFont('helvetica','bold').setFontSize(9.5); doc.text(nameLines,C1,y+3);
+    doc.setFont('helvetica','normal').setFontSize(9);
+    doc.text(doseLines,C2,y+3); doc.text(freqLines,C3,y+3); doc.text(timeLines,C4,y+3);
+    if(subLines.length){doc.setTextColor(...MUTE).setFont('helvetica','italic').setFontSize(7.5);
+      doc.text(subLines,C1,y+3+maxLines*4.6);}
+    y+=rowH;
+    doc.setDrawColor(232,238,235); doc.line(M,y-2,M+CW,y-2);
+  });
+  y+=6;
+
+  // summary
+  ensure(8);
+  doc.setTextColor(...MUTE).setFont('helvetica','normal').setFontSize(8.5);
+  doc.text(`${items.length} medication${items.length!==1?'s':''} recorded`,M,y);
+
+  // footer (last page)
+  const foot='This is a personal record of medications generated by WellNest and does not replace professional medical advice. '+
+    'Always confirm doses and schedules with your doctor or pharmacist. In an emergency call 000.   '+
+    'Generated by WellNest · '+new Date().toLocaleDateString('en-AU');
+  doc.setDrawColor(225,232,228); doc.line(M,287,R,287);
+  doc.setTextColor(...MUTE).setFont('helvetica','normal').setFontSize(6.8);
+  doc.text(doc.splitTextToSize(foot,CW),M,290);
+
+  doc.save(`medications-${name?name.replace(/\s+/g,'-').toLowerCase()+'-':''}${today()}.pdf`);
+  toast('Medications PDF exported');
+}
+function renderAsthmaPlan(){
+  const p=loadObj(DB.asthmaPlan); const el=document.getElementById('as-plan'); if(!el)return;
+  const filled=p.doctor||p.preventer||p.reliever||p.z1s||p.z2s||p.z3s;
+  const firstAid=`<div class="card pad-lg sos" style="margin-top:16px">
+    <div style="display:flex;align-items:center;gap:13px;margin-bottom:12px">
+      <div class="pulse">✚</div><div><b style="font-size:15px">Asthma first aid — 4×4×4</b>
+      <div style="font-size:12px;color:var(--ink-dim)">National Asthma Council Australia</div></div></div>
+    <ol class="plan-firstaid">
+      <li><span>Sit the person upright. Stay calm and reassure them.</span></li>
+      <li><span>Give 4 separate puffs of a blue/grey reliever. Shake, 1 puff into the spacer, 4 breaths. Repeat until 4 puffs given.</span></li>
+      <li><span>Wait 4 minutes. If there's no improvement, give 4 more puffs.</span></li>
+      <li><span>If still no improvement, call <b>000</b> for an ambulance and say it's an asthma emergency. Keep giving 4 puffs every 4 minutes until help arrives.</span></li>
+    </ol></div>`;
+  if(!filled){
+    el.innerHTML=`<div class="card pad-lg"><div class="empty" style="padding:22px">
+      <div class="big">≈</div><b style="display:block;color:var(--ink);font-size:15px;margin-bottom:4px">No action plan yet</b>
+      Tap “Edit plan” to record the plan you set up with your doctor.</div></div>${firstAid}`;
+    return;
+  }
+  const meds=[['Preventer (daily)',p.preventer],['Reliever (as needed)',p.reliever],['Other',p.other]]
+    .filter(m=>m[1]).map(m=>`<div class="card" style="padding:14px 16px"><div style="font-size:11.5px;color:var(--ink-dim);font-weight:700">${m[0]}</div>
+      <div style="font-size:13.5px;font-weight:600;margin-top:3px">${esc(m[1])}</div></div>`).join('');
+  const zone=(cls,title,s,pf,a)=>`<div class="zone ${cls}">
+    <div class="zhead"><span class="zlight"></span><span class="ztitle">${title}</span>${pf?`<span class="zpf">${esc(pf)}</span>`:''}</div>
+    ${s?`<div class="zrow"><b>Signs:</b> <span>${esc(s)}</span></div>`:''}
+    ${a?`<div class="zrow"><b>Action:</b> <span>${esc(a)}</span></div>`:''}</div>`;
+  el.innerHTML=`<div class="card pad-lg">
+    ${(p.doctor||p.review||p.best)?`<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-dim);margin-bottom:16px">
+      ${p.doctor?`<span>👩‍⚕️ ${esc(p.doctor)}</span>`:''}${p.best?`<span>📈 Best ${esc(p.best)} L/min</span>`:''}${p.review?`<span>🗓 Review ${fmtDate(p.review)}</span>`:''}</div>`:''}
+    ${meds?`<div class="plan-meds">${meds}</div>`:''}
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${zone('zone-z1','When well',p.z1s,p.z1pf,p.z1a)}
+      ${zone('zone-z2','When getting worse',p.z2s,p.z2pf,p.z2a)}
+      ${zone('zone-z3','Asthma emergency',p.z3s,p.z3pf,p.z3a)}
+    </div>
+    ${p.triggers?`<div style="margin-top:16px;font-size:13px"><b style="color:var(--ink-dim)">Triggers to avoid:</b> ${esc(p.triggers)}</div>`:''}
+  </div>${firstAid}`;
+  updateAsthmaPlanButton();
+}
+
+function updateAsthmaPlanButton(){
+  const p=loadObj(DB.asthmaPlan);
+  const filled=p.doctor||p.preventer||p.reliever||p.z1s||p.z2s||p.z3s;
+  const btn=document.querySelector('[onclick="openAsthmaPlan()"]');
+  if(btn){btn.textContent=filled?'✎ Edit plan':'➕ Add plan';}
+  const pdfBtn=document.getElementById('ap-pdf-btn');
+  if(pdfBtn){pdfBtn.style.display=filled?'block':'none';}
+}
+
+/* =================== EPILEPSY =================== */
+function openEp(id){
+  const items=load(DB.ep); const e=id?items.find(x=>x.id===id):{};
+  modal(`<h4>${id?'Edit':'Log'} seizure</h4><div class="msub">Record details to share with your neurologist</div>
+    <div class="field-row"><div class="field"><label>Date</label><input type="date" id="f-date" value="${e.date||today()}"></div>
+      <div class="field"><label>Time</label><input type="time" id="f-time" value="${e.time||''}"></div></div>
+    <div class="field-row"><div class="field"><label>Type</label><select id="f-type">
+        ${['Focal aware','Focal impaired','Tonic-clonic','Absence','Myoclonic','Atonic','Other'].map(t=>`<option ${e.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="field"><label>Duration</label><select id="f-dur">
+        ${['< 1 min','1–2 min','2–5 min','> 5 min'].map(d=>`<option ${e.duration===d?'selected':''}>${d}</option>`).join('')}</select></div></div>
+    <div class="field"><label>Possible triggers</label><div class="tag-select" id="f-trig">
+      ${['Missed dose','Poor sleep','Stress','Flashing light','Illness','Alcohol','Hormonal','Unknown'].map(t=>`<span class="tag-opt ${(e.triggers||[]).includes(t)?'on':''}" onclick="this.classList.toggle('on')">${t}</span>`).join('')}</div></div>
+    <div class="field"><label>Notes / recovery</label><textarea id="f-notes" placeholder="Aura, recovery time, injuries…">${esc(e.notes)}</textarea></div>
+    <div class="modal-actions">${id?`<button class="btn danger" onclick="delEp('${id}')">Delete</button>`:''}
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveEp('${id||''}')">Save</button></div>`);
+}
+function saveEp(id){
+  const items=load(DB.ep);
+  const o={id:id||uid(),date:document.getElementById('f-date').value,time:document.getElementById('f-time').value,
+    type:document.getElementById('f-type').value,duration:document.getElementById('f-dur').value,
+    triggers:[...document.querySelectorAll('#f-trig .tag-opt.on')].map(x=>x.textContent),
+    notes:document.getElementById('f-notes').value};
+  if(id){const i=items.findIndex(x=>x.id===id);items[i]=o;}else items.push(o);
+  save(DB.ep,items);closeModal();toast('Seizure logged');renderAll();
+}
+function delEp(id){save(DB.ep,load(DB.ep).filter(x=>x.id!==id));closeModal();toast('Entry deleted');renderAll();}
+function confirmDelEp(id){
+  const e=load(DB.ep).find(x=>x.id===id);
+  if(!e)return;
+  modal(`<h4>Delete seizure event?</h4><div class="msub">This will permanently remove this entry.</div>
+    <div class="row" style="margin:8px 0 4px;opacity:1"><div class="chip-ic tint">⚡</div>
+      <div class="main-txt"><b>${e.type} · ${e.duration}</b><span>${fmtShort(e.date)}${e.time?' · '+e.time:''}</span></div></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn danger" onclick="delEp('${id}')">Delete</button></div>`);
+}
+function renderEp(){
+  const items=load(DB.ep).slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
+  const last=items[0];
+  document.getElementById('ep-free').textContent=last?daysSince(last.date):'—';
+  document.getElementById('ep-month').textContent=items.filter(x=>daysSince(x.date)<=30).length;
+  document.getElementById('ep-last').textContent=last?fmtShort(last.date):'None';
+  const list=document.getElementById('ep-list');
+  if(!items.length){list.innerHTML=emptyState('⚡','No seizures logged','Hopefully it stays that way. Log here if one occurs.');return;}
+  list.innerHTML=items.map(e=>`<div class="row">
+    <div class="chip-ic tint">⚡</div>
+    <div class="main-txt"><b>${e.type} · ${e.duration}</b>
+      <span>${e.triggers.length?esc(e.triggers.join(', ')):'No triggers noted'}${e.notes?' · '+esc(e.notes):''}</span></div>
+    <div class="meta">${fmtShort(e.date)}${e.time?'<br>'+e.time:''}</div>
+    <div class="actions"><div class="icon-btn" onclick="openEp('${e.id}')">✎</div><div class="icon-btn" onclick="confirmDelEp('${e.id}')" style="color:var(--coral)">🗑</div></div></div>`).join('');
+}
+
+/* =================== MEDS =================== */
+function openMed(id){
+  const items=load(DB.meds); const e=id?items.find(x=>x.id===id):{};
+  const routine=e.routine||[];
+  modal(`<h4>${id?'Edit':'Add'} medication</h4><div class="msub">Dose, schedule and purpose</div>
+    <div class="field"><label>Name</label><input id="f-name" value="${esc(e.name)}" placeholder="e.g. Gabapentin"></div>
+    <div class="field-row"><div class="field"><label>Dose</label><input id="f-dose" value="${esc(e.dose)}" placeholder="e.g. 300mg"></div>
+      <div class="field"><label>Frequency</label><select id="f-freq">
+        ${['Once daily','Twice daily','3× daily','4× daily','As needed','Weekly'].map(f=>`<option ${e.freq===f?'selected':''}>${f}</option>`).join('')}</select></div></div>
+    <div class="field"><label>Daily routine — when do you take this?</label>
+      <div class="tag-select" id="f-routine">
+        ${TIME_SLOTS.map(s=>`<span class="tag-opt ${routine.includes(s.key)?'on':''}" data-slot="${s.key}" onclick="this.classList.toggle('on')">${s.icon} ${s.label}</span>`).join('')}
+      </div></div>
+    <div class="field-row"><div class="field"><label>Specific time(s) — optional</label><input id="f-time" value="${esc(e.time)}" placeholder="e.g. 8am, 8pm"></div>
+      <div class="field"><label>For</label><input id="f-for" value="${esc(e.for)}" placeholder="e.g. Nerve pain"></div></div>
+    <div class="field"><label>Prescriber / notes</label><input id="f-notes" value="${esc(e.notes)}" placeholder="Dr Lee · take with food"></div>
+    <div class="modal-actions">${id?`<button class="btn danger" onclick="delMed('${id}')">Delete</button>`:''}
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveMed('${id||''}')">Save</button></div>`);
+}
+function saveMed(id){
+  const items=load(DB.meds);
+  const routine=[...document.querySelectorAll('#f-routine .tag-opt.on')].map(x=>x.dataset.slot);
+  const o={id:id||uid(),name:document.getElementById('f-name').value,dose:document.getElementById('f-dose').value,
+    freq:document.getElementById('f-freq').value,routine,time:document.getElementById('f-time').value,
+    for:document.getElementById('f-for').value,notes:document.getElementById('f-notes').value};
+  if(!o.name){toast('Add a name first');return;}
+  if(id){const i=items.findIndex(x=>x.id===id);items[i]=o;}else items.push(o);
+  save(DB.meds,items);closeModal();toast('Medication saved');renderAll();
+}
+function delMed(id){save(DB.meds,load(DB.meds).filter(x=>x.id!==id));closeModal();toast('Medication removed');renderAll();}
+function confirmDelMed(id){
+  const e=load(DB.meds).find(x=>x.id===id);
+  if(!e)return;
+  modal(`<h4>Delete medication?</h4><div class="msub">This will permanently remove this medication.</div>
+    <div class="row" style="margin:8px 0 4px;opacity:1"><div class="chip-ic" style="background:var(--teal);color:#03130a;font-weight:800">⊕</div>
+      <div class="main-txt"><b>${esc(e.name)} ${e.dose?'· '+esc(e.dose):''}</b><span>${esc(e.freq)}${e.time?' · '+esc(e.time):''}</span></div></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn danger" onclick="delMed('${id}')">Delete</button></div>`);
+}
+function toggleMedToday(id){
+  const log=loadObj(DB.medlog); const key=today();
+  log[key]=log[key]||[];
+  log[key]=log[key].includes(id)?log[key].filter(x=>x!==id):[...log[key],id];
+  save(DB.medlog,log);renderAll();
+}
+function toggleDose(id,slot){
+  const dk=id+'__'+slot;
+  const log=loadObj(DB.medlog); const key=today();
+  log[key]=log[key]||[];
+  log[key]=log[key].includes(dk)?log[key].filter(x=>x!==dk):[...log[key],dk];
+  save(DB.medlog,log);renderAll();
+}
+function dayDoseStats(){
+  const items=load(DB.meds); const log=loadObj(DB.medlog)[today()]||[];
+  let total=0,taken=0;
+  items.forEach(m=>{const r=m.routine||[];total+=r.length;
+    r.forEach(s=>{if(log.includes(m.id+'__'+s))taken++;});});
+  return {total,taken};
+}
+function renderMedRoutine(){
+  const card=document.getElementById('m-routine'); if(!card)return;
+  const items=load(DB.meds);
+  const log=loadObj(DB.medlog)[today()]||[];
+  const cur=currentSlot();
+  const nowEl=document.getElementById('m-routine-now');
+  if(nowEl)nowEl.textContent=slotIcon(cur)+' Now: '+slotLabel(cur);
+  if(!items.length){card.innerHTML='<div style="font-size:12.5px;color:var(--ink-dim);padding:8px 0">No medications yet — add one and choose when you take it.</div>';return;}
+  let html='';
+  TIME_SLOTS.forEach(s=>{
+    const meds=items.filter(m=>(m.routine||[]).includes(s.key));
+    const isNow=s.key===cur;
+    html+=`<div style="padding:12px 0;border-bottom:1px solid var(--card-line)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:${meds.length?'10px':'0'}">
+        <span style="font-size:13px;font-weight:700;color:${isNow?'var(--teal)':'var(--ink)'}">${s.icon} ${s.label}</span>
+        <span style="font-size:11px;color:var(--ink-faint)">${s.sub}</span>
+        ${isNow?'<span style="font-size:10px;font-weight:800;color:#03130a;background:var(--teal);padding:2px 8px;border-radius:99px;letter-spacing:.3px">NOW</span>':''}
+      </div>`;
+    if(meds.length){
+      html+=meds.map(m=>{const dk=m.id+'__'+s.key;const taken=log.includes(dk);
+        return`<div style="display:flex;align-items:center;gap:10px;padding:5px 0">
+          <div class="icon-btn" style="${taken?'background:var(--teal);color:#03130a;border-color:var(--teal)':''}" onclick="toggleDose('${m.id}','${s.key}')">${taken?'✓':'○'}</div>
+          <div style="flex:1;font-size:13px;${taken?'opacity:.5;text-decoration:line-through':''}"><b>${esc(m.name)}</b> ${esc(m.dose)}</div></div>`;}).join('');
+    }else{
+      html+='<div style="font-size:12px;color:var(--ink-faint)">No medications</div>';
+    }
+    html+='</div>';
+  });
+  const asNeeded=items.filter(m=>!(m.routine||[]).length);
+  if(asNeeded.length){
+    html+='<div style="padding:12px 0 0"><div style="font-size:13px;font-weight:700;margin-bottom:8px">⊕ As needed</div>';
+    html+=asNeeded.map(m=>{const taken=log.includes(m.id);
+      return`<div style="display:flex;align-items:center;gap:10px;padding:5px 0">
+      <div class="icon-btn" style="${taken?'background:var(--teal);color:#03130a;border-color:var(--teal)':''}" onclick="toggleMedToday('${m.id}')">${taken?'✓':'○'}</div>
+      <div style="flex:1;font-size:13px;${taken?'opacity:.5;text-decoration:line-through':''}"><b>${esc(m.name)}</b> ${esc(m.dose)} <span style="color:var(--ink-dim)">· ${esc(m.freq)}</span></div></div>`;}).join('');
+    html+='</div>';
+  }
+  card.innerHTML=html;
+}
+function renderMeds(){
+  renderMedRoutine();
+  const items=load(DB.meds);
+  const list=document.getElementById('m-list');
+  if(!items.length){list.innerHTML=emptyState('⊕','No medications yet','Add your medications to track your daily schedule.');return;}
+  list.innerHTML='<div style="font-size:12px;font-weight:700;color:var(--ink-dim);margin:4px 0 12px;text-transform:uppercase;letter-spacing:.5px">All medications</div>'+
+    items.map(e=>{
+    const badges=(e.routine||[]).map(k=>`<span style="font-size:10.5px;font-weight:700;color:var(--teal);background:color-mix(in srgb,var(--teal) 14%,transparent);padding:2px 8px;border-radius:99px;margin-right:4px;white-space:nowrap">${slotIcon(k)} ${slotLabel(k)}</span>`).join('');
+    return`<div class="row">
+    <div class="chip-ic" style="background:color-mix(in srgb,var(--teal) 16%,transparent);color:var(--teal)">⊕</div>
+    <div class="main-txt"><b>${esc(e.name)} ${e.dose?'· '+esc(e.dose):''}</b>
+      <span>${esc(e.freq)}${e.time?' · '+esc(e.time):''}${e.for?' · for '+esc(e.for):''}</span>
+      ${badges?`<div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:4px">${badges}</div>`:''}</div>
+    <div class="meta">${esc(e.notes)}</div>
+    <div class="actions"><div class="icon-btn" onclick="openMed('${e.id}')">✎</div><div class="icon-btn" onclick="confirmDelMed('${e.id}')" style="color:var(--coral)">🗑</div></div></div>`}).join('');
+}
+
+/* =================== APPOINTMENTS =================== */
+function openAppt(id){
+  const items=load(DB.appts); const e=id?items.find(x=>x.id===id):{};
+  modal(`<h4>${id?'Edit':'Add'} appointment</h4><div class="msub">Keep your visits in one place</div>
+    <div class="field"><label>With / reason</label><input id="f-title" value="${esc(e.title)}" placeholder="e.g. Neurology review — Dr Patel"></div>
+    <div class="field-row"><div class="field"><label>Date</label><input type="date" id="f-date" value="${e.date||today()}"></div>
+      <div class="field"><label>Time</label><input type="time" id="f-time" value="${e.time||''}"></div></div>
+    <div class="field"><label>Location</label><input id="f-loc" value="${esc(e.loc)}" placeholder="Clinic / telehealth"></div>
+    <div class="field"><label>Notes / questions to ask</label><textarea id="f-notes" placeholder="Bring blood results, ask about dose…">${esc(e.notes)}</textarea></div>
+    <div class="modal-actions">${id?`<button class="btn danger" onclick="delAppt('${id}')">Delete</button>`:''}
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveAppt('${id||''}')">Save</button></div>`);
+}
+function saveAppt(id){
+  const items=load(DB.appts);
+  const o={id:id||uid(),title:document.getElementById('f-title').value,date:document.getElementById('f-date').value,
+    time:document.getElementById('f-time').value,loc:document.getElementById('f-loc').value,notes:document.getElementById('f-notes').value};
+  if(!o.title){toast('Add a title first');return;}
+  if(id){const i=items.findIndex(x=>x.id===id);items[i]=o;}else items.push(o);
+  save(DB.appts,items);closeModal();toast('Appointment saved');renderAll();
+}
+function delAppt(id){save(DB.appts,load(DB.appts).filter(x=>x.id!==id));closeModal();toast('Appointment deleted');renderAll();}
+function apptRow(e){return`<div class="row">
+  <div class="chip-ic tint">▣</div>
+  <div class="main-txt"><b>${esc(e.title)}</b><span>${e.loc?esc(e.loc):'No location'}${e.notes?' · '+esc(e.notes):''}</span></div>
+  <div class="meta">${fmtDate(e.date)}${e.time?'<br>'+e.time:''}</div>
+  <div class="actions"><div class="icon-btn" onclick="openAppt('${e.id}')">✎</div></div></div>`;}
+function renderAppts(){
+  const items=load(DB.appts);
+  const up=items.filter(x=>x.date>=today()).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const past=items.filter(x=>x.date<today()).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('ap-upcoming').innerHTML=up.length?up.map(apptRow).join(''):emptyState('▣','No upcoming appointments','Add one to stay ahead of your care schedule.');
+  document.getElementById('ap-past').innerHTML=past.length?past.map(apptRow).join(''):'<div class="empty" style="padding:18px">No past appointments.</div>';
+}
+
+/* =================== CONTACTS =================== */
+function openContact(id){
+  const items=load(DB.contacts); const e=id?items.find(x=>x.id===id):{};
+  modal(`<h4>${id?'Edit':'Add'} contact</h4><div class="msub">Care team and emergency contacts</div>
+    <div class="field"><label>Name</label><input id="f-name" value="${esc(e.name)}" placeholder="Dr Sarah Lee"></div>
+    <div class="field-row"><div class="field"><label>Role</label><select id="f-role" onchange="condFromRole(this.value)">
+        <option value="" ${!e.role?'selected':''}>Select…</option>
+        ${['General Practitioner','Pain Specialist','Rheumatologist','Neurologist','Gastroenterologist','Rehabilitation Consultant','Respiratory Consultant','Physiotherapist','Psychologist','Psychiatrist','Pharmacist','Insurance Manager','Support Worker','Other'].map(r=>`<option ${e.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
+      <div class="field"><label>Phone</label><input id="f-phone" value="${esc(e.phone)}" placeholder="04xx xxx xxx"></div></div>
+    <div class="field"><label>Practice / notes</label><input id="f-notes" value="${esc(e.notes)}" placeholder="Clinic name, address"></div>
+    <div class="field"><label>Related to — shows this contact on these pages</label><div class="tag-select" id="f-cond">
+      ${['Chronic pain','Asthma','Epilepsy'].map(c=>`<span class="tag-opt ${(e.conditions||[]).includes(c)?'on':''}" onclick="this.classList.toggle('on')">${c}</span>`).join('')}</div></div>
+    <div class="field"><label>Primary care team</label>
+      <div class="switch-field" onclick="this.querySelector('.switch').classList.toggle('on')">
+        <div><div class="sf-text">Part of primary care team</div>
+          <div class="sf-sub">Key contact for your health management</div></div>
+        <div class="switch ${e.primary?'on':''}" id="f-primary"></div>
+      </div></div>
+    <div class="field"><label>Emergency contact</label>
+      <div class="switch-field" onclick="this.querySelector('.switch').classList.toggle('on')">
+        <div><div class="sf-text">Show on emergency plan</div>
+          <div class="sf-sub">Visible to responders on your emergency page</div></div>
+        <div class="switch ${e.emerg?'on':''}" id="f-emerg"></div>
+      </div></div>
+    <div class="modal-actions">${id?`<button class="btn danger" onclick="delContact('${id}')">Delete</button>`:''}
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveContact('${id||''}')">Save</button></div>`);
+}
+function condFromRole(role){
+  const map={Neurologist:'Epilepsy','Respiratory Consultant':'Asthma','Pain Specialist':'Chronic pain'};
+  const cond=map[role]; if(!cond)return;
+  const opt=[...document.querySelectorAll('#f-cond .tag-opt')].find(o=>o.textContent===cond);
+  if(opt&&!opt.classList.contains('on'))opt.classList.add('on');
+}
+function saveContact(id){
+  const items=load(DB.contacts);
+  const o={id:id||uid(),name:document.getElementById('f-name').value,role:document.getElementById('f-role').value,
+    phone:document.getElementById('f-phone').value,notes:document.getElementById('f-notes').value,
+    conditions:[...document.querySelectorAll('#f-cond .tag-opt.on')].map(x=>x.textContent),
+    primary:document.getElementById('f-primary').classList.contains('on'),
+    emerg:document.getElementById('f-emerg').classList.contains('on')};
+  if(!o.name){toast('Add a name first');return;}
+  if(id){const i=items.findIndex(x=>x.id===id);items[i]=o;}else items.push(o);
+  save(DB.contacts,items);closeModal();toast('Contact saved');renderAll();
+}
+function delContact(id){save(DB.contacts,load(DB.contacts).filter(x=>x.id!==id));closeModal();toast('Contact removed');renderAll();}
+function renderContacts(){
+  const items=load(DB.contacts);
+  const list=document.getElementById('c-list');
+  if(!items.length){list.innerHTML=emptyState('☎','No contacts yet','Add your GP, specialists and emergency contacts.');return;}
+  list.innerHTML=items.map(e=>`<div class="row">
+    <div class="chip-ic tint">☎</div>
+    <div class="main-txt"><b>${esc(e.name)} ${e.emerg?'<span class="badge tint" style="margin-left:4px">Emergency</span>':''}</b>
+      <span>${esc(e.role)}${e.notes?' · '+esc(e.notes):''}</span></div>
+    <div class="meta">${e.phone?`<a href="tel:${esc(e.phone)}" style="color:var(--teal-soft);text-decoration:none">${esc(e.phone)}</a>`:''}</div>
+    <div class="actions"><div class="icon-btn" onclick="openContact('${e.id}')">✎</div></div></div>`).join('');
+}
+function renderLinkedContacts(cond,cardId,listId){
+  const card=document.getElementById(cardId), list=document.getElementById(listId);
+  if(!card||!list)return;
+  const items=load(DB.contacts).filter(c=>(c.conditions||[]).includes(cond));
+  if(!items.length){card.style.display='none';return;}
+  card.style.display='';
+  list.innerHTML=items.map(e=>`<div class="row">
+    <div class="chip-ic tint">☎</div>
+    <div class="main-txt"><b>${esc(e.name)} ${e.emerg?'<span class="badge tint" style="margin-left:4px">Emergency</span>':''}</b>
+      <span>${esc(e.role)}${e.notes?' · '+esc(e.notes):''}</span></div>
+    <div class="meta">${e.phone?`<a href="tel:${esc(e.phone)}" style="color:var(--teal-soft);text-decoration:none">${esc(e.phone)}</a>`:''}</div>
+    <div class="actions"><div class="icon-btn" onclick="openContact('${e.id}')">✎</div></div></div>`).join('');
+}
+function renderContactsByRole(roles,cardId,listId){
+  const card=document.getElementById(cardId), list=document.getElementById(listId);
+  if(!card||!list)return;
+  const roleArray=Array.isArray(roles)?roles:[roles];
+  const items=load(DB.contacts).filter(c=>roleArray.includes(c.role));
+  if(!items.length){card.style.display='none';return;}
+  card.style.display='';
+  list.innerHTML=items.map(e=>`<div class="row">
+    <div class="chip-ic tint">☎</div>
+    <div class="main-txt"><b>${esc(e.name)} ${e.emerg?'<span class="badge tint" style="margin-left:4px">Emergency</span>':''}</b>
+      <span>${esc(e.role)}${e.notes?' · '+esc(e.notes):''}</span></div>
+    <div class="meta">${e.phone?`<a href="tel:${esc(e.phone)}" style="color:var(--teal-soft);text-decoration:none">${esc(e.phone)}</a>`:''}</div>
+    <div class="actions"><div class="icon-btn" onclick="openContact('${e.id}')">✎</div></div></div>`).join('');
+}
+function renderTeams(){
+  renderContactsByRole('Pain Specialist','pain-team','pain-team-list');
+  renderLinkedContacts('Asthma','asthma-team','asthma-team-list');
+  renderLinkedContacts('Epilepsy','ep-team','ep-team-list');
+  renderContactsByRole('Pharmacist','meds-team','meds-team-list');
+  renderContactsByRole('Rehabilitation Consultant','ex-team','ex-team-list');
+  renderContactsByRole(['Psychologist','Psychiatrist'],'ref-team','ref-team-list');
+  renderContactsByRole('Insurance Manager','exp-team','exp-team-list');
+}
+
+/* =================== EXERCISES =================== */
+function openExercise(id){
+  const items=load(DB.exercises);
+  const e=id?items.find(x=>x.id===id):null;
+  modal(`<h4>${id?'Edit':'Log'} exercise</h4><div class="msub">Track your activity</div>
+    <div class="field"><label>Exercise type</label><select id="ex-type">
+      ${['Walking','Running','Cycling','Swimming','Yoga','Strength training','Stretching','Other'].map(t=>`<option ${e?.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="field-row"><div class="field"><label>Duration (min)</label><input type="number" id="ex-dur" value="${e?.duration||''}" placeholder="30" min="1"></div>
+      <div class="field"><label>Intensity</label><select id="ex-int">
+        ${['Low','Moderate','High'].map(i=>`<option ${e?.intensity===i?'selected':''}>${i}</option>`).join('')}</select></div></div>
+    <div class="field"><label>Notes</label><textarea id="ex-notes" placeholder="How did you feel? Any pain or limitations?">${esc(e?.notes)}</textarea></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button>
+      ${id?`<button class="btn danger" onclick="delExercise('${id}')">Delete</button>`:''}
+      <button class="btn primary" onclick="saveExercise('${id||''}')">Save</button></div>`);
+}
+function saveExercise(id){
+  const type=document.getElementById('ex-type').value;
+  const duration=parseInt(document.getElementById('ex-dur').value)||0;
+  const intensity=document.getElementById('ex-int').value;
+  const notes=document.getElementById('ex-notes').value;
+  if(!type||!duration){toast('Fill in exercise type & duration');return;}
+  const items=load(DB.exercises);
+  if(id){
+    const idx=items.findIndex(x=>x.id===id);
+    if(idx>=0)items[idx]={...items[idx],type,duration,intensity,notes};
+  }else{
+    items.push({id:uid(),type,duration,intensity,notes,date:today()});
+  }
+  save(DB.exercises,items);closeModal();toast('Exercise logged');renderAll();
+}
+function delExercise(id){
+  if(confirm('Delete this exercise log?')){
+    save(DB.exercises,load(DB.exercises).filter(x=>x.id!==id));
+    closeModal();toast('Exercise removed');renderAll();
+  }
+}
+function renderExercises(){
+  const list=document.getElementById('ex-list');
+  if(!list)return;
+  const items=load(DB.exercises).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(!items.length){list.innerHTML='<div style="text-align:center;color:var(--ink-dim);padding:40px 20px">No exercises logged yet. Start by clicking "+ Log exercise".</div>';return;}
+  let curr='';
+  list.innerHTML=items.map(e=>{
+    const d=fmtDate(e.date);
+    const h=curr!==d?`<div style="font-size:13px;font-weight:700;color:var(--ink-dim);margin:20px 0 12px 0;text-transform:uppercase;letter-spacing:0.5px">${d}</div>`:'';
+    curr=d;
+    return h+`<div class="row" style="margin-bottom:12px">
+      <div style="flex:1"><div style="font-weight:600;font-size:14px">${esc(e.type)}</div>
+        <div style="font-size:13px;color:var(--ink-dim);margin-top:2px">${e.duration} min · ${e.intensity}${e.notes?` · ${esc(e.notes).substring(0,50)}`:''}</div></div>
+      <div class="icon-btn" onclick="openExercise('${e.id}')" style="color:var(--teal)">✎</div></div>`;
+  }).join('')+curr;
+}
+
+/* =================== REFLECTION =================== */
+function openReflectionJournal(id){
+  const items=load(DB.reflection);
+  const e=id?items.find(x=>x.id===id):null;
+  modal(`<h4>${id?'Edit':'New'} journal entry</h4><div class="msub">Reflect on your feelings and experiences</div>
+    <div class="field"><label>Mood today</label><select id="ref-mood">
+      ${['Peaceful','Content','Neutral','Anxious','Sad','Overwhelmed'].map(m=>`<option ${e?.mood===m?'selected':''}>${m}</option>`).join('')}</select></div>
+    <div class="field"><label>Your thoughts & feelings</label><textarea id="ref-entry" placeholder="Write freely about what you're experiencing…" style="min-height:180px">${esc(e?.entry)}</textarea></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button>
+      ${id?`<button class="btn danger" onclick="delReflectionJournal('${id}')">Delete</button>`:''}
+      <button class="btn primary" onclick="saveReflectionJournal('${id||''}')">Save</button></div>`);
+}
+function saveReflectionJournal(id){
+  const mood=document.getElementById('ref-mood').value;
+  const entry=document.getElementById('ref-entry').value;
+  if(!entry.trim()){toast('Write something in your entry');return;}
+  const items=load(DB.reflection);
+  if(id){
+    const idx=items.findIndex(x=>x.id===id);
+    if(idx>=0)items[idx]={...items[idx],mood,entry,updated:today()};
+  }else{
+    items.push({id:uid(),mood,entry,date:today(),updated:today()});
+  }
+  save(DB.reflection,items);closeModal();toast('Entry saved');renderAll();
+}
+function delReflectionJournal(id){
+  if(confirm('Delete this journal entry?')){
+    save(DB.reflection,load(DB.reflection).filter(x=>x.id!==id));
+    closeModal();toast('Entry deleted');renderAll();
+  }
+}
+function renderReflectionJournal(){
+  const cont=document.getElementById('ref-journal');
+  if(!cont)return;
+  const items=load(DB.reflection).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(!items.length){cont.innerHTML='<div style="font-size:12px;color:var(--ink-dim);padding:20px 0">Start journaling to track your emotional wellness.</div>';return;}
+  cont.innerHTML=items.slice(0,3).map(e=>{
+    const moodColor={Peaceful:'var(--green)',Content:'var(--teal)',Neutral:'var(--ink-dim)',Anxious:'var(--amber)',Sad:'var(--coral)',Overwhelmed:'var(--violet)'}[e.mood]||'var(--ink)';
+    return `<div style="margin-bottom:10px;padding:10px;background:rgba(0,0,0,0.2);border-radius:8px;border-left:3px solid ${moodColor}">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+        <div style="font-size:12px;font-weight:600;color:${moodColor}">${e.mood}</div>
+        <div style="font-size:11px;color:var(--ink-dim)">${fmtShort(e.date)}</div>
+      </div>
+      <div style="font-size:12px;color:var(--ink-dim);line-height:1.4">${esc(e.entry).substring(0,80)}${e.entry.length>80?'…':''}</div>
+      <button class="icon-btn" onclick="openReflectionJournal('${e.id}')" style="color:var(--violet);margin-top:6px;font-size:11px">View →</button>
+    </div>`;
+  }).join('');
+}
+
+function openReflectionReminder(id){
+  const items=load(DB.refReminders);
+  const e=id?items.find(x=>x.id===id):null;
+  modal(`<h4>${id?'Edit':'Add'} reminder</h4><div class="msub">Keep yourself grounded and centered</div>
+    <div class="field"><label>Reminder</label><textarea id="ref-rem-text" placeholder="e.g., Take 3 deep breaths, Drink water, Step outside for 5 minutes…" style="min-height:80px">${esc(e?.text)}</textarea></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button>
+      ${id?`<button class="btn danger" onclick="delReflectionReminder('${id}')">Delete</button>`:''}
+      <button class="btn primary" onclick="saveReflectionReminder('${id||''}')">Save</button></div>`);
+}
+function saveReflectionReminder(id){
+  const text=document.getElementById('ref-rem-text').value;
+  if(!text.trim()){toast('Enter a reminder');return;}
+  const items=load(DB.refReminders);
+  if(id){
+    const idx=items.findIndex(x=>x.id===id);
+    if(idx>=0)items[idx]={...items[idx],text};
+  }else{
+    items.push({id:uid(),text});
+  }
+  save(DB.refReminders,items);closeModal();toast('Reminder saved');renderAll();
+}
+function delReflectionReminder(id){
+  if(confirm('Delete this reminder?')){
+    save(DB.refReminders,load(DB.refReminders).filter(x=>x.id!==id));
+    closeModal();toast('Reminder deleted');renderAll();
+  }
+}
+function renderReflectionReminders(){
+  const cont=document.getElementById('ref-reminders');
+  if(!cont)return;
+  const items=load(DB.refReminders);
+  if(!items.length){cont.innerHTML='<div style="font-size:12px;color:var(--ink-dim);padding:20px 0">Add reminders to help you stay grounded.</div>';return;}
+  cont.innerHTML=items.map(r=>`<div style="margin-bottom:8px;padding:10px;background:rgba(0,0,0,0.15);border-radius:6px;display:flex;justify-content:space-between;align-items:start;gap:10px">
+    <div style="font-size:12px;flex:1;line-height:1.4;color:var(--ink)">${esc(r.text)}</div>
+    <div class="icon-btn" onclick="openReflectionReminder('${r.id}')" style="color:var(--teal);font-size:14px">✎</div>
+  </div>`).join('');
+}
+
+function openReflectionTip(id){
+  const items=load(DB.refTips);
+  const e=id?items.find(x=>x.id===id):null;
+  modal(`<h4>${id?'Edit':'Add'} professional tip</h4><div class="msub">Techniques from your mental health provider</div>
+    <div class="field"><label>Technique or tip</label><input id="ref-tip-name" placeholder="e.g., Grounding technique, Breathing exercise…" value="${esc(e?.name)}"></div>
+    <div class="field"><label>How to use it</label><textarea id="ref-tip-desc" placeholder="Describe the technique and when to use it…" style="min-height:100px">${esc(e?.description)}</textarea></div>
+    <div class="field"><label>When to use (optional)</label><input id="ref-tip-when" placeholder="e.g., When anxious, During panic attacks, Before sleep…" value="${esc(e?.when)}"></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button>
+      ${id?`<button class="btn danger" onclick="delReflectionTip('${id}')">Delete</button>`:''}
+      <button class="btn primary" onclick="saveReflectionTip('${id||''}')">Save</button></div>`);
+}
+function saveReflectionTip(id){
+  const name=document.getElementById('ref-tip-name').value;
+  const description=document.getElementById('ref-tip-desc').value;
+  const when=document.getElementById('ref-tip-when').value;
+  if(!name||!description){toast('Fill in technique name and description');return;}
+  const items=load(DB.refTips);
+  if(id){
+    const idx=items.findIndex(x=>x.id===id);
+    if(idx>=0)items[idx]={...items[idx],name,description,when};
+  }else{
+    items.push({id:uid(),name,description,when});
+  }
+  save(DB.refTips,items);closeModal();toast('Tip saved');renderAll();
+}
+function delReflectionTip(id){
+  if(confirm('Delete this tip?')){
+    save(DB.refTips,load(DB.refTips).filter(x=>x.id!==id));
+    closeModal();toast('Tip deleted');renderAll();
+  }
+}
+function renderReflectionTips(){
+  const cont=document.getElementById('ref-tips');
+  if(!cont)return;
+  const items=load(DB.refTips);
+  if(!items.length){cont.innerHTML='<div style="font-size:12px;color:var(--ink-dim);padding:20px 0">Add professional techniques to your mental wellness toolkit.</div>';return;}
+  cont.innerHTML=items.map(t=>`<div style="margin-bottom:12px;padding:14px;background:rgba(0,0,0,0.2);border-radius:8px">
+    <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:6px">
+      <div style="font-size:13px;font-weight:600;color:var(--violet)">${esc(t.name)}</div>
+      <div class="icon-btn" onclick="openReflectionTip('${t.id}')" style="color:var(--teal);font-size:14px">✎</div>
+    </div>
+    <div style="font-size:12px;color:var(--ink-dim);line-height:1.4;margin-bottom:6px">${esc(t.description)}</div>
+    ${t.when?`<div style="font-size:11px;color:var(--ink-faint);font-style:italic">When: ${esc(t.when)}</div>`:''}
+  </div>`).join('');
+}
+
+function renderReflection(){
+  renderReflectionJournal();
+  renderReflectionReminders();
+  renderReflectionTips();
+}
+
+/* =================== EXPENSES =================== */
+function openExpense(id){
+  const items=load(DB.expenses);
+  const e=id?items.find(x=>x.id===id):null;
+  const opts='Doctor visit,Medication,Hospital/ER,Mental health,Lab/imaging,Equipment,Insurance,Other'
+    .split(',').map(c=>'<option '+(e?.category===c?'selected':'')+'>'+c+'</option>').join('');
+  const delBtn=id?'<button class="btn danger" onclick="delExpense('+id+')">Delete</button>':'';
+  const html=`<h4>${id?'Edit':'Add'} expense</h4><div class="msub">Track your medical costs</div>
+    <div class="field-row"><div class="field"><label>Date</label><input type="date" id="exp-date" value="${e?.date||today()}"></div>
+      <div class="field"><label>Amount ($)</label><input type="number" id="exp-amt" value="${e?.amount||''}" placeholder="0.00" step="0.01" min="0"></div></div>
+    <div class="field"><label>Category</label><select id="exp-cat">${opts}</select></div>
+    <div class="field"><label>Provider or description</label><input id="exp-desc" placeholder="e.g., Dr. Smith, Pharmacy, Royal Hospital" value="${esc(e?.description)}"></div>
+    <div class="field"><label>Notes (optional)</label><textarea id="exp-notes" placeholder="e.g., Covered by insurance, Out of pocket">${esc(e?.notes)}</textarea></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button>
+      ${delBtn}
+      <button class="btn primary" onclick="saveExpense('${id||''}')">Save</button></div>`;
+  modal(html);
+}
+function saveExpense(id){
+  const date=document.getElementById('exp-date').value;
+  const amount=parseFloat(document.getElementById('exp-amt').value)||0;
+  const category=document.getElementById('exp-cat').value;
+  const description=document.getElementById('exp-desc').value;
+  const notes=document.getElementById('exp-notes').value;
+  if(!date||!amount||amount<=0){toast('Fill in date and amount');return;}
+  const items=load(DB.expenses);
+  if(id){
+    const idx=items.findIndex(x=>x.id===id);
+    if(idx>=0)items[idx]={...items[idx],date,amount,category,description,notes};
+  }else{
+    items.push({id:uid(),date,amount,category,description,notes});
+  }
+  save(DB.expenses,items);closeModal();toast('Expense saved');renderAll();
+}
+function delExpense(id){
+  if(confirm('Delete this expense?')){
+    save(DB.expenses,load(DB.expenses).filter(x=>x.id!==id));
+    closeModal();toast('Expense deleted');renderAll();
+  }
+}
+function renderExpenses(){
+  const list=document.getElementById('exp-list');
+  const totalEl=document.getElementById('exp-total');
+  const monthEl=document.getElementById('exp-month');
+  if(!list||!totalEl||!monthEl)return;
+  
+  const items=load(DB.expenses).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const now=new Date();
+  const thisMonth=items.filter(e=>{
+    const d=new Date(e.date);
+    return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+  });
+  
+  const total=items.reduce((s,e)=>s+e.amount,0);
+  const monthTotal=thisMonth.reduce((s,e)=>s+e.amount,0);
+  
+  totalEl.textContent='$'+total.toFixed(2);
+  monthEl.textContent='$'+monthTotal.toFixed(2);
+  
+  if(!items.length){list.innerHTML='<div style="text-align:center;color:var(--ink-dim);padding:40px 20px">No expenses tracked yet. Click "+ Add expense" to get started.</div>';return;}
+  
+  const catColor={
+    'Doctor visit':'var(--coral)',
+    'Medication':'var(--teal)',
+    'Hospital/ER':'var(--coral)',
+    'Mental health':'var(--violet)',
+    'Lab/imaging':'var(--amber)',
+    'Equipment':'var(--sky)',
+    'Insurance':'var(--green)',
+    'Other':'var(--ink-dim)'
+  };
+  
+  let curr='';
+  list.innerHTML=items.map(e=>{
+    const d=fmtDate(e.date);
+    const h=curr!==d?`<div style="font-size:13px;font-weight:700;color:var(--ink-dim);margin:20px 0 12px 0;text-transform:uppercase;letter-spacing:0.5px">${d}</div>`:'';
+    curr=d;
+    const color=catColor[e.category]||'var(--ink-dim)';
+    return h+`<div class="row" style="margin-bottom:12px">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${color}"></div>
+          <div style="font-weight:600;font-size:14px">${esc(e.description)||e.category}</div>
+        </div>
+        <div style="font-size:12px;color:var(--ink-dim)">${e.category}${e.notes?` · ${esc(e.notes).substring(0,40)}`:''}</div>
+      </div>
+      <div style="text-align:right;margin-right:10px">
+        <div style="font-weight:600;font-size:14px;color:var(--amber)">$${e.amount.toFixed(2)}</div>
+      </div>
+      <div class="icon-btn" onclick="openExpense('${e.id}')" style="color:var(--amber)">✎</div>
+    </div>`;
+  }).join('')+curr;
+}
+
+function openEmergency(){
+  const e=loadObj(DB.emergency);
+  modal(`<h4>Emergency details</h4><div class="msub">Shared on your emergency plan for responders</div>
+    <div class="field-row"><div class="field"><label>Full name</label><input id="e-name" value="${esc(e.name)}"></div>
+      <div class="field"><label>Date of birth</label><input type="date" id="e-dob" value="${e.dob||''}"></div></div>
+    <div class="field-row"><div class="field"><label>Blood type</label><select id="e-blood">
+      ${['Unknown','O+','O-','A+','A-','B+','B-','AB+','AB-'].map(b=>`<option ${e.blood===b?'selected':''}>${b}</option>`).join('')}</select></div>
+      <div class="field"><label>Medicare / ID</label><input id="e-id" value="${esc(e.id)}"></div></div>
+    <div class="field"><label>Conditions</label><textarea id="e-cond" placeholder="Epilepsy, asthma, chronic pain…">${esc(e.cond)}</textarea></div>
+    <div class="field"><label>Allergies</label><input id="e-allergy" value="${esc(e.allergy)}" placeholder="Penicillin, latex…"></div>
+    <div class="field"><label>Action plan / instructions</label><textarea id="e-plan" placeholder="In a tonic-clonic seizure: time it, protect head, recovery position, call 000 if over 5 min…">${esc(e.plan)}</textarea></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveEmergency()">Save</button></div>`);
+}
+function saveEmergency(){
+  save(DB.emergency,{name:document.getElementById('e-name').value,dob:document.getElementById('e-dob').value,
+    blood:document.getElementById('e-blood').value,id:document.getElementById('e-id').value,
+    cond:document.getElementById('e-cond').value,allergy:document.getElementById('e-allergy').value,
+    plan:document.getElementById('e-plan').value});
+  closeModal();toast('Emergency plan updated');renderAll();
+}
+function renderEmergency(){
+  const e=loadObj(DB.emergency); const meds=load(DB.meds);
+  const emergContacts=load(DB.contacts).filter(c=>c.emerg);
+  const v=document.getElementById('em-view');
+  const age=e.dob?Math.floor(daysSince(e.dob)/365):null;
+  v.innerHTML=`
+  <div class="bento cols-2">
+    <div class="card pad-lg sos">
+      <div style="display:flex;align-items:center;gap:13px;margin-bottom:16px">
+        <div class="pulse">✚</div><div><b style="font-size:17px">${esc(e.name)||'Add your details'}</b>
+        <div style="font-size:12.5px;color:var(--ink-dim)">${age?age+' yrs':''}${e.blood&&e.blood!=='Unknown'?' · Blood '+e.blood:''}${e.id?' · '+esc(e.id):''}</div></div>
+      </div>
+      <div class="erow"><span>Conditions</span><b>${esc(e.cond)||'—'}</b></div>
+      <div class="erow"><span>Allergies</span><b style="color:var(--coral-soft)">${esc(e.allergy)||'None recorded'}</b></div>
+    </div>
+    <div class="card pad-lg">
+      <b style="font-size:15px;display:block;margin-bottom:12px">Action plan</b>
+      <div style="font-size:14px;line-height:1.6;color:var(--ink-dim);white-space:pre-wrap">${esc(e.plan)||'No action plan recorded yet. Tap “Edit details” to add instructions for responders.'}</div>
+    </div>
+  </div>
+  <div class="bento cols-2" style="margin-top:16px">
+    <div class="card pad-lg">
+      <b style="font-size:15px;display:block;margin-bottom:12px">Current medications</b>
+      ${meds.length?meds.map(m=>`<div class="erow"><span>${esc(m.name)}</span><b>${esc(m.dose)} · ${esc(m.freq)}</b></div>`).join(''):'<div style="color:var(--ink-faint);font-size:13px">No medications listed.</div>'}
+    </div>
+    <div class="card pad-lg">
+      <b style="font-size:15px;display:block;margin-bottom:12px">Emergency contacts</b>
+      ${emergContacts.length?emergContacts.map(c=>`<div class="erow"><span>${esc(c.name)} · ${esc(c.role)}</span>${c.phone?`<b><a href="tel:${esc(c.phone)}" style="color:var(--teal-soft);text-decoration:none">${esc(c.phone)}</a></b>`:'<b>—</b>'}</div>`).join(''):'<div style="color:var(--ink-faint);font-size:13px">Mark contacts as “emergency” to show them here.</div>'}
+      <a href="tel:000" class="btn" style="width:100%;justify-content:center;margin-top:14px;background:var(--coral);color:#fff;border:none;text-decoration:none">📞 Call 000</a>
+    </div>
+  </div>
+  <div class="card pad-lg" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <b style="font-size:15px">In an emergency — remember</b>
+      <button class="btn sm ghost" onclick="resetEmergCheck()">↺ Reset</button>
+    </div>
+    <div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:14px">A few steps to steady you. Always follow the personalised action plan you set up with your doctor.</div>
+    <div id="em-checklist"></div>
+  </div>
+  <div class="card pad-lg" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <b style="font-size:15px">If you're heading to hospital — things to bring</b>
+      <button class="btn sm ghost" onclick="resetHospBag()">↺ Reset</button>
+    </div>
+    <div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:14px">A grab list so nothing's forgotten in the rush. Tick items as you pack them.</div>
+    <div id="em-hospbag"></div>
+  </div>`;
+  renderEmergChecklist();
+  renderHospBag();
+  // inject erow style once
+  if(!document.getElementById('erow-style')){const s=document.createElement('style');s.id='erow-style';
+    s.textContent='.erow{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--card-line);font-size:13.5px}.erow:last-child{border:none}.erow span{color:var(--ink-dim)}.erow b{text-align:right;font-weight:600}';
+    document.head.appendChild(s);}
+}
+const EMERG_STEPS=[
+  'Stay as calm as you can and check what is happening',
+  'Call 000 if it feels life-threatening or you are unsure',
+  'Take your rescue or emergency medication if your plan says to',
+  'Show responders this Emergency Plan — conditions, allergies & medications',
+  'Tell them when the symptoms started',
+  'Unlock the door and clear a path for paramedics',
+  'Stay with the person until help arrives',
+  'Call an emergency contact to let them know'
+];
+function renderEmergChecklist(){
+  const el=document.getElementById('em-checklist'); if(!el)return;
+  const done=loadObj(DB.emergCheck);
+  el.innerHTML=EMERG_STEPS.map((step,i)=>{const t=!!done[i];return`<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--card-line);cursor:pointer" onclick="toggleEmergCheck(${i})">
+    <div class="icon-btn" style="flex-shrink:0;${t?'background:var(--coral);color:#fff;border-color:var(--coral)':''}">${t?'✓':'○'}</div>
+    <div style="font-size:13.5px;line-height:1.45;padding-top:5px;${t?'opacity:.5;text-decoration:line-through':''}">${step}</div></div>`}).join('');
+}
+function toggleEmergCheck(i){const done=loadObj(DB.emergCheck);done[i]=!done[i];save(DB.emergCheck,done);renderEmergChecklist();}
+function resetEmergCheck(){save(DB.emergCheck,{});renderEmergChecklist();}
+const HOSP_BAG=[
+  'Phone & charger (a long cable helps)',
+  'Medications, or an up-to-date medication list',
+  'Photo ID & Medicare / health insurance card',
+  'This Emergency Plan — conditions, allergies & contacts',
+  'Glasses, hearing aids or other daily aids',
+  'A change of comfortable clothes & underwear',
+  'Toiletries — toothbrush, deodorant, lip balm',
+  'Phone numbers of family or emergency contacts',
+  'Cash or card for parking, vending & small extras',
+  'Something to pass the time — book, earphones',
+  'Any mobility aids — cane, walker, wheelchair',
+  'Water bottle & a light snack'
+];
+function renderHospBag(){
+  const el=document.getElementById('em-hospbag'); if(!el)return;
+  const done=loadObj(DB.hospBag);
+  el.innerHTML=HOSP_BAG.map((item,i)=>{const t=!!done[i];return`<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--card-line);cursor:pointer" onclick="toggleHospBag(${i})">
+    <div class="icon-btn" style="flex-shrink:0;${t?'background:var(--teal);color:#03130a;border-color:var(--teal)':''}">${t?'✓':'○'}</div>
+    <div style="font-size:13.5px;line-height:1.45;padding-top:5px;${t?'opacity:.5;text-decoration:line-through':''}">${item}</div></div>`}).join('');
+}
+function toggleHospBag(i){const done=loadObj(DB.hospBag);done[i]=!done[i];save(DB.hospBag,done);renderHospBag();}
+function resetHospBag(){save(DB.hospBag,{});renderHospBag();}
+
+/* =================== DASHBOARD =================== */
+function emptyState(ic,t,s){return`<div class="empty"><div class="big">${ic}</div><b style="display:block;color:var(--ink);font-size:15px;margin-bottom:4px">${t}</b>${s}</div>`;}
+function renderDash(){
+  // chart
+  const painItems=load(DB.pain).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const last7=painItems.slice(0,7);
+  const cd=last7.slice().reverse(); const cb=document.getElementById('d-chart'); const cl=document.getElementById('d-chartlabels');
+  if(cd.length){cb.innerHTML=cd.map(x=>`<div class="bar" data-v="${x.level}/10" style="height:${Math.max(x.level/10*100,6)}%;--accent:${painColor(x.level)}"></div>`).join('');
+    cl.innerHTML=cd.map(x=>`<span>${fmtShort(x.date).split(' ')[0]}</span>`).join('');}
+  else{cb.innerHTML='<div style="color:var(--ink-faint);font-size:13px;align-self:center;margin:auto">No pain data yet</div>';cl.innerHTML='';}
+  // next appt
+  const meds=load(DB.meds);
+  const up=load(DB.appts).filter(x=>x.date>=today()).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const na=document.getElementById('d-nextappt');
+  if(up[0]){const dd=daysSince(up[0].date);na.innerHTML=`<div class="cycle-big">${esc(up[0].title)}</div>
+    <div class="cycle-sub">${fmtDate(up[0].date)}${up[0].time?' · '+up[0].time:''} — ${dd===0?'today':'in '+Math.abs(dd)+' day'+(Math.abs(dd)===1?'':'s')}</div>`;}
+  else na.innerHTML=`<div class="cycle-big">Nothing scheduled</div>
+    <div class="cycle-sub">Tap to add your next visit. <button class="btn sm ghost" style="margin-left:6px" onclick="go('appts')">+ Add one</button></div>`;
+  // today meds — shows doses due for the current time of day
+  const tm=document.getElementById('d-todaymeds');const log=loadObj(DB.medlog)[today()]||[];
+  if(!meds.length){
+    tm.innerHTML='<div style="color:var(--ink-faint);font-size:13px;padding:8px 0">No medications added yet.</div>';
+  }else{
+    const cur=currentSlot();
+    const dueNow=meds.filter(m=>(m.routine||[]).includes(cur));
+    const heading=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:13.5px;font-weight:800;color:var(--teal)">${slotIcon(cur)} ${slotLabel(cur)} medications</span></div>`;
+    if(dueNow.length){
+      tm.innerHTML=heading+dueNow.map(m=>{const dk=m.id+'__'+cur;const t=log.includes(dk);
+        return`<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--card-line)">
+          <div class="icon-btn" style="${t?'background:var(--teal);color:#03130a;border-color:var(--teal)':''}" onclick="toggleDose('${m.id}','${cur}')">${t?'✓':'○'}</div>
+          <div style="flex:1"><b style="font-size:13.5px;${t?'opacity:.5;text-decoration:line-through':''}">${esc(m.name)} ${esc(m.dose)}</b>
+            <div style="font-size:11.5px;color:var(--ink-dim)">${esc(m.for)||esc(m.freq)}</div></div></div>`;}).join('');
+    }else{
+      // nothing due this slot — point to the next slot that has meds
+      const order=TIME_SLOTS.map(s=>s.key);const ci=order.indexOf(cur);
+      let next=null;
+      for(let i=1;i<=order.length;i++){const sk=order[(ci+i)%order.length];
+        if(meds.some(m=>(m.routine||[]).includes(sk))){next=sk;break;}}
+      tm.innerHTML=heading+`<div style="font-size:12.5px;color:var(--ink-dim);padding:4px 0 10px">Nothing scheduled for this ${slotLabel(cur).toLowerCase()}.</div>`+
+        (next?`<div style="font-size:12px;color:var(--ink-faint)">Next: ${slotIcon(next)} ${slotLabel(next)} — ${meds.filter(m=>(m.routine||[]).includes(next)).length} medication${meds.filter(m=>(m.routine||[]).includes(next)).length===1?'':'s'}</div>`:'');
+    }
+  }
+  renderCycleWidget();
+}
+
+/* ---- Cycling dashboard widget ---- */
+const PAIN_QUOTES=[
+  {q:"At the end of the day, we can endure much more than we think we can.",a:"Frida Kahlo"},
+  {q:"Although the world is full of suffering, it is also full of the overcoming of it.",a:"Helen Keller"},
+  {q:"Once you choose hope, anything's possible.",a:"Christopher Reeve"},
+  {q:"However difficult life may seem, there is always something you can do and succeed at.",a:"Stephen Hawking"},
+  {q:"Feet, what do I need them for if I have wings to fly.",a:"Frida Kahlo"},
+  {q:"Optimism is the faith that leads to achievement.",a:"Helen Keller"},
+  {q:"You may not control all the events that happen to you, but you can decide not to be reduced by them.",a:"Maya Angelou"},
+  {q:"There is no greater agony than bearing an untold story inside you.",a:"Maya Angelou"},
+  {q:"Nothing is impossible. The word itself says 'I'm possible!'",a:"Audrey Hepburn"},
+  {q:"Out of difficulties grow miracles.",a:"Jean de La Bruyère"},
+  {q:"The human capacity for burden is like bamboo — far more flexible than you'd ever believe at first glance.",a:"Jodi Picoult"},
+  {q:"Turn your wounds into wisdom.",a:"Oprah Winfrey"},
+  {q:"You never know how strong you are until being strong is your only choice.",a:"Bob Marley"},
+  {q:"The most beautiful people we have known are those who have known defeat, known suffering, and have found their way out of the depths.",a:"Elisabeth Kübler-Ross"},
+  {q:"I can be changed by what happens to me. But I refuse to be reduced by it.",a:"Maya Angelou"},
+  {q:"Pain is inevitable. Suffering is optional.",a:"Haruki Murakami"},
+  {q:"The wound is the place where the light enters you.",a:"Rumi"},
+  {q:"What lies behind us and what lies before us are tiny matters compared to what lies within us.",a:"Ralph Waldo Emerson"},
+  {q:"Although it's difficult today, things will get better. It's just a matter of time before you find yourself basking in the sunlight again.",a:"Demi Lovato"},
+  {q:"Healing is a matter of time, but it is sometimes also a matter of opportunity.",a:"Hippocrates"},
+  {q:"Hope is being able to see that there is light despite all of the darkness.",a:"Desmond Tutu"},
+  {q:"Everything you've ever wanted is on the other side of fear.",a:"George Addair"},
+  {q:"Strength does not come from physical capacity. It comes from an indomitable will.",a:"Mahatma Gandhi"},
+  {q:"You gain strength, courage and confidence by every experience in which you really stop to look fear in the face.",a:"Eleanor Roosevelt"},
+  {q:"Fall seven times, stand up eight.",a:"Japanese Proverb"},
+  {q:"Our greatest glory is not in never falling, but in rising every time we fall.",a:"Confucius"},
+  {q:"The gem cannot be polished without friction, nor man perfected without trials.",a:"Seneca"},
+  {q:"When we are no longer able to change a situation, we are challenged to change ourselves.",a:"Viktor Frankl"},
+  {q:"It always seems impossible until it's done.",a:"Nelson Mandela"},
+  {q:"Courage doesn't always roar. Sometimes courage is the quiet voice at the end of the day saying, 'I will try again tomorrow.'",a:"Mary Anne Radmacher"},
+  {q:"Tough times never last, but tough people do.",a:"Robert H. Schuller"},
+  {q:"You have power over your mind — not outside events. Realize this, and you will find strength.",a:"Marcus Aurelius"},
+  {q:"The struggle you're in today is developing the strength you need for tomorrow.",a:"Robert Tew"},
+  {q:"Rock bottom became the solid foundation on which I rebuilt my life.",a:"J.K. Rowling"},
+  {q:"Don't let your struggle become your identity.",a:"Ralph Smart"},
+  {q:"And once the storm is over, you won't remember how you made it through. But one thing is certain: you will come out a different person.",a:"Haruki Murakami"},
+  {q:"Perseverance is not a long race; it is many short races one after the other.",a:"Walter Elliot"},
+  {q:"In the middle of difficulty lies opportunity.",a:"Albert Einstein"},
+  {q:"The brick walls are there to stop the people who don't want it badly enough.",a:"Randy Pausch"},
+  {q:"Believe you can and you're halfway there.",a:"Theodore Roosevelt"},
+  {q:"The bravest thing I ever did was continuing my life when I wanted to die.",a:"Juliette Lewis"},
+  {q:"You are allowed to be both a masterpiece and a work in progress simultaneously.",a:"Sophia Bush"},
+  {q:"Just when the caterpillar thought the world was over, it became a butterfly.",a:"Proverb"},
+  {q:"What we achieve inwardly will change outer reality.",a:"Plutarch"},
+  {q:"A river cuts through rock not because of its power but its persistence.",a:"Jim Watkins"},
+  {q:"Difficult roads often lead to beautiful destinations.",a:"Zig Ziglar"},
+  {q:"Keep your face always toward the sunshine, and shadows will fall behind you.",a:"Walt Whitman"},
+  {q:"The flower that blooms in adversity is the most rare and beautiful of all.",a:"Mulan"},
+  {q:"You don't have to control your thoughts. You just have to stop letting them control you.",a:"Dan Millman"},
+  {q:"Even the darkest night will end and the sun will rise.",a:"Victor Hugo"},
+  {q:"Self-care is how you take your power back.",a:"Lalah Delia"},
+  {q:"Promise me you'll always remember: you're braver than you believe, stronger than you seem, and smarter than you think.",a:"A.A. Milne"},
+  {q:"Scars are not signs of weakness, they are signs of survival and endurance.",a:"Rodney A. Winters"},
+  {q:"Some days there won't be a song in your heart. Sing anyway.",a:"Emory Austin"}
+];
+let cwIndex=0, cwTimer=null, cwQuote=null, cwQuoteIndex=Math.floor(Math.random()*PAIN_QUOTES.length);
+function setCycleQuote(){
+  cwQuote=PAIN_QUOTES[cwQuoteIndex%PAIN_QUOTES.length];
+  const qEl=document.getElementById('cw-quote'), aEl=document.getElementById('cw-attr');
+  if(qEl)qEl.textContent='“'+cwQuote.q+'”';
+  if(aEl)aEl.textContent='— '+cwQuote.a;
+}
+function renderCycleWidget(){
+  const w=document.getElementById('cycleWidget'); if(!w)return;
+  // inspiration quote — advances each time the carousel returns to this slide
+  setCycleQuote();
+  // next appointment
+  const up=load(DB.appts).filter(x=>x.date>=today()).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const ae=document.getElementById('cw-appt');
+  if(up[0]){const dd=daysSince(up[0].date);
+    ae.innerHTML=`<div class="cycle-big">${esc(up[0].title)}</div>
+      <div class="cycle-sub">${fmtDate(up[0].date)}${up[0].time?' · '+up[0].time:''} — ${dd===0?'today':'in '+Math.abs(dd)+' day'+(Math.abs(dd)===1?'':'s')}</div>`;}
+  else ae.innerHTML=`<div class="cycle-big">Nothing scheduled</div>
+      <div class="cycle-sub">Tap a card below to add your next visit.</div>`;
+  // today's medications — counted per scheduled dose (time of day)
+  const meds=load(DB.meds);
+  const {total,taken}=dayDoseStats();
+  const cur=currentSlot();
+  const log=loadObj(DB.medlog)[today()]||[];
+  const dueNowCount=meds.filter(m=>(m.routine||[]).includes(cur)).length;
+  const dueNowTaken=meds.filter(m=>(m.routine||[]).includes(cur)&&log.includes(m.id+'__'+cur)).length;
+  const me=document.getElementById('cw-meds');
+  if(total){const done=taken>=total;const remNow=dueNowCount-dueNowTaken;
+    me.innerHTML=`<div class="cycle-big">${slotIcon(cur)} ${slotLabel(cur)} — ${dueNowCount?(remNow>0?remNow+' to take':'all taken'):'nothing due'}</div>
+      <div class="cycle-sub">${done?'All '+total+' doses done today — nicely kept up. 🌿':taken+' of '+total+' doses taken today.'}</div>`;}
+  else if(meds.length){
+    me.innerHTML=`<div class="cycle-big">No routine set</div>
+      <div class="cycle-sub">Open a medication to choose when you take it.</div>`;}
+  else me.innerHTML=`<div class="cycle-big">No medications yet</div>
+      <div class="cycle-sub">Add your roster to track daily doses.</div>`;
+  buildCycleDots();
+  showCycleSlide(cwIndex);
+  startCycle();
+}
+function buildCycleDots(){
+  const slides=document.querySelectorAll('#cycleWidget .cycle-slide');
+  const dots=document.getElementById('cw-dots');
+  dots.innerHTML=Array.from(slides).map((_,i)=>`<button class="cycle-dot" onclick="goCycleSlide(${i})"></button>`).join('');
+}
+function showCycleSlide(i){
+  const slides=document.querySelectorAll('#cycleWidget .cycle-slide');
+  const dots=document.querySelectorAll('#cycleWidget .cycle-dot');
+  if(!slides.length)return;
+  const prev=cwIndex;
+  cwIndex=(i+slides.length)%slides.length;
+  // arriving at the inspiration slide (0) from another slide → show a fresh quote
+  if(cwIndex===0&&prev!==0){
+    cwQuoteIndex=(cwQuoteIndex+1)%PAIN_QUOTES.length;
+    setCycleQuote();
+  }
+  slides.forEach((s,n)=>{
+    const accent=s.getAttribute('data-accent');
+    s.style.setProperty('--sa',`var(${accent})`);
+    s.classList.toggle('active',n===cwIndex);
+  });
+  dots.forEach((d,n)=>{
+    d.classList.toggle('active',n===cwIndex);
+    if(n===cwIndex){const accent=slides[cwIndex].getAttribute('data-accent');d.style.setProperty('--sa',`var(${accent})`);}
+  });
+}
+function goCycleSlide(i){showCycleSlide(i);startCycle();}
+function startCycle(){
+  clearInterval(cwTimer);
+  const dash=document.getElementById('page-dashboard');
+  if(!dash||!dash.classList.contains('active'))return;
+  cwTimer=setInterval(()=>showCycleSlide(cwIndex+1),6000);
+}
+
+/* =================== SETTINGS =================== */
+function renderSettings(){
+  const s=loadObj(DB.settings);
+  const nameEl=document.getElementById('set-name'); if(nameEl)nameEl.value=s.name||'';
+  const greetEl=document.getElementById('set-greet'); if(greetEl)greetEl.value=s.greeting||'auto';
+  // data summary
+  const counts={Pain:load(DB.pain).length,Asthma:load(DB.asthma).length,Seizures:load(DB.ep).length,
+    Medications:load(DB.meds).length,Appointments:load(DB.appts).length,Contacts:load(DB.contacts).length};
+  const total=Object.values(counts).reduce((a,b)=>a+b,0);
+  const st=document.getElementById('set-stats');
+  if(st)st.innerHTML=`<b style="color:var(--ink)">${total}</b> records stored — `+
+    Object.entries(counts).map(([k,v])=>`${v} ${k.toLowerCase()}`).join(', ')+'.';
+  initGoogleSignIn();
+  renderBilling();
+}
+function saveSettings(){
+  const s=loadObj(DB.settings);
+  s.name=document.getElementById('set-name').value.trim();
+  s.greeting=document.getElementById('set-greet').value;
+  save(DB.settings,s);
+  // sync emergency name if it's empty, so settings feeds through
+  const em=loadObj(DB.emergency);
+  if(s.name&&!em.name){em.name=s.name;save(DB.emergency,em);}
+  toast('Profile saved'); applyGreeting(); renderAll();
+}
+function applyGreeting(){
+  const s=loadObj(DB.settings);
+  const eb=document.getElementById('eyebrow'), pt=document.getElementById('pageTitle');
+  const pageDash=document.getElementById('page-dashboard');
+  if(!eb||!pt||!pageDash||!pageDash.classList.contains('active'))return;
+  let lead='Welcome back';
+  if(s.greeting==='hello')lead='Hello';
+  else if(s.greeting==='auto'||!s.greeting){const h=new Date().getHours();
+    lead=(h<6||h>=18)?'Good evening':(h<12?'Good morning':'Good afternoon');}
+  const nameStr=s.name?`, ${s.name}`:'';
+  eb.textContent=lead+nameStr;
+}
+function exportData(){
+  const dump={exported:new Date().toISOString(),version:1};
+  Object.entries(DB).forEach(([k,key])=>{const v=localStorage.getItem(key);if(v!=null)dump[key]=JSON.parse(v);});
+  const blob=new Blob([JSON.stringify(dump,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`wellnest-backup-${today()}.json`;a.click();URL.revokeObjectURL(a.href);
+  toast('Data exported');
+}
+function importData(ev){
+  const file=ev.target.files[0]; if(!file)return;
+  const r=new FileReader();
+  r.onload=()=>{try{
+    const data=JSON.parse(r.result);
+    let n=0;
+    Object.keys(DB).forEach(k=>{if(data[k]!==undefined){save(DB[k],data[k]);n++;}});
+    if(n){localStorage.setItem('wn-seeded','1');toast('Data imported');applyGreeting();renderAll();}
+    else toast('No WellNest data found in file');
+  }catch(e){toast('Could not read that file');}
+  ev.target.value='';};
+  r.readAsText(file);
+}
+function resetData(){
+  modal(`<h4>Reset all data?</h4><div class="msub">This permanently clears every tracker, medication, appointment, contact and your emergency plan from this device. This cannot be undone.</div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn danger" onclick="doReset()">Delete everything</button></div>`);
+}
+function doReset(){
+  Object.values(DB).forEach(key=>localStorage.removeItem(key));
+  localStorage.removeItem('wn-seeded');
+  closeModal();toast('All data reset');applyGreeting();renderAll();
+}
+
+/* ---------- master render ---------- */
+function renderAll(){renderDash();renderPain();renderAsthma();renderEp();renderMeds();renderAppts();renderContacts();renderTeams();renderExercises();renderReflection();renderExpenses();renderEmergency();renderSettings();}
+
+/* ---------- seed sample data on first run ---------- */
+function seed(){
+  if(localStorage.getItem('wn-seeded'))return;
+  const d=n=>new Date(Date.now()-n*864e5).toISOString().slice(0,10);
+  save(DB.pain,[{id:uid(),level:6,locations:['Lower back'],date:d(6),type:'Aching',notes:'Long day at desk'},
+    {id:uid(),level:7,locations:['Lower back','Hips'],date:d(5),type:'Throbbing',notes:'Rainy weather'},
+    {id:uid(),level:5,locations:['Neck'],date:d(4),type:'Stiff',notes:'Better after stretching'},
+    {id:uid(),level:4,locations:['Lower back'],date:d(2),type:'Aching',notes:'Walked, helped'},
+    {id:uid(),level:3,locations:['Neck'],date:d(0),type:'Stiff',notes:'Good day'}]);
+  save(DB.asthma,[{id:uid(),pf:410,date:d(3),symptoms:['None'],reliever:0,trigger:'None'},
+    {id:uid(),pf:380,date:d(1),symptoms:['Wheeze'],reliever:1,trigger:'Cold air'},
+    {id:uid(),pf:420,date:d(0),symptoms:['None'],reliever:0,trigger:'None'}]);
+  save(DB.ep,[{id:uid(),date:d(48),time:'07:30',type:'Focal aware',duration:'< 1 min',triggers:['Poor sleep'],notes:'Brief aura, no injury'}]);
+  const m1=uid(),m2=uid(),m3=uid();
+  save(DB.meds,[{id:m1,name:'Gabapentin',dose:'300mg',freq:'3× daily',routine:['morning','afternoon','evening'],time:'8am, 2pm, 8pm',for:'Nerve pain',notes:'Dr Lee'},
+    {id:m2,name:'Levetiracetam',dose:'500mg',freq:'Twice daily',routine:['morning','night'],time:'8am, 8pm',for:'Epilepsy',notes:'Take consistently'},
+    {id:m3,name:'Ventolin',dose:'100mcg',freq:'As needed',routine:[],time:'',for:'Asthma reliever',notes:'Blue puffer'}]);
+  save(DB.medlog,{[d(0)]:[m1+'__morning']});
+  save(DB.appts,[{id:uid(),title:'Neurology review — Dr Patel',date:d(-9),time:'10:30',loc:'City Neurology Clinic',notes:'Bring seizure log'},
+    {id:uid(),title:'GP check-up — Dr Lee',date:d(-2),time:'14:00',loc:'Bayside Medical',notes:'Repeat scripts'},
+    {id:uid(),title:'Pain physio session',date:d(20),time:'09:00',loc:'MoveWell Physio',notes:''}]);
+  save(DB.contacts,[{id:uid(),name:'Dr Sarah Lee',role:'GP',phone:'02 9000 1234',notes:'Bayside Medical',emerg:true},
+    {id:uid(),name:'Dr Raj Patel',role:'Neurologist',phone:'02 9000 5678',notes:'City Neurology',emerg:true},
+    {id:uid(),name:'Alex (partner)',role:'Next of kin',phone:'0412 345 678',notes:'',emerg:true},
+    {id:uid(),name:'Bayside Pharmacy',role:'Pharmacy',phone:'02 9000 9012',notes:'Open till 9pm',emerg:false}]);
+  save(DB.emergency,{name:'Jordan Avery',dob:'1990-04-12',blood:'O+',id:'',
+    cond:'Epilepsy (focal), asthma, chronic lower back pain',allergy:'Penicillin',
+    plan:'During a seizure: stay calm, time it, cushion the head, move hazards away, turn into recovery position once movements stop. Do NOT restrain or put anything in mouth. Call 000 if it lasts over 5 minutes, repeats without recovery, or causes injury.'});
+  localStorage.setItem('wn-seeded','1');
+}
+
+/* ---------- theme ---------- */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  document.querySelectorAll('.theme-toggle .tt-opt').forEach(o=>o.classList.toggle('on',o.dataset.t===t));
+  try{localStorage.setItem('wn-theme',t);}catch(e){}
+}
+
+/* ---------- google sign-in ---------- */
+// Replace with your Google OAuth 2.0 Client ID from https://console.cloud.google.com
+const GOOGLE_CLIENT_ID='YOUR_GOOGLE_CLIENT_ID_HERE';
+const googleAuthKey='wn-google-auth';
+
+function initGoogleSignIn(){
+  const box=document.getElementById('google-signin-box');
+  const info=document.getElementById('google-user-info');
+  if(!box||!info)return;
+  if(!window.google){setTimeout(initGoogleSignIn,100);return;}
+  const auth=loadObj(googleAuthKey);
+  if(auth.name){
+    box.style.display='none';
+    info.style.display='block';
+    document.getElementById('google-user-name').textContent=auth.name;
+    document.getElementById('google-user-email').textContent=auth.email;
+    if(auth.picture)document.getElementById('google-user-pic').src=auth.picture;
+  }else{
+    google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:googleCallback});
+    google.accounts.id.renderButton(box,{
+      theme:'outline',width:'100%',size:'large',text:'signin_with'
+    });
+  }
+}
+function googleCallback(response){
+  try{
+    const base64Url=response.credential.split('.')[1];
+    const base64=base64Url.replace(/-/g,'+').replace(/_/g,'/');
+    const decoded=JSON.parse(atob(base64));
+    const auth={name:decoded.name,email:decoded.email,picture:decoded.picture,id_token:response.credential};
+    save(googleAuthKey,auth);
+    toast('Signed in with Google');
+    renderSettings();
+  }catch(e){console.error('Google auth error:',e);}
+}
+function googleSignOut(){
+  localStorage.removeItem(googleAuthKey);
+  toast('Signed out');
+  renderSettings();
+}
+
+/* ---------- stripe billing ---------- */
+/* Configure these from your Stripe Dashboard.
+   - Create Payment Links (Products → Payment Links) for each plan, set a 7-day free trial,
+     and set the post-payment redirect to this app's URL with ?checkout=success appended.
+   - Create a Customer Portal link (Settings → Billing → Customer portal) for subscription management.
+   Publishable key / links are safe to expose; the SECRET key must NEVER appear in this file.
+   Real subscription status must be confirmed server-side via Stripe webhooks — the local
+   flag below is for UI display only and can be spoofed by the user. */
+const STRIPE_CONFIG={
+  monthly:{price:'$4.99 AUD',period:'/month',link:'https://buy.stripe.com/YOUR_MONTHLY_LINK'},
+  yearly:{price:'$44.99 AUD',period:'/year',note:'Save 20% — 2 months free',link:'https://buy.stripe.com/YOUR_YEARLY_LINK'},
+  trialDays:7,
+  portalLink:'https://billing.stripe.com/p/login/YOUR_PORTAL_LINK'
+};
+
+function startCheckout(plan){
+  const cfg=STRIPE_CONFIG[plan];
+  if(!cfg||cfg.link.includes('YOUR_')){
+    toast('Add your Stripe Payment Link first');return;
+  }
+  // attach the signed-in email so Stripe pre-fills & links the customer
+  const auth=loadObj(googleAuthKey);
+  let url=cfg.link;
+  if(auth.email)url+=(url.includes('?')?'&':'?')+'prefilled_email='+encodeURIComponent(auth.email);
+  window.location.href=url;
+}
+function openBillingPortal(){
+  if(STRIPE_CONFIG.portalLink.includes('YOUR_')){toast('Add your Customer Portal link first');return;}
+  window.open(STRIPE_CONFIG.portalLink,'_blank');
+}
+function checkCheckoutReturn(){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('checkout')==='success'){
+    const b=loadObj(DB.billing); b.plan='premium'; b.since=today(); save(DB.billing,b);
+    toast('Welcome to WellNest Premium');
+    history.replaceState(null,'',window.location.pathname);
+  }else if(params.get('checkout')==='cancel'){
+    history.replaceState(null,'',window.location.pathname);
+  }
+}
+function renderBilling(){
+  const body=document.getElementById('bill-body'); const badge=document.getElementById('bill-badge');
+  if(!body||!badge)return;
+  const b=loadObj(DB.billing); const isPrem=b.plan==='premium';
+  badge.innerHTML=isPrem?'<span class="bill-badge prem">Premium</span>':'<span class="bill-badge free">Free plan</span>';
+  if(isPrem){
+    body.innerHTML=`<div style="font-size:13.5px;line-height:1.6;margin-bottom:16px">
+      You're on <b style="color:var(--green)">WellNest Premium</b>${b.since?` since ${fmtDate(b.since)}`:''}.
+      Thanks for supporting WellNest. Manage your plan, payment method or invoices in the billing portal.</div>
+      <button class="btn primary" onclick="openBillingPortal()">Manage billing →</button>`;
+    return;
+  }
+  const m=STRIPE_CONFIG.monthly, y=STRIPE_CONFIG.yearly;
+  body.innerHTML=`<div style="font-size:13px;color:var(--ink-dim);margin-bottom:16px">
+      Start with a ${STRIPE_CONFIG.trialDays}-day free trial. Cancel anytime.</div>
+    <div class="plan-grid">
+      <div class="plan-card">
+        <div class="pc-name">Premium Monthly</div>
+        <div class="pc-price">${m.price}<small>${m.period}</small></div>
+        <div class="pc-note">${STRIPE_CONFIG.trialDays}-day free trial</div>
+        <button class="btn" onclick="startCheckout('monthly')">Start free trial</button>
+      </div>
+      <div class="plan-card featured">
+        <span class="pc-tag">Best value</span>
+        <div class="pc-name">Premium Yearly</div>
+        <div class="pc-price">${y.price}<small>${y.period}</small></div>
+        <div class="pc-note">${y.note||(STRIPE_CONFIG.trialDays+'-day free trial')}</div>
+        <button class="btn primary" onclick="startCheckout('yearly')">Start free trial</button>
+      </div>
+    </div>
+    <div style="font-size:11.5px;color:var(--ink-faint);margin-top:14px">Secure payment by Stripe. You can cancel during the trial at no charge.</div>`;
+}
+
+/* ---------- init ---------- */
+checkCheckoutReturn();
+applyTheme(localStorage.getItem('wn-theme')||'dark');
+updateOrbColors('dashboard');
+seed();renderAll();applyGreeting();

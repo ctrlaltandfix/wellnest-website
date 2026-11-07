@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="WellNest — a private chronic health management dashboard for tracking pain, medications, appointments, contacts and more. All data stays on your device.">
+<meta name="theme-color" content="#0a0e1a">
+<title>WellNest — Chronic Health Dashboard</title>
+<link rel="stylesheet" href="fonts.css">
+<script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('wn-theme')||'dark');}catch(e){}</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="bg-wrap"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
+<div class="dotgrid"></div>
+
+<div class="shell">
+  <main class="main">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"><img src="data:image/png;base64,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" alt="WellNest logo"></div>
+        <div><h1>WellNest</h1></div>
+      </div>
+      <div class="topbar-right">
+        <div style="display:flex;gap:6px">
+          <button class="settings-btn emerg-glow" onclick="go('emergency')" title="Emergency plan" style="color:var(--coral);background:color-mix(in srgb,var(--coral) 16%,transparent);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 16px;white-space:nowrap;min-width:140px">Emergency Plan <span style="font-size:18px;line-height:1">✚</span></button>
+          <button class="settings-btn" onclick="go('settings')" title="Settings">⚙</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pagehead">
+      <button class="back-btn" id="backBtn" onclick="go('dashboard')">← Dashboard</button>
+      <div class="greet">
+        <div class="eyebrow" id="eyebrow">Welcome back</div>
+        <h2 id="pageTitle"></h2>
+      </div>
+    </div>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="page active" id="page-dashboard">
+      <div class="navcards">
+        <div class="navcard a-coral" onclick="go('pain')"><div class="nc-ic">✦</div><div><div class="nc-label">Chronic Pain</div><div class="nc-sub">Track & log</div></div></div>
+        <div class="navcard a-sky" onclick="go('asthma')"><div class="nc-ic">≈</div><div><div class="nc-label">Asthma</div><div class="nc-sub">Breathe easier</div></div></div>
+        <div class="navcard a-violet" onclick="go('epilepsy')"><div class="nc-ic">⚡</div><div><div class="nc-label">Epilepsy</div><div class="nc-sub">Seizure log</div></div></div>
+        <div class="navcard a-teal" onclick="go('meds')"><div class="nc-ic">⊕</div><div><div class="nc-label">Medications</div><div class="nc-sub">Doses & schedule</div></div></div>
+        <div class="nav-break" aria-hidden="true"></div>
+        <div class="navcard a-amber" onclick="go('appts')"><div class="nc-ic">▣</div><div><div class="nc-label">Appointments</div><div class="nc-sub">Upcoming visits</div></div></div>
+        <div class="navcard a-teal" onclick="go('contacts')"><div class="nc-ic">☎</div><div><div class="nc-label">Contacts</div><div class="nc-sub">Care circle</div></div></div>
+        <div class="navcard a-green" onclick="go('exercises')"><div class="nc-ic">⟳</div><div><div class="nc-label">Exercises</div><div class="nc-sub">Activity log</div></div></div>
+        <div class="navcard a-violet" onclick="go('reflection')"><div class="nc-ic">✧</div><div><div class="nc-label">Reflection</div><div class="nc-sub">Mental wellness</div></div></div>
+        <div class="navcard a-amber" onclick="go('expenses')"><div class="nc-ic">💰</div><div><div class="nc-label">Expenses</div><div class="nc-sub">Medical costs</div></div></div>
+      </div>
+
+      <div class="bento cols-2" style="margin-bottom:16px">
+        <div class="cycle-widget" id="cycleWidget">
+          <div class="cycle-slide" data-accent="--violet">
+            <div class="cycle-eyebrow"><span class="cw-ic">❝</span>Daily inspiration</div>
+            <div class="cycle-body">
+              <div class="cycle-quote" id="cw-quote"></div>
+              <div class="cycle-attr" id="cw-attr"></div>
+            </div>
+          </div>
+          <div class="cycle-slide" data-accent="--amber">
+            <div class="cycle-eyebrow"><span class="cw-ic">▣</span>Next appointment</div>
+            <div class="cycle-body"><div id="cw-appt"></div></div>
+          </div>
+          <div class="cycle-slide" data-accent="--teal">
+            <div class="cycle-eyebrow"><span class="cw-ic">⊕</span>Today's medications</div>
+            <div class="cycle-body"><div id="cw-meds"></div></div>
+          </div>
+          <div class="cycle-dots" id="cw-dots"></div>
+        </div>
+        <div class="card pad-lg a-teal" style="min-height:230px;--sa:var(--teal);position:relative;overflow:hidden;display:flex;flex-direction:column">
+          <div style="position:absolute;inset:0;background:radial-gradient(circle at 92% 4%,color-mix(in srgb,var(--teal) 22%,transparent),transparent 58%);pointer-events:none"></div>
+          <div class="cycle-eyebrow" style="position:relative;z-index:1"><span class="cw-ic">⊕</span>Today's medications</div>
+          <div id="d-todaymeds" style="position:relative;z-index:1;margin-top:16px"></div>
+        </div>
+      </div>
+
+      <div class="bento cols-2" style="margin-top:0">
+        <div class="card pad-lg a-coral" style="min-height:230px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <b style="font-size:15px">Pain trend</b><span style="font-size:12px;color:var(--ink-dim)">Last 7 logged days</span>
+          </div>
+          <div class="chartbox" id="d-chart"></div>
+          <div class="chartlabels" id="d-chartlabels"></div>
+        </div>
+        <div class="card pad-lg a-amber" style="min-height:230px;--sa:var(--amber);position:relative;overflow:hidden;display:flex;flex-direction:column">
+          <div style="position:absolute;inset:0;background:radial-gradient(circle at 92% 4%,color-mix(in srgb,var(--amber) 22%,transparent),transparent 58%);pointer-events:none"></div>
+          <div class="cycle-eyebrow" style="position:relative;z-index:1"><span class="cw-ic">▣</span>Next appointment</div>
+          <div class="cycle-body"><div id="d-nextappt"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAIN ============ -->
+    <section class="page a-coral" id="page-pain">
+      <div class="section-head"><button class="btn primary" onclick="openPain()">+ Log pain</button><div></div></div>
+      <div id="p-list"></div>
+
+      <div class="bento cols-3">
+        <div class="card stat"><div class="label">Latest entry</div><div class="num" id="p-latest">—<small>/10</small></div></div>
+        <div class="card stat"><div class="label">7-day average</div><div class="num" id="p-avg">—<small>/10</small></div></div>
+        <div class="card stat"><div class="label">Entries logged</div><div class="num" id="p-count">—</div></div>
+      </div>
+      <div class="card pad-lg" id="pain-team" style="margin-top:18px;padding:18px;display:none">
+        <h3 style="margin:0 0 4px 0;font-size:16px">Care team</h3>
+        <div style="font-size:13px;color:var(--ink-dim);margin-bottom:12px">Pain specialists managing your chronic pain</div>
+        <div id="pain-team-list"></div></div>
+    </section>
+
+    <!-- ============ ASTHMA ============ -->
+    <section class="page a-sky" id="page-asthma">
+      <div style="display:flex;gap:32px;margin-bottom:16px;align-items:flex-start">
+        <div class="card pad-lg" style="flex:1;padding:14px">
+          <h3 style="margin:0 0 3px 0;font-size:16px">Asthma diary</h3>
+          <div style="font-size:13px;color:var(--ink-dim);margin-bottom:6px">Peak flow, symptoms and reliever use</div>
+          <div class="section-head" style="margin-bottom:14px">
+            <button class="btn primary" onclick="openAsthma()">+ Add reading</button><div></div></div>
+          <div id="as-list"></div>
+        </div>
+
+        <div class="card pad-lg" style="flex:1;padding:14px">
+          <h3 style="margin:0 0 3px 0;font-size:16px">Asthma action plan</h3>
+          <div style="font-size:13px;color:var(--ink-dim);margin-bottom:6px">Your personalised plan, set up with your doctor</div>
+          <div class="section-head" style="margin-bottom:14px">
+            <button class="btn primary" onclick="openAsthmaPlan()" style="width:fit-content">+ Add plan</button>
+            <button class="btn" id="ap-pdf-btn" onclick="exportAsthmaPlanPDF()" style="display:none">⬇ PDF</button><div></div></div>
+          <div id="as-plan"></div>
+        </div>
+      </div>
+
+      <div class="bento cols-3">
+        <div class="card stat"><div class="label">Last peak flow</div><div class="num" id="as-pf">—<small> L/min</small></div></div>
+        <div class="card stat"><div class="label">Control status</div><div class="num" style="font-size:24px" id="as-status">—</div></div>
+        <div class="card stat"><div class="label">Reliever uses (7d)</div><div class="num" id="as-reliever">—</div></div>
+      </div>
+      <div class="card pad-lg" id="asthma-team" style="margin-top:18px;padding:18px;display:none">
+        <h3 style="margin:0 0 4px 0;font-size:16px">Care team</h3>
+        <div style="font-size:13px;color:var(--ink-dim);margin-bottom:12px">Contacts linked to asthma</div>
+        <div id="asthma-team-list"></div></div>
+    </section>
+
+    <!-- ============ EPILEPSY ============ -->
+    <section class="page a-violet" id="page-epilepsy">
+      <div class="section-head"><button class="btn primary" onclick="openEp()">+ Log seizure</button><div></div></div>
+      <div id="ep-list" style="margin-bottom:24px"></div>
+
+      <div class="bento cols-3">
+        <div class="card stat"><div class="label">Days seizure-free</div><div class="num" id="ep-free">—</div></div>
+        <div class="card stat"><div class="label">Seizures (30d)</div><div class="num" id="ep-month">—</div></div>
+        <div class="card stat"><div class="label">Last event</div><div class="num" style="font-size:20px" id="ep-last">—</div></div>
+      </div>
+      <div class="card pad-lg" id="ep-team" style="margin-top:18px;padding:18px;display:none">
+        <h3 style="margin:0 0 4px 0;font-size:16px">Care team</h3>
+        <div style="font-size:13px;color:var(--ink-dim);margin-bottom:12px">Contacts linked to epilepsy</div>
+        <div id="ep-team-list"></div></div>
+    </section>
+
+    <!-- ============ MEDS ============ -->
+    <section class="page a-teal" id="page-meds">
+      <div class="section-head"><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn primary" onclick="openMed()">+ Add medication</button><button class="btn" onclick="exportMedsPDF()">⬇ Export PDF</button></div><div></div></div>
+      <div class="card pad-lg" id="m-routine-card" style="margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <b style="font-size:15px">Daily routine</b>
+          <span id="m-routine-now" style="font-size:12px;font-weight:700;color:var(--teal)"></span>
+        </div>
+        <div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:14px">Your medications grouped by time of day. The dashboard shows what's due right now.</div>
+        <div id="m-routine"></div>
+      </div>
+      <div id="m-list"></div>
+      <div class="card pad-lg" id="meds-team" style="margin-top:18px;padding:18px;display:none">
+        <h3 style="margin:0 0 4px 0;font-size:16px">Care team</h3>
+        <div style="font-size:13px;color:var(--ink-dim);margin-bottom:12px">Pharmacists managing your medications</div>
+        <div id="meds-team-list"></div></div>
+    </section>
+
+    <!-- ============ APPOINTMENTS ============ -->
+    <section class="page a-amber" id="page-appts">
+      <div class="section-head"><button class="btn primary" onclick="openAppt()">+ Add appointment</button><div></div></div>
+      <div id="ap-upcoming"></div>
+      <div id="ap-past"></div>
+    </section>
+
+    <!-- ============ CONTACTS ============ -->
+    <section class="page a-teal" id="page-contacts">
+      <div class="section-head"><button class="btn primary" onclick="openContact()">+ Add contact</button><div></div></div>
+      <div id="c-list"></div>
+    </section>
+
+    <!-- ============ EXERCISES ============ -->
+    <section class="page a-green" id="page-exercises">
+      <div class="section-head"><button class="btn primary" onclick="openExercise()">+ Log exercise</button><div></div></div>
+      <div id="ex-list"></div>
+      <div class="card pad-lg" id="ex-team" style="margin-top:18px;padding:18px;display:none">
+        <h3 style="margin:0 0 4px 0;font-size:16px">Care team</h3>
+        <div style="font-size:13px;color:var(--ink-dim);margin-bottom:12px">Rehabilitation specialists supporting your exercises</div>
+        <div id="ex-team-list"></div></div>
+    </section>
+
+    <!-- ============ REFLECTION ============ -->
+    <section class="page a-violet" id="page-reflection">
+      <div class="bento cols-2" style="margin-bottom:16px">
+        <div class="card pad-lg">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <b style="font-size:15px">Journal</b>
+            <button class="btn" onclick="openReflectionJournal()" style="padding:6px 12px;font-size:12px">+ Entry</button>
+          </div>
+          <div style="font-size:12.5px;color:var(--ink-dim)">Reflect on your feelings and thoughts.</div>
+          <div id="ref-journal" style="margin-top:14px"></div>
+        </div>
+
+        <div class="card pad-lg">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <b style="font-size:15px">Reminders</b>
+            <button class="btn" onclick="openReflectionReminder()" style="padding:6px 12px;font-size:12px">+ Add</button>
+          </div>
+          <div style="font-size:12.5px;color:var(--ink-dim)">Mental health reminders to stay grounded.</div>
+          <div id="ref-reminders" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <div class="card pad-lg">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <b style="font-size:15px">Professional tips</b>
+          <button class="btn" onclick="openReflectionTip()" style="padding:6px 12px;font-size:12px">+ Add tip</button>
+        </div>
+        <div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:14px">Techniques and advice from your mental health professional.</div>
+        <div id="ref-tips"></div>
+      </div>
+      <div class="card pad-lg" id="ref-team" style="margin-top:18px;padding:18px;display:none">
+        <h3 style="margin:0 0 4px 0;font-size:16px">Care team</h3>
+        <div style="font-size:13px;color:var(--ink-dim);margin-bottom:12px">Psychologists and psychiatrists supporting your mental health</div>
+        <div id="ref-team-list"></div></div>
+    </section>
+
+    <!-- ============ EXPENSES ============ -->
+    <section class="page a-amber" id="page-expenses">
+      <div class="section-head"><button class="btn primary" onclick="openExpense()">+ Add expense</button><div></div></div>
+      <div class="bento cols-2" style="margin-bottom:16px">
+        <div class="card pad-lg" style="--sa:var(--amber)">
+          <div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:6px">Total expenses</div>
+          <div id="exp-total" style="font-size:28px;font-weight:700;color:var(--amber)">$0.00</div>
+          <div style="font-size:11px;color:var(--ink-faint);margin-top:8px">All tracked expenses</div>
+        </div>
+        <div class="card pad-lg" style="--sa:var(--amber)">
+          <div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:6px">This month</div>
+          <div id="exp-month" style="font-size:28px;font-weight:700;color:var(--amber)">$0.00</div>
+          <div style="font-size:11px;color:var(--ink-faint);margin-top:8px">Current month total</div>
+        </div>
+      </div>
+      <div id="exp-list"></div>
+      <div class="card pad-lg" id="exp-team" style="margin-top:18px;padding:18px;display:none">
+        <h3 style="margin:0 0 4px 0;font-size:16px">Care team</h3>
+        <div style="font-size:13px;color:var(--ink-dim);margin-bottom:12px">Insurance managers handling your medical costs</div>
+        <div id="exp-team-list"></div></div>
+    </section>
+
+    <!-- ============ EMERGENCY ============ -->
+    <section class="page a-coral" id="page-emergency">
+      <div class="section-head"><button class="btn" onclick="openEmergency()">✎ Edit details</button><div></div></div>
+      <div id="em-view"></div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section class="page a-green" id="page-settings">
+      <div class="card pad-lg">
+        <b style="font-size:15px;display:block;margin-bottom:4px">Profile</b>
+        <div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:16px">Personalises your dashboard greeting.</div>
+        <div class="field-row">
+          <div class="field"><label>Display name</label><input id="set-name" placeholder="e.g. Chris"></div>
+          <div class="field"><label>Preferred greeting</label><select id="set-greet">
+            <option value="auto">Time of day (Good morning…)</option>
+            <option value="welcome">Welcome back</option>
+            <option value="hello">Hello</option></select></div>
+        </div>
+        <button class="btn primary" onclick="saveSettings()">Save profile</button>
+      </div>
+
+      <div class="card pad-lg" style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+          <div><b style="font-size:15px;display:block;margin-bottom:4px">Billing &amp; subscription</b>
+          <div style="font-size:12.5px;color:var(--ink-dim)">Manage your WellNest Premium plan.</div></div>
+          <span id="bill-badge"></span>
+        </div>
+        <div id="bill-body" style="margin-top:18px"></div>
+      </div>
+
+      <div class="bento cols-2" style="margin-top:16px">
+        <div class="card pad-lg">
+          <b style="font-size:15px;display:block;margin-bottom:4px">Your data</b>
+          <div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:16px">Everything is stored locally on this device. Back it up or move it between devices here.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn" onclick="exportData()">⬇ Export data (JSON)</button>
+            <button class="btn" onclick="document.getElementById('importFile').click()">⬆ Import data</button>
+            <button class="btn danger" onclick="resetData()">⟳ Reset all data</button>
+            <input type="file" id="importFile" accept="application/json,.json" style="display:none" onchange="importData(event)">
+          </div>
+          <div id="set-stats" style="font-size:12.5px;color:var(--ink-dim);margin-top:16px"></div>
+        </div>
+
+        <div class="card pad-lg">
+          <b style="font-size:15px;display:block;margin-bottom:4px">Appearance</b>
+          <div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:16px">Switch between light and dark themes.</div>
+          <div class="theme-toggle" style="width:100%;max-width:260px" id="setThemeToggle">
+            <span class="tt-opt" data-t="light" onclick="applyTheme('light')">☀ Light</span>
+            <span class="tt-opt" data-t="dark" onclick="applyTheme('dark')">☾ Dark</span>
+            <span class="tt-knob"></span>
+          </div>
+          <div style="font-size:12px;color:var(--ink-faint);margin-top:14px">Your choice is remembered on this device.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
