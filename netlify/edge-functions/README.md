@@ -2,15 +2,16 @@
 
 The GitHub copy (https://ctrlaltandfix.github.io/wellnest-website/) is ready to run sign-in and the
 dashboard itself. It still needs the WellNest server for accounts and health data, and that server
-has to allow requests from github.io. This folder holds the one file that allows them.
+has to allow requests from github.io. `github-pages-bridge.ts` in this folder is the one file that allows them.
 
 Until the file is deployed, the GitHub copy opens wellnest.services for Sign in and the dashboard
 (which is what it does today). Once it's live, the GitHub copy picks it up automatically.
 
 ## Steps
 
-1. Copy `netlify/edge-functions/github-pages-bridge.ts` into the project that deploys
-   **wellnest.services** to Netlify (the `wellnest-web` repo), at the same path.
+1. Copy `github-pages-bridge.ts` (in this folder) into the project that deploys
+   **wellnest.services** to Netlify (the `wellnest-web` repo), at the same path:
+   `netlify/edge-functions/github-pages-bridge.ts`.
 2. In that project's `netlify.toml`, add this **above any other `[[edge_functions]]` entries**,
    so it runs first:
 
