@@ -28,25 +28,12 @@ APP_ROUTES = (r"^/(?:login|start|startfree|signin|signup|register|dashboard(?:-b
               r"|emergency-plan-shared|meeting-note-shared|achievements|settings|growth|email-preferences"
               r"|confirm-free-kit)/?$|^/(?:auth|ios-auth)(?:/|$)")
 
-# Runs before anything else on every page:
-#  - plain root-relative links (<a href="/pricing">) get the GitHub Pages path
-#  - any navigation to an app route (link, router push, direct visit) opens the live app
-LINK_FIX = (
-    '<script id="gh-pages-base">(function(){var B="%s",L="%s",R=/%s/i;'
-    'function rel(p){return p.indexOf(B)===0?p.slice(B.length)||"/":p}'
-    'function live(u){try{var x=new URL(u,location.href);if(x.origin!==location.origin)return null;'
-    'var p=rel(x.pathname);return R.test(p)?L+p+x.search+x.hash:null}catch(e){return null}}'
-    'var here=live(location.href);if(here){location.replace(here);return}'
-    '["pushState","replaceState"].forEach(function(k){var o=history[k];history[k]=function(s,t,u){'
-    'var l=u!=null&&live(String(u));if(l){location.assign(l);return}return o.apply(this,arguments)}});'
-    'function fix(u){return typeof u=="string"&&u.charAt(0)=="/"&&u.charAt(1)!="/"'
-    '&&u!==B&&u.indexOf(B+"/")!==0?B+u:u}'
-    'document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");'
-    'if(!a)return;var h=a.getAttribute("href"),n=fix(h),l=live(n);'
-    'if(l){a.setAttribute("href",l);if(!a.target){e.preventDefault();e.stopPropagation();location.assign(l)}return}'
-    'if(n!==h)a.setAttribute("href",n)},true);'
-    '})();</script>' % (BASE, LIVE_APP, APP_ROUTES.replace("/", r"\/"))
-)
+# Runs before anything else on every page (source: tools/gh-pages-bootstrap.js).
+_boot = (pathlib.Path(__file__).with_name("gh-pages-bootstrap.js")).read_text(encoding="utf-8")
+_boot = re.sub(r"^/\*.*?\*/\s*", "", _boot, flags=re.S)  # drop header comment
+_boot = (_boot.replace("__BASE__", BASE).replace("__LIVE__", LIVE_APP)
+         .replace('"__ROUTES__"', '"' + APP_ROUTES.replace("\\", "\\\\") + '"'))
+LINK_FIX = '<script id="gh-pages-base">' + _boot.strip() + "</script>"
 
 
 def patch_js(text: str) -> str:
@@ -58,6 +45,20 @@ def patch_js(text: str) -> str:
     # 3. Hard-coded asset paths in string literals
     text = re.sub(r"([`\"'])/(?!%s/)(%s)" % (re.escape(B), ASSET_DIRS),
                   lambda m: "%s%s/%s" % (m[1], BASE, m[2]), text)
+    # 5. Netlify Identity endpoint: use the WellNest server (set by the bootstrap)
+    for name in set(re.findall(r"(\w+)=[`\"]/\.netlify/identity[`\"]", text)):
+        text = re.sub(r"(?<!__WN_IDENTITY__\|\|)`\$\{window\.location\.origin\}\$\{%s\}`" % name,
+                      lambda m: "(window.__WN_IDENTITY__||%s)" % m[0], text)
+    # 6. Post-login redirect sanitiser: keep the target inside the GitHub Pages path,
+    #    and compare against /login, /start, /auth/ without the prefix.
+    marker = "let n=new URL(e||`/dashboard`,t);"
+    if marker in text and "n.pathname.indexOf(`%s/`)" % BASE not in text:
+        i = text.index(marker) + len(marker)
+        j = text.index("return n.searchParams", i)
+        body = text[i:j].replace("n.pathname.toLowerCase()",
+                                 "n.pathname.toLowerCase().replace(/^%s(?=\\/|$)/,``)" % BASE.replace("/", "\\/"))
+        text = (text[:i] + "n.pathname.indexOf(`%s/`)&&(n.pathname=`%s`+n.pathname);" % (BASE, BASE)
+                + body + text[j:])
     # 4. Hard page navigations: location.assign(`/x`), location.href=`/`, new URL(`/x`, ...)
     text = re.sub(r"(location\.(?:assign|replace)\(|location\.href=|new URL\()([`\"'])/(?!/)(?!%s(?:/|[`\"']))"
                   % re.escape(B), lambda m: "%s%s%s/" % (m[1], m[2], BASE), text)
