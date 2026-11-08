@@ -173,6 +173,13 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY COLLATE NOCASE, name TEXT, list TEXT NOT NULL, created_date TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS rate_limits (bucket TEXT NOT NULL, key TEXT NOT NULL, window INTEGER NOT NULL,
      hits INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (bucket, key, window))`,
+  // Website traffic (cloudflare/analytics.js). No IP addresses are stored:
+  // "visitor" is a hash that changes every day, "session" is per browser tab.
+  `CREATE TABLE IF NOT EXISTS page_views (
+     id TEXT PRIMARY KEY, ts INTEGER NOT NULL, day TEXT NOT NULL, path TEXT NOT NULL,
+     country TEXT, source TEXT, campaign TEXT, device TEXT, browser TEXT,
+     visitor TEXT NOT NULL, session TEXT NOT NULL, seconds INTEGER NOT NULL DEFAULT 0)`,
+  `CREATE INDEX IF NOT EXISTS page_views_ts ON page_views (ts)`,
 ];
 let schemaReady = false;
 export async function ensureSchema(env) {

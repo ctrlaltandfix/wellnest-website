@@ -2,6 +2,7 @@
 // and its API (sign-in, account, records, files) backed by the D1 database.
 import { SITE, json, fail, corsHeaders, ensureSchema, currentUser } from "./lib.js";
 import { handleIdentity, handleGoogleCallback } from "./identity.js";
+import { handleCollect, handleStats } from "./analytics.js";
 import { handleMe, handleEntities, handleUploads, handleFileSign, handleFileRaw, handleFunction } from "./data.js";
 
 const OLD_BASE = "/wellnest-website";
@@ -14,6 +15,7 @@ async function api(request, env, path) {
   if (path === "/api/auth/google/callback") return handleGoogleCallback(request, env);
   if (parts[0] === "files" && parts[1] === "raw" && parts[2] && request.method === "GET") return handleFileRaw(request, env, parts[2]);
   if (parts[0] === "functions" && parts[1] && request.method === "POST") return handleFunction(request, env, parts[1]);
+  if (path === "/api/analytics/collect") return handleCollect(request, env);
   if (path === "/api/claude/status") return json({ connected: false, reason: "Not configured" });
   if (path === "/api/calendar/status") return json({ configured: false, connected: false });
   if (parts[0] === "calendar") return json({ error: "Google Calendar connection is awaiting setup.", configured: false }, 503);
@@ -21,6 +23,7 @@ async function api(request, env, path) {
   const user = await currentUser(env, request);
   if (!user) return fail(401, "Authentication required");
 
+  if (path === "/api/analytics/stats" && request.method === "GET") return handleStats(request, env, user);
   if (path === "/api/auth/me") return handleMe(request, env, user);
   if (parts[0] === "entities" && parts[1]) return handleEntities(request, env, user, decodeURIComponent(parts[1]), parts[2] && decodeURIComponent(parts[2]));
   if (parts[0] === "uploads") return handleUploads(request, env, user, parts.slice(1));

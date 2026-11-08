@@ -24,6 +24,14 @@ const SKIP = new Set([
 ]);
 const TEXT = new Set([".html", ".js", ".mjs", ".css"]);
 
+// Site statistics (see cloudflare/analytics.js): every page except /admin loads
+// /wn-stats.js, which is only added to the Cloudflare copy of the site.
+const STATS_TAG = '<script defer src="/wn-stats.js"></script>';
+function addStats(html, rel) {
+  if (rel.startsWith("admin/") || html.includes(STATS_TAG) || !html.includes("</head>")) return html;
+  return html.replace("</head>", STATS_TAG + "\n</head>");
+}
+
 function stripBase(text) {
   return text
     // escaped forms inside regular expressions, e.g. /^\/wellnest-website(?=\/|$)/
@@ -52,7 +60,8 @@ function walk(dir) {
     files++;
     if (TEXT.has(extname(name))) {
       const text = readFileSync(src, "utf8");
-      const out = stripBase(text);
+      let out = stripBase(text);
+      if (extname(name) === ".html") out = addStats(out, rel.split("\\").join("/"));
       if (out !== text) changed++;
       writeFileSync(dest, out);
     } else {
@@ -61,6 +70,7 @@ function walk(dir) {
   }
 }
 walk(ROOT);
+cpSync(join(ROOT, "tools", "wn-stats.js"), join(OUT, "wn-stats.js"));
 
 const leftover = [];
 (function check(dir) {
