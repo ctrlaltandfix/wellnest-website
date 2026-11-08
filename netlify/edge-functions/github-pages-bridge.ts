@@ -12,7 +12,7 @@
 // else pass straight through, untouched.
 import type { Context } from "@netlify/edge-functions";
 
-const ALLOWED = new Set(["https://ctrlaltandfix.github.io"]);
+const ALLOWED = new Set(["https://ctrlaltandfix.github.io", "https://wellnest.email-chrisgreenfield.workers.dev"]);
 const IDENTITY = "/api/_identity"; // proxied to /.netlify/identity
 
 function corsHeaders(origin: string): Record<string, string> {

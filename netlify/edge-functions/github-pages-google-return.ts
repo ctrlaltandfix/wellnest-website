@@ -10,7 +10,7 @@
 // Content-Security-Policy already allows.
 import type { Config, Context } from "@netlify/edge-functions";
 
-const ALLOWED = new Set(["https://ctrlaltandfix.github.io"]);
+const ALLOWED = new Set(["https://ctrlaltandfix.github.io", "https://wellnest.email-chrisgreenfield.workers.dev"]);
 const SCRIPT = "/imported/wn-google-return.js";
 const CLEAR = "wn_return=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax";
 
