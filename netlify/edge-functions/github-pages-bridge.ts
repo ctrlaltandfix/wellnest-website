@@ -42,6 +42,17 @@ export default async (request: Request, context: Context) => {
   headers.delete("Cookie"); // cross-site calls authenticate with the Bearer token only
   const bearer = headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
 
+  // Google sign-in started from the GitHub copy: Netlify Identity always returns
+  // people to wellnest.services, so remember (10 min) where to hand them back.
+  // github-pages-google-return.ts completes the handoff.
+  let returnTo: string | null = null;
+  if (url.pathname === IDENTITY + "/authorize") {
+    try {
+      const r = new URL(url.searchParams.get("redirect_to") ?? "");
+      if (ALLOWED.has(r.origin)) returnTo = r.origin + r.pathname;
+    } catch { /* no valid redirect_to */ }
+  }
+
   let response: Response;
   if (isIdentity) {
     // Netlify Identity lives under /.netlify/, which edge functions can't wrap
@@ -65,6 +76,12 @@ export default async (request: Request, context: Context) => {
     response = await context.next(new Request(request, { headers }));
   }
 
+  if (returnTo) {
+    const out = new Response(response.body, response);
+    out.headers.append("Set-Cookie",
+      `wn_return=${encodeURIComponent(returnTo)}; Path=/; Max-Age=600; Secure; HttpOnly; SameSite=Lax`);
+    return out;
+  }
   if (!allowed) return response;
   const out = new Response(response.body, response);
   for (const [k, v] of Object.entries(corsHeaders(origin))) out.headers.set(k, v);

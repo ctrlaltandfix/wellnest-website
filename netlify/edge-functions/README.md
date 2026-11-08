@@ -38,6 +38,8 @@ missing the edge functions that serve most of `/api`.
 
 ## Known limits
 
-- **Google sign-in** may finish on wellnest.services instead of github.io, because Netlify Identity
-  returns users to the site's own address. Email and password sign-in stays on github.io.
+- **Google sign-in** returns to wellnest.services first (Netlify Identity always does), then
+  `github-pages-google-return.ts` hands the person and their sign-in straight back to github.io.
+  It only runs on `/`, `/login` and `/dashboard`, and only acts when the bridge marked the sign-in
+  as started from GitHub Pages; everyone else gets the normal site.
 - **Connecting Google Calendar** completes on wellnest.services, where Google sends the user back.
