@@ -1,0 +1,68 @@
+[build]
+edge_functions = "netlify/edge-functions"
+publish = "."
+functions = "netlify/functions"
+
+  [build.environment]
+  NODE_VERSION = "24"
+  ONNXRUNTIME_NODE_INSTALL_CUDA = "skip"
+
+  [build.processing]
+
+    [build.processing.css]
+
+    [build.processing.html]
+
+    [build.processing.images]
+
+    [build.processing.js]
+
+  [build.services]
+
+[database]
+
+  [database.migrations]
+  path = "netlify/database/migrations"
+
+[functions]
+
+  [functions."*"]
+  node_bundler = "esbuild"
+
+[[headers]]
+for = "/assets/*"
+
+  [headers.values]
+  Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/api/*"
+
+  [headers.values]
+  Cache-Control = "private, no-store"
+
+[[headers]]
+for = "/*"
+
+  [headers.values]
+  X-Content-Type-Options = "nosniff"
+  Referrer-Policy = "strict-origin-when-cross-origin"
+  Content-Security-Policy = "script-src-elem https://wellnest.services/assets/ https://wellnest.services/imported/ https://www.wellnest.services/assets/ https://www.wellnest.services/imported/ https://*.netlify.app/assets/ https://*.netlify.app/imported/ blob: https://*.googletagmanager.com https://*.google-analytics.com https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.doubleclick.net https://*.seoplatform.io https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://esm.run https://*.clarity.ms https://*.bing.com https://*.stripe.com https://*.facebook.net https://huggingface.co https://*.hf.co 'sha256-BSHIA8uyEksveTZNsWDdE7q9p6Oqa/LdAOuySBi6RJg=' 'sha256-KDo0dTHZe93q6HmkoE2sxnCF+nh5X2h+2uj7UyA7R48=' 'sha256-Nszz1tkFpUOxVVDYcaJ13rtE9eV66QMfxHlPe45QJKQ=' 'sha256-S1i41waIK4vYgc470tKDbyavs/CKrlejf0l1iTQmLEQ=' 'sha256-bHq8UIr5LyJL17zPSjkbXHqgyPhBJMAXCDFg91IP+H0=' 'sha256-uKRdIfrvrHqflOEhMUKluMusUBg8mbZq5ZDxmnljScg=';"
+
+[[redirects]]
+from = "/auth/start/:provider"
+to = "/login"
+status = 302
+force = true
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+force = false
+
+  [redirects.query]
+
+  [redirects.conditions]
+
+  [redirects.headers]
