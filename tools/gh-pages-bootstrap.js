@@ -36,13 +36,14 @@
     try {
       var s = typeof input == "string" ? input : input instanceof URL ? input.href : input && input.url;
       var x = new URL(s, location.href);
-      if (x.origin === new URL(L).origin) {
+      var sameSite = x.origin === location.origin;
+      if (x.origin === new URL(L).origin && !(sameSite && /^\/(?:api\/|\.netlify\/identity)/.test(rel(x.pathname)))) {
         // direct calls to the server (e.g. Netlify Identity's own client): drop extra headers
         init = trimHeaders(Object.assign({}, init || {}), input);
         init.credentials = "omit";
         return of(input instanceof Request ? new Request(input, init) : input, init);
       }
-      if (x.origin === location.origin) {
+      if (sameSite) {
         var p = rel(x.pathname);
         if (p.indexOf("/.netlify/identity") === 0) p = "/api/_identity" + p.slice(18);
         if (p.indexOf("/api/") === 0) {
