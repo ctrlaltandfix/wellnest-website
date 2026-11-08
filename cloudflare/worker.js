@@ -42,6 +42,10 @@ export default {
       return Response.redirect(url.origin + (url.pathname.slice(OLD_BASE.length) || "/") + url.search, 301);
     }
 
+    // The app's sign-in library also uses Netlify Identity's original address.
+    if (url.pathname === "/.netlify/identity" || url.pathname.startsWith("/.netlify/identity/")) {
+      url.pathname = "/api/_identity" + url.pathname.slice("/.netlify/identity".length);
+    }
     if (url.pathname.startsWith("/api/")) {
       const cors = corsHeaders(request);
       if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
