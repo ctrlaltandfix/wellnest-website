@@ -1,6 +1,8 @@
-// Cloudflare Workers config for WellNest on wellnest.services.
-// Each deploy first builds dist-cloudflare/ (the site with clean root addresses)
-// from the GitHub Pages files in this repo; the GitHub copy is unaffected.
+// Cloudflare Workers config for WellNest on wellnest.services: the website
+// (dist-cloudflare/, built from this repo's GitHub Pages files on every deploy)
+// and its API backed by the D1 database "wellnest-db".
+// Secrets (set in the Cloudflare dashboard, never in this file):
+//   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, RESEND_API_KEY
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "wellnest",
@@ -13,6 +15,10 @@
     "directory": "dist-cloudflare",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/wellnest-website", "/wellnest-website/*"]
-  }
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "wellnest-db", "database_id": "7d75ba9d-cc5f-4d23-8235-94de919602a4" }
+  ],
+  "observability": { "enabled": true }
 }
