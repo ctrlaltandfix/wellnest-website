@@ -1,13 +1,18 @@
-// Cloudflare Workers config for the WellNest GitHub Pages copy.
-// "name" must match the Worker's name in the Cloudflare dashboard.
+// Cloudflare Workers config for WellNest on wellnest.services.
+// Each deploy first builds dist-cloudflare/ (the site with clean root addresses)
+// from the GitHub Pages files in this repo; the GitHub copy is unaffected.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "wellnest-website",
+  "name": "wellnest",
   "main": "cloudflare/worker.js",
   "compatibility_date": "2025-09-01",
+  "build": {
+    "command": "node tools/build-cloudflare.mjs"
+  },
   "assets": {
-    "directory": ".",
+    "directory": "dist-cloudflare",
     "binding": "ASSETS",
-    "run_worker_first": true
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/wellnest-website", "/wellnest-website/*"]
   }
 }
