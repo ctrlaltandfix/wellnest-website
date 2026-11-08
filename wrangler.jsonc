@@ -1,0 +1,13 @@
+// Cloudflare Workers config for the WellNest GitHub Pages copy.
+// "name" must match the Worker's name in the Cloudflare dashboard.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "wellnest-website",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  }
+}

@@ -1,0 +1,16 @@
+# Not part of the website: keep out of Cloudflare's public files.
+.git
+.github
+.assetsignore
+wrangler.jsonc
+cloudflare/
+netlify/
+netlify.toml
+tools/
+tests/
+node_modules/
+package.json
+package-lock.json
+github-pages-bridge.ts
+.wrangler/
+.gitignore
