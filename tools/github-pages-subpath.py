@@ -16,13 +16,13 @@ BASE = "/wellnest-website"
 if "--base" in sys.argv:
     BASE = "/" + sys.argv[sys.argv.index("--base") + 1].strip("/")
 B = BASE.lstrip("/")  # "wellnest-website"
-SKIP_DIRS = {".git", "node_modules", "netlify", "tests", "tools"}
+SKIP_DIRS = {".git", "node_modules", "netlify", "tests", "tools", "cloudflare", ".wrangler"}
 
 ASSET_DIRS = r"(?:landing|imported|assets|favicon\.svg|favicon)"
 
 # Signed-in features (accounts, health data) need the WellNest server, which
 # GitHub Pages cannot run, so these routes open the live app instead.
-LIVE_APP = "https://wellnest.services"
+LIVE_APP = "https://wellnest-web.netlify.app"
 APP_ROUTES = (r"^/(?:login|start|startfree|signin|signup|register|dashboard(?:-beta)?|chronic-pain|asthma|epilepsy"
               r"|medications|appointments|care-circle|exercises|reflection|expenses|emergency-plan"
               r"|emergency-plan-shared|meeting-note-shared|achievements|settings|growth|email-preferences"

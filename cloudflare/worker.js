@@ -16,6 +16,15 @@ export default {
       return Response.redirect(url.origin + BASE + "/" + url.search, 302);
     }
 
+    // Old links without the prefix (wellnest.services/pricing, /dashboard,
+    // /ios-auth/callback, password-reset emails): page requests go to the same
+    // page under /wellnest-website/ (browsers keep any #token on redirect).
+    // Files like robots.txt and sitemap.xml are still served at the root.
+    const isPage = request.method === "GET" && (request.headers.get("Accept") || "").includes("text/html");
+    if (!url.pathname.startsWith(BASE + "/") && isPage) {
+      return Response.redirect(url.origin + BASE + url.pathname + url.search, 302);
+    }
+
     const assetUrl = new URL(url);
     if (url.pathname.startsWith(BASE + "/")) assetUrl.pathname = url.pathname.slice(BASE.length);
     const res = await env.ASSETS.fetch(new Request(assetUrl, request));
