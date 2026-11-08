@@ -24,19 +24,32 @@
   function token() { var m = document.cookie.match(/(?:^|;\s*)nf_jwt=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
 
   // --- send API + identity calls to the WellNest server -------------------
+  // The server bridge allows only these request headers (plus browser-set ones).
+  var OK_HEADERS = /^(authorization|content-type|x-requested-with|accept|accept-language|content-language)$/i;
+  function trimHeaders(init, input) {
+    var h = new Headers(init.headers || (input instanceof Request ? input.headers : undefined)), out = new Headers();
+    h.forEach(function (v, k) { if (OK_HEADERS.test(k)) out.set(k, v); });
+    init.headers = out;
+    return init;
+  }
   window.fetch = function (input, init) {
     try {
       var s = typeof input == "string" ? input : input instanceof URL ? input.href : input && input.url;
       var x = new URL(s, location.href);
+      if (x.origin === new URL(L).origin) {
+        // direct calls to the server (e.g. Netlify Identity's own client): drop extra headers
+        init = trimHeaders(Object.assign({}, init || {}), input);
+        init.credentials = "omit";
+        return of(input instanceof Request ? new Request(input, init) : input, init);
+      }
       if (x.origin === location.origin) {
         var p = rel(x.pathname);
         if (p.indexOf("/.netlify/identity") === 0) p = "/api/_identity" + p.slice(18);
         if (p.indexOf("/api/") === 0) {
-          init = Object.assign({}, init || {});
-          var h = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
-          var t = token();
+          init = trimHeaders(Object.assign({}, init || {}), input);
+          var h = init.headers, t = token();
           if (t && !h.has("Authorization") && p.indexOf("/api/_identity") !== 0) h.set("Authorization", "Bearer " + t);
-          init.headers = h; init.credentials = "omit"; init.mode = "cors";
+          init.credentials = "omit"; init.mode = "cors";
           var target = L + p + x.search;
           return input instanceof Request ? of(new Request(target, input), init) : of(target, init);
         }
