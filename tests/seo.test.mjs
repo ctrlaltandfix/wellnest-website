@@ -76,3 +76,11 @@ test('IndexNow: page addresses, submission and the admin endpoint', async () => 
   assert.equal(all.submitted, 2);                               // every sitemap page
   assert.deepEqual(sent.at(-1).body.urlList, ['https://wellnest.services/', 'https://wellnest.services/about']);
 });
+
+test("the app's own redirects to its .html pages are left alone", () => {
+  const root = new URL('..', import.meta.url).pathname;
+  const app = readdirSync(root + 'assets').filter(f => /^index-calendar-.*\.js$/.test(f)).map(f => readFileSync(root + 'assets/' + f, 'utf8')).join('');
+  for (const slug of ['free-tools', 'free-medication-list', 'free-symptom-summary-maker'])
+    assert.ok(app.includes(`path:\`/${slug}\`,element:(0,R.jsx)(Fb,{to:\`/${slug}.html\`})`), slug); // pointing them at themselves loops
+  assert.doesNotMatch(app, /canonicalPath:`[^`]*(\.html|[A-Z])[^`]*`/);
+});

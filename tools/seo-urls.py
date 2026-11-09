@@ -49,7 +49,8 @@ def fix_bundle(text):
                   lambda m: m.group(1) + RENAMED[m.group(2)], text)
     # Links the app draws: <a href> and router <Link to>. (Its router ignores case.)
     text = re.sub(r"\b(href|to):`/(" + "|".join(RENAMED) + r")`", lambda m: f"{m.group(1)}:`/{RENAMED[m.group(2)]}`", text)
-    text = re.sub(r"\b(href|to):`/([a-z0-9-]+)\.html`", lambda m: f"{m.group(1)}:`/{page_slug(m.group(2) + '.html')}`", text)
+    # (Only <a href>: the router's own redirects to /x.html are how the app reaches those pages.)
+    text = re.sub(r"\bhref:`/([a-z0-9-]+)\.html`", lambda m: f"href:`/{page_slug(m.group(1) + '.html')}`", text)
     # A page without its own canonical address falls back to /PageName: lower-case it.
     text = text.replace("`/${e}`);document.title", "`/${e.toLowerCase()}`);document.title")
     return text
