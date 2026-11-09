@@ -154,3 +154,26 @@ test('missing GitHub token is explained', async () => {
   const res = await handleEditor(req('files'), { ...env(), GITHUB_TOKEN: '' }, OWNER, 'files');
   assert.equal(res.status, 503);
 });
+
+test('screenshots reach each AI in its own format; bad or excess images are dropped', async () => {
+  const png = Buffer.from('fake-png').toString('base64');
+  for (const provider of ['anthropic', 'openai', 'gemini']) {
+    const w = fakeWorld();
+    w.say('Thanks, I can see it.');
+    const res = await handleEditor(req('chat', { provider, model: 'm1', messages: [
+      { role: 'user', content: 'old', images: [{ type: 'image/png', data: png }] },
+      { role: 'assistant', content: 'ok' },
+      { role: 'user', content: '', images: [
+        { type: 'image/png', data: png }, { type: 'text/html', data: png }, { type: 'image/jpeg', data: 'not base64!' },
+        ...Array(7).fill({ type: 'image/jpeg', data: png })] },
+    ] }), env(), OWNER, 'chat');
+    assert.equal(res.status, 200, provider);
+    const sent = JSON.stringify(w.calls.ai[0]);
+    const count = (sent.match(/ZmFrZS1wbmc=/g) || []).length;
+    assert.equal(count, 6, `${provider}: newest 6 valid images only`);
+    if (provider === 'anthropic') assert.match(sent, /"type":"image","source":\{"type":"base64","media_type":"image\/png"/);
+    if (provider === 'openai') assert.match(sent, /"image_url":\{"url":"data:image\/png;base64,/);
+    if (provider === 'gemini') assert.match(sent, /"inlineData":\{"mimeType":"image\/png"/);
+    assert.match(sent, /\(see screenshot\)/);
+  }
+});

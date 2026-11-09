@@ -133,13 +133,41 @@ async function listModels(env, provider) {
   throw Object.assign(new Error("Unknown provider"), { status: 400 });
 }
 
-// messages: [{ role: "user" | "assistant", content: string }]
+// Screenshots the owner adds to the chat: [{ type: "image/png", data: base64 }]
+const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
+const MAX_IMAGE_B64 = 6_000_000;   // ~4.5 MB each (the page shrinks them well below this)
+const MAX_IMAGES = 6;              // across the whole request
+export function cleanImages(list, budget) {
+  const out = [];
+  for (const im of Array.isArray(list) ? list : []) {
+    if (budget.left <= 0) break;
+    if (!im || !IMAGE_TYPES.has(im.type) || typeof im.data !== "string" || im.data.length > MAX_IMAGE_B64 || !/^[A-Za-z0-9+/=]+$/.test(im.data)) continue;
+    out.push({ type: im.type, data: im.data });
+    budget.left--;
+  }
+  return out;
+}
+
+// Each provider's message format, with any screenshots before the text.
+export function toAnthropic(m) {
+  if (!m.images?.length) return { role: m.role, content: m.content };
+  return { role: m.role, content: [...m.images.map(i => ({ type: "image", source: { type: "base64", media_type: i.type, data: i.data } })), { type: "text", text: m.content }] };
+}
+export function toOpenAI(m) {
+  if (!m.images?.length) return { role: m.role, content: m.content };
+  return { role: m.role, content: [...m.images.map(i => ({ type: "image_url", image_url: { url: `data:${i.type};base64,${i.data}` } })), { type: "text", text: m.content }] };
+}
+export function toGemini(m) {
+  return { role: m.role === "assistant" ? "model" : "user", parts: [...(m.images || []).map(i => ({ inlineData: { mimeType: i.type, data: i.data } })), { text: m.content }] };
+}
+
+// messages: [{ role: "user" | "assistant", content: string, images?: [...] }]
 export async function callModel(env, provider, model, system, messages) {
   if (provider === "anthropic") {
     const d = await provFetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model, max_tokens: 16000, system, messages }),
+      body: JSON.stringify({ model, max_tokens: 16000, system, messages: messages.map(toAnthropic) }),
     }, "Claude");
     return (d.content || []).filter(c => c.type === "text").map(c => c.text).join("");
   }
@@ -147,7 +175,7 @@ export async function callModel(env, provider, model, system, messages) {
     const d = await provFetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, max_completion_tokens: 16000, messages: [{ role: "system", content: system }, ...messages] }),
+      body: JSON.stringify({ model, max_completion_tokens: 16000, messages: [{ role: "system", content: system }, ...messages.map(toOpenAI)] }),
     }, "ChatGPT");
     return d.choices?.[0]?.message?.content || "";
   }
@@ -157,7 +185,7 @@ export async function callModel(env, provider, model, system, messages) {
       headers: { "x-goog-api-key": env.GEMINI_API_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
-        contents: messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+        contents: messages.map(toGemini),
         generationConfig: { maxOutputTokens: 16000 },
       }),
     }, "Gemini");
@@ -180,6 +208,7 @@ EDITABLE FILES
 ${files.join("\n")}
 
 The owner is currently previewing: ${focus || "(nothing)"}
+The owner may attach screenshots (of this site or others) to show what they mean; use them to understand the request, then change the files as usual.
 
 TO READ A FILE, reply with only lines like:
 READ: path/to/file.html
@@ -215,9 +244,13 @@ async function handleChat(request, env) {
   const model = String(body.model || "").slice(0, 120);
   if (!model) return fail(400, "Choose a model.");
   const drafts = body.drafts && typeof body.drafts === "object" ? body.drafts : {};
+  // Newest screenshots win if there are more than MAX_IMAGES in the conversation.
+  const budget = { left: MAX_IMAGES };
   const messages = (Array.isArray(body.messages) ? body.messages : [])
     .filter(m => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
-    .slice(-30).map(m => ({ role: m.role, content: m.content.slice(0, 200_000) }));
+    .slice(-30).reverse()
+    .map(m => ({ role: m.role, content: m.content.slice(0, 200_000) || "(see screenshot)", images: m.role === "user" ? cleanImages(m.images, budget) : [] }))
+    .reverse();
   if (!messages.length || messages[messages.length - 1].role !== "user") return fail(400, "Nothing to send.");
 
   const tree = await listTree(env);
