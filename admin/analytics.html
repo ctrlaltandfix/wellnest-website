@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* Matches the wellnest.services landing page: dark green hero, Bricolage Grotesque
-     headlines, lime accents with Instrument Serif italics, a lime band, then cream. */
+     headlines, lime accents with Instrument Serif italics, then cream. */
   :root {
     --hero: #081e1b; --hero-2: #0f2c25; --on-hero: #f6fbf4; --on-hero-2: #bbd0c5; --hero-line: rgba(246,251,244,.12);
     --lime: #d8fb96; --lime-ink: #10251c;
@@ -56,13 +56,6 @@
   .tile .delta { font-size: 13px; margin-top: 4px; color: var(--on-hero-2); }
   .tile .delta:empty { display: none; }
   .tile .up { color: var(--lime); font-weight: 600; } .tile .down { color: #ffb89c; font-weight: 600; }
-
-  /* ---- lime band ---- */
-  .band { background: var(--lime); color: var(--lime-ink); overflow: hidden; }
-  .band .wrap { display: flex; align-items: center; gap: 22px; padding-top: 18px; padding-bottom: 18px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
-  .band .label { opacity: .7; letter-spacing: .16em; }
-  .band span.item { font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 13px; }
-  .band span.star { opacity: .55; }
 
   /* ---- cream content ---- */
   main { padding: 48px 0 12px; }
@@ -129,7 +122,6 @@
     <div class="tiles" id="tiles"></div>
   </div>
 </div>
-<div class="band"><div class="wrap" id="band"><span class="label">At a glance</span></div></div>
 <div class="wrap">
   <main id="main"><p class="empty">Loading…</p></main>
   <footer><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Counted by WellNest's own server — no cookies, no IP addresses stored. Visitors are counted once per day.</footer>
@@ -328,14 +320,6 @@
   function headline(big, small) {
     document.getElementById("headline").replaceChildren(document.createTextNode(big), el("em", { text: small }));
   }
-  function band(items) {
-    var b = document.getElementById("band");
-    b.replaceChildren(el("span", { class: "label", text: "At a glance" }));
-    items.forEach(function (t, i) {
-      if (i) b.appendChild(el("span", { class: "star", text: "✳", "aria-hidden": "true" }));
-      b.appendChild(el("span", { class: "item", text: t }));
-    });
-  }
 
   function render(data) {
     var t = data.totals || {}, p = data.previous || {};
@@ -346,7 +330,6 @@
 
     if (!t.views) {
       document.getElementById("tiles").replaceChildren();
-      band(["Waiting for the first visit"]);
       main.replaceChildren(el("div", { class: "notice" }, [el("h2", { text: "No visits counted yet" }),
         el("p", { text: "Visits show up here a few seconds after they happen. Open any page of wellnest.services in another tab, then refresh this page." })]));
       return;
@@ -356,13 +339,6 @@
       tile("Avg. time on site", dur(t.avg_session_seconds), t.avg_session_seconds, p.avg_session_seconds, false, period),
       tile("Bounce rate", (t.bounce_rate || 0).toFixed(0) + "%", t.bounce_rate, p.bounce_rate, true, period)
     );
-    var topC = data.countries[0], topS = data.sources[0], topP = data.pages[0], topD = data.devices[0];
-    band([
-      topC && "Most from " + country(topC.name).replace(/^\S+\s+/, ""),
-      topP && "Top page " + pretty(topP.name),
-      topS && "Top source " + (topS.name === "Direct" ? "direct" : topS.name),
-      topD && Math.min(100, Math.round(topD.visitors / Math.max(1, t.visitors) * 100)) + "% on " + topD.name.toLowerCase(),
-    ].filter(Boolean));
 
     var visitorsCol = [{ key: "visitors", label: "Visitors" }, { key: "views", label: "Views" }];
     var pages = table("Top pages", data.pages, [{ key: "views", label: "Views" }, { key: "visitors", label: "Visitors" }, { key: "avg_seconds", label: "Avg. time", fmt: function (v) { return v ? dur(v) : "–"; } }], { first: "Page", name: pretty });
