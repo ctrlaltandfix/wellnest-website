@@ -93,6 +93,21 @@ SLIDES = [
     dot_list("Flares followed cold, wet days", "Pain eased in weeks with 7+ hours of sleep"),
     actions("Export PDF for my specialist", "Share with care circle"),
   ]),
+  ("Pain", [
+    top("Pain easing this week", "Last 7 days"),
+    title("See what moves ", "your pain."),
+    E("div", {"className": "hb-fc-week", "role": "img", "aria-label": "Illustrative daily pain scores for the last 7 days, falling from 7 to 4 out of 10"},
+      *[E("div", {"className": "hb-fc-day" + (" is-today" if d == "Today" else "")},
+          E("span", {"className": "hb-fc-day-val"}, str(v)),
+          E("span", {"className": "hb-fc-day-bar", "style": {"height": f"{v * 10}%"}}),
+          E("small", {}, d))
+        for d, v in [("Tue", 7), ("Wed", 6), ("Thu", 7), ("Fri", 5), ("Sat", 5), ("Sun", 4), ("Today", 4)]]),
+    E("div", {"className": "hb-fc-where"},
+      E("span", {"className": "hb-fc-label"}, "Where it hurts"),
+      E("span", {"className": "hb-fc-tags"}, E("span", {}, "Lower back"), E("span", {}, "Left hand · CRPS"), E("span", {}, "Knees"))),
+    dot_list("Pain is lower on days you pace your activity", "Heat helped in 4 of your last 5 flares"),
+    actions("Log pain now", "Pain history"),
+  ]),
   ("Meds", [
     top("3 of 4 doses taken today", "Today"),
     title("Never second-guess ", "a dose."),
@@ -319,6 +334,18 @@ STYLES = """
 .hb-fc-zone-bar .is-red{background:#e0735e}.hb-fc-zone-bar .is-amber{background:#e9bd55}.hb-fc-zone-bar .is-green{background:#6fd39b;box-shadow:0 0 14px #6fd39b80}
 .hb-fc-zone-marker{position:absolute;top:-5px;width:4px;height:20px;margin-left:-2px;border-radius:3px;background:#fff;box-shadow:0 0 0 3px #0c2b25,0 0 12px #ffffffb3}
 .hb-fc-zone-labels{display:grid;grid-template-columns:50fr 30fr 20fr;gap:4px;margin-top:8px;font:600 10px/1 Geist,Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#8fab9c}
+.hb-fc-week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:150px;padding:14px 14px 10px;border-radius:18px;background:linear-gradient(180deg,#ffffff0d,#ffffff05);border:1px solid #ffffff14;margin-bottom:10px}
+.hb-fc-day{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;min-width:0}
+.hb-fc-day-val{font:700 12px/1 Geist,Inter,system-ui,sans-serif;color:#a9c4b5}
+.hb-fc-day-bar{display:block;width:100%;max-width:26px;max-height:calc(100% - 34px);border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,#ffffff38,#ffffff14);transform-origin:bottom}
+.hb-fc-panel.is-active .hb-fc-day-bar{animation:hb-fc-grow .7s cubic-bezier(.2,.7,.2,1) both}
+.hb-fc-day.is-today .hb-fc-day-bar{background:linear-gradient(180deg,#d8fa8d,#9fd166);box-shadow:0 0 16px #d8fa8d66}
+.hb-fc-day.is-today .hb-fc-day-val{color:#d8fa8d}
+.hb-fc-day small{font:600 10.5px/1 Geist,Inter,system-ui,sans-serif;color:#8fab9c}
+.hb-fc-day.is-today small{color:#f3faf0}
+.hb-fc-where{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 10px}
+.hb-fc-where .hb-fc-tags{margin:0}
+@keyframes hb-fc-grow{from{transform:scaleY(.15);opacity:.3}}
 @keyframes hb-fc-progress{to{transform:scaleX(1)}}
 @keyframes hb-fc-rise{from{opacity:0;transform:translateY(8px)}}
 @keyframes hb-fc-spin{to{--hb-fc-angle:360deg}}
@@ -327,7 +354,7 @@ STYLES = """
 @keyframes hb-fc-breathe{0%,to{opacity:.75;scale:1}50%{opacity:1;scale:1.05}}
 @media (width<=900px){.hb-hero-visual.hb-fc-stage{min-height:0;margin:20px auto 0;padding:52px 0 52px;transform:none}}
 @media (width<=650px){.hb-hero-visual.hb-fc-stage{padding:0 0 64px}.hb-fc{padding:22px 18px 18px;border-radius:24px;transform:none}.hb-fc-stats{gap:6px}.hb-fc-stat{padding:10px 9px}.hb-fc-stat strong{font-size:23px}.hb-fc-delta{font-size:10.5px}.hb-fc-chip-dose{left:4px;bottom:0;padding:9px 12px}.hb-fc-chip-streak{right:4px;top:auto;bottom:0;padding:8px 12px;transform:rotate(3deg)}.hb-fc-chip-streak strong{font-size:24px}.hb-fc-note{text-align:left}.hb-fc-tab{font-size:11.5px;padding:8px 10px 9px}.hb-fc-row{grid-template-columns:44px minmax(0,1fr) auto;padding:8px 10px;gap:8px}.hb-fc-row-log{grid-template-columns:54px minmax(0,1fr)}.hb-fc-zone-head strong{font-size:27px}}
-@media (prefers-reduced-motion:reduce){.hb-fc,.hb-fc:before,.hb-fc-glow,.hb-fc-chip,.hb-fc-pulse,.hb-fc-panel.is-active>*{animation:none}.hb-fc-panel.is-active .hb-fc-line{animation:none}.hb-fc-line{stroke-dashoffset:0}.hb-fc-tab.is-active .hb-fc-tab-bar{animation:none;transform:scaleX(1)}.hb-fc-panel{transition:none}}
+@media (prefers-reduced-motion:reduce){.hb-fc,.hb-fc:before,.hb-fc-glow,.hb-fc-chip,.hb-fc-pulse,.hb-fc-panel.is-active>*,.hb-fc-panel.is-active .hb-fc-day-bar{animation:none}.hb-fc-panel.is-active .hb-fc-line{animation:none}.hb-fc-line{stroke-dashoffset:0}.hb-fc-tab.is-active .hb-fc-tab-bar{animation:none;transform:scaleX(1)}.hb-fc-panel{transition:none}}
 /* hb-feature-card:end */
 """
 
