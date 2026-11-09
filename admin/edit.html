@@ -72,12 +72,6 @@
   .thinking i:nth-child(2) { animation-delay: .15s; } .thinking i:nth-child(3) { animation-delay: .3s; }
   @keyframes dot { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .thinking i { animation: none; opacity: .6; } }
-  .empty-chat { color: var(--muted); padding: 6px 2px; }
-  .empty-chat h2 { margin: 0 0 6px; font: 800 24px/1.1 var(--display); letter-spacing: -.05em; color: var(--ink); }
-  .empty-chat h2 em { font: italic 400 1.05em var(--serif); color: var(--mark); letter-spacing: 0; }
-  .ideas { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
-  .ideas button { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 12px; cursor: pointer; color: var(--ink-2); }
-  .ideas button:hover { border-color: var(--mark); }
 
   .changes { border-top: 1px solid var(--line); padding: 10px 14px; display: none; flex-direction: column; gap: 8px; background: #fbfcf8; max-height: 42%; overflow-y: auto; }
   .changes.on { display: flex; }
@@ -297,14 +291,6 @@
   function renderLog() {
     var log = ui.log;
     log.replaceChildren();
-    if (!chat.length) {
-      var ideas = ["Change the home page headline to “Track less. Feel more.”", "Fix any spelling mistakes on the pricing page", "Add a short FAQ about privacy to the about page", "Make the contact page mention we reply within 2 business days"];
-      log.appendChild(el("div", { class: "empty-chat" }, [
-        el("h2", {}, ["What should we ", el("em", { text: "change?" })]),
-        el("div", { text: "Describe the change in your own words. You'll see it in the preview before anything goes live." }),
-        el("div", { class: "ideas" }, ideas.map(function (t) { return el("button", { type: "button", text: t, onclick: function () { ui.input.value = t; ui.input.focus(); autosize(); } }); })),
-      ]));
-    }
     chat.forEach(function (m) {
       if (m.role === "user") log.appendChild(el("div", { class: "msg user", text: m.content }));
       else if (m.role === "note") log.appendChild(el("div", { class: "msg note", text: m.content }));
