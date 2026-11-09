@@ -118,13 +118,18 @@ export async function handleCollect(request, env) {
 export function isAnalyticsAdmin(env, user) {
   if (!user) return false;
   if (user.role === "admin") return true;
-  const allowed = String(env.ADMIN_EMAILS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  // Accepts "a@x.com", "a@x.com, b@y.com", one per line, or a pasted value still in quotes.
+  const allowed = String(env.ADMIN_EMAILS || "").split(/[\s,;]+/)
+    .map(s => s.replace(/^["'<\[]+|["'>\]]+$/g, "").trim().toLowerCase()).filter(Boolean);
   return allowed.includes(String(user.email || "").toLowerCase());
 }
 
 export async function handleStats(request, env, user) {
   if (!isAnalyticsAdmin(env, user)) {
-    return fail(403, "This account can't see site statistics. Add its email to ADMIN_EMAILS in Cloudflare.");
+    return fail(403, "This account can't see site statistics. Add its email to ADMIN_EMAILS in Cloudflare.", {
+      signed_in_as: user?.email || null,
+      admin_emails_set: Boolean(String(env.ADMIN_EMAILS || "").trim()),
+    });
   }
   const url = new URL(request.url);
   const days = Math.max(1, Math.min(365, Math.round(Number(url.searchParams.get("days")) || 30)));

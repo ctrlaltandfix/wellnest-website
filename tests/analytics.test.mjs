@@ -41,6 +41,8 @@ test('helpers', () => {
   assert.equal(deviceOf(UA), 'Mobile');
   assert.equal(isAnalyticsAdmin({ ADMIN_EMAILS: 'Me@Example.com, x@y.z' }, { email: 'me@example.com', role: 'user' }), true);
   assert.equal(isAnalyticsAdmin({}, { email: 'me@example.com', role: 'user' }), false);
+  assert.equal(isAnalyticsAdmin({ ADMIN_EMAILS: '"me@example.com"' }, { email: 'me@example.com' }), true);
+  assert.equal(isAnalyticsAdmin({ ADMIN_EMAILS: 'a@b.c\nme@example.com;' }, { email: 'ME@example.com' }), true);
 });
 
 test('collects views and time on page, then reports them to an admin only', async () => {

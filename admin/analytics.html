@@ -307,8 +307,12 @@
       }
       var body = await res.json().catch(function () { return {}; });
       if (res.status === 403) {
+        var who = body.signed_in_as || "this account";
         notice("This account can't see statistics", [
-          ["Signed in as an account that isn't on the admin list. In Cloudflare, open ", el("strong", { text: "Workers & Pages → wellnest → Settings → Variables and Secrets" }), ", add a text variable ", el("code", { text: "ADMIN_EMAILS" }), " with your sign-in email, and deploy."],
+          ["You're signed in as ", el("strong", { text: who }), "."],
+          body.admin_emails_set
+            ? ["The site can see ", el("code", { text: "ADMIN_EMAILS" }), ", but that email isn't in it. Check it's spelled exactly as above."]
+            : ["The site can't see an ", el("code", { text: "ADMIN_EMAILS" }), " setting yet. In Cloudflare, open ", el("strong", { text: "Workers & Pages → wellnest → Settings → Variables and Secrets" }), " (not the Build variables section), add ", el("code", { text: "ADMIN_EMAILS" }), " with the email above, and choose Deploy."],
         ]);
         return;
       }

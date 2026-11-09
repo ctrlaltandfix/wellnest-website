@@ -3,6 +3,7 @@
 // and its API backed by the D1 database "wellnest-db".
 // Secrets (set in the Cloudflare dashboard, never in this file):
 //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, RESEND_API_KEY
+// Variables (set in the dashboard): ADMIN_EMAILS - who can open /admin/analytics
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "wellnest",
@@ -20,5 +21,7 @@
   "d1_databases": [
     { "binding": "DB", "database_name": "wellnest-db", "database_id": "7d75ba9d-cc5f-4d23-8235-94de919602a4" }
   ],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // Keep variables set in the Cloudflare dashboard (e.g. ADMIN_EMAILS) when deploying from GitHub.
+  "keep_vars": true
 }
