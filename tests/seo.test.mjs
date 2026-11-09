@@ -84,3 +84,33 @@ test("the app's own redirects to its .html pages are left alone", () => {
     assert.ok(app.includes(`path:\`/${slug}\`,element:(0,R.jsx)(Fb,{to:\`/${slug}.html\`})`), slug); // pointing them at themselves loops
   assert.doesNotMatch(app, /canonicalPath:`[^`]*(\.html|[A-Z])[^`]*`/);
 });
+
+test('large images: WebP to browsers that take it, the original otherwise, cached for a week', async () => {
+  const files = { '/imported/a.png': ['PNG', 'image/png'], '/imported/a.webp': ['WEBP', 'image/webp'], '/imported/b.png': ['PNGB', 'image/png'] };
+  const e = { ASSETS: { fetch: async req => { const f = files[new URL(req.url).pathname]; return f ? new Response(f[0], { headers: { 'Content-Type': f[1] } }) : new Response('nf', { status: 404 }); } } };
+  const get = (p, accept) => worker.fetch(new Request('https://wellnest.services' + p, { headers: { Accept: accept } }), e);
+  let r = await get('/imported/a.png', 'image/avif,image/webp,*/*');
+  assert.equal(await r.text(), 'WEBP');
+  assert.equal(r.headers.get('Content-Type'), 'image/webp');
+  assert.equal(r.headers.get('Vary'), 'Accept');
+  assert.match(r.headers.get('Cache-Control'), /max-age=604800/);
+  r = await get('/imported/a.png', 'image/png,*/*');                       // e.g. link-preview bots
+  assert.equal(await r.text(), 'PNG');
+  assert.equal(r.headers.get('Vary'), 'Accept');
+  r = await get('/imported/b.png', 'image/webp,*/*');                      // no smaller copy: original
+  assert.equal(await r.text(), 'PNGB');
+});
+
+test('structured data: one block per page, valid, with share image and breadcrumbs', () => {
+  const root = new URL('..', import.meta.url).pathname;
+  const sitemap = readFileSync(root + 'sitemap.xml', 'utf8');
+  for (const [, slug] of sitemap.matchAll(/<loc>https:\/\/wellnest\.services\/?([^<]*)<\/loc>/g)) {
+    const file = (slug || 'index') + '.html', html = readFileSync(root + file, 'utf8');
+    assert.equal((html.match(/id="wn-seo-extra"/g) || []).length, 1, file);
+    for (const m of html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
+    assert.match(html, new RegExp(`<meta property="og:image" content="https://wellnest\\.services/og/${slug || 'index'}\\.png" />`), file);
+    assert.ok(readFileSync(root + 'og/' + (slug || 'index') + '.png').length > 1000, 'share image exists: ' + file);
+    if (slug) assert.match(html, /"@type":"BreadcrumbList"/, file);
+    assert.doesNotMatch(html, /favicon\.svg"\}/, file + ': PNG logo');
+  }
+});

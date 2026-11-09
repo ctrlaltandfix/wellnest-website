@@ -8,6 +8,7 @@ import { handleIndexNow } from "./seo.js";
 import { handleMe, handleEntities, handleUploads, handleFileSign, handleFileRaw, handleFunction } from "./data.js";
 
 const OLD_BASE = "/wellnest-website";
+const IMAGE_CACHE = "public, max-age=604800, stale-while-revalidate=86400";
 
 // Routes the app draws itself (they have no page file). From the app's router.
 const APP_ROUTES = new Set(["achievements", "appointments", "asthma", "care-circle", "chronic-pain", "confirm-free-kit", "dashboard",
@@ -117,7 +118,27 @@ export default {
       if (clean) return Response.redirect(url.origin + clean + url.search, 301);
     }
 
+    // Large images have a much smaller .webp copy (tools/optimize-images.py): send it
+    // at the image's usual address to browsers that accept WebP.
+    const image = /^\/(?:imported|landing)\/[^/]+\.(?:png|jpe?g)$/i.test(url.pathname);
+    if (image && (request.method === "GET" || request.method === "HEAD") && /image\/webp/.test(request.headers.get("Accept") || "")) {
+      const webp = await env.ASSETS.fetch(new Request(url.origin + url.pathname.replace(/\.[a-z]+$/i, ".webp"), { method: request.method, headers: request.headers }));
+      if (webp.status === 200 || webp.status === 304) {
+        const out = new Response(webp.body, webp);
+        out.headers.set("Content-Type", "image/webp");
+        out.headers.set("Vary", "Accept");
+        out.headers.set("Cache-Control", IMAGE_CACHE);
+        return out;
+      }
+    }
+
     let res = await env.ASSETS.fetch(request);
+    // Images rarely change: let browsers keep them for a week instead of re-checking each view.
+    if (res.status === 200 && /^\/(?:imported|landing|og)\/[^/]+\.(?:png|jpe?g|webp|svg)$/i.test(url.pathname)) {
+      res = new Response(res.body, res);
+      res.headers.set("Cache-Control", IMAGE_CACHE);
+      if (image) res.headers.set("Vary", "Accept");
+    }
     // Pages that exist only inside the app (no file of their own) come back from the
     // 404 page, which starts the app. Answer them as found, and keep the private ones
     // out of search results.
