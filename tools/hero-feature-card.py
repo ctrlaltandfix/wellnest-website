@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replace the homepage hero graphic with the WellNest feature card.
+"""Replace the homepage hero graphic with the rotating WellNest feature card.
 
 The homepage hero is drawn by the app (component `tv` in the main bundle), and
 index.html / 404.html hold a prerendered copy shown until the app loads. This
@@ -55,13 +55,29 @@ def stat(label, value, unit, delta, down=False):
              E("span", {"className": "hb-fc-label"}, label), big,
              E("span", {"className": "hb-fc-delta hb-fc-down" if down else "hb-fc-delta"}, delta))
 
-CARD = E("div", {"className": "hb-hero-visual hb-fc-stage", "aria-label": "Illustrative preview: a WellNest summary ready for your next appointment", "data-hb-reveal": True},
-  E("div", {"className": "hb-fc-glow", "aria-hidden": "true"}),
-  E("article", {"className": "hb-fc"},
-    E("div", {"className": "hb-fc-top"},
-      E("span", {"className": "hb-fc-badge"}, E("span", {"className": "hb-fc-pulse", "aria-hidden": "true"}), "Ready for your next appointment"),
-      E("span", {"className": "hb-fc-range"}, "Last 30 days")),
-    E("h2", {"className": "hb-fc-title"}, "Your health story, ", E("em", {}, "in one page.")),
+class Raw:
+    """A live React expression (bundle) with its static value for the prerender (None = omit)."""
+    def __init__(self, js, html=None):
+        self.js, self.html = js, html
+
+def dot_list(*items):
+    return E("ul", {"className": "hb-fc-insights"}, *[E("li", {}, E("span", {"className": "hb-fc-dot", "aria-hidden": "true"}), t) for t in items])
+
+def actions(primary, secondary):
+    return E("div", {"className": "hb-fc-actions"}, E("span", {"className": "hb-fc-btn"}, primary, ARROW), E("span", {"className": "hb-fc-share"}, secondary))
+
+def top(badge, rng):
+    return E("div", {"className": "hb-fc-top"},
+             E("span", {"className": "hb-fc-badge"}, E("span", {"className": "hb-fc-pulse", "aria-hidden": "true"}), badge),
+             E("span", {"className": "hb-fc-range"}, rng))
+
+def title(plain, em):
+    return E("h2", {"className": "hb-fc-title"}, plain, E("em", {}, em))
+
+SLIDES = [
+  ("Summary", [
+    top("Ready for your next appointment", "Last 30 days"),
+    title("Your health story, ", "in one page."),
     E("div", {"className": "hb-fc-stats"},
       stat("Average pain", "5.2", "/10", "↓ 18% vs last month", True),
       stat("Doses on time", "96", "%", "58 of 60 taken"),
@@ -74,13 +90,82 @@ CARD = E("div", {"className": "hb-hero-visual hb-fc-stage", "aria-label": "Illus
         E("path", {"d": AREA, "fill": "url(#hbFcFill)"}),
         E("path", {"className": "hb-fc-line", "d": LINE, "fill": "none", "stroke": "#d8fa8d", "strokeWidth": "2.4", "strokeLinecap": "round", "vectorEffect": "non-scaling-stroke"})),
       E("div", {"className": "hb-fc-axis", "aria-hidden": "true"}, E("span", {}, "1 Oct"), E("span", {}, "15 Oct"), E("span", {}, "30 Oct"))),
-    E("ul", {"className": "hb-fc-insights"},
-      E("li", {}, E("span", {"className": "hb-fc-dot", "aria-hidden": "true"}), "Flares followed cold, wet days"),
-      E("li", {}, E("span", {"className": "hb-fc-dot", "aria-hidden": "true"}), "Pain eased in weeks with 7+ hours of sleep")),
-    E("div", {"className": "hb-fc-actions"},
-      E("span", {"className": "hb-fc-btn"}, "Export PDF for my specialist", ARROW),
-      E("span", {"className": "hb-fc-share"}, "Share with care circle")),
-    E("p", {"className": "hb-fc-note"}, "Illustrative preview · Example data")),
+    dot_list("Flares followed cold, wet days", "Pain eased in weeks with 7+ hours of sleep"),
+    actions("Export PDF for my specialist", "Share with care circle"),
+  ]),
+  ("Meds", [
+    top("3 of 4 doses taken today", "Today"),
+    title("Never second-guess ", "a dose."),
+    E("ul", {"className": "hb-fc-rows"}, *[
+      E("li", {"className": "hb-fc-row"},
+        E("span", {"className": "hb-fc-time"}, t),
+        E("span", {}, E("strong", {}, name), E("small", {}, dose)),
+        E("span", {"className": "hb-fc-status" + ("" if ok else " is-due")}, *( [CHECK, "Taken"] if ok else ["Due 8 pm"] )))
+      for t, name, dose, ok in [("8:00", "Gabapentin", "600 mg · 1 tablet", True), ("12:30", "Panadol", "1000 mg · 2 tablets", True),
+                                ("14:00", "Magnesium", "500 mg · 1 tablet", True), ("20:00", "Gabapentin", "600 mg · 1 tablet", False)]]),
+    dot_list("Catapres refill due in 5 days — reminder on", "On time 96% of the time this month"),
+    actions("Log a dose", "Medication history"),
+  ]),
+  ("Seizures", [
+    top("Seizure diary", "Last 90 days"),
+    title("Every seizure, ", "clearly recorded."),
+    E("div", {"className": "hb-fc-stats"},
+      stat("Seizure-free", "14", " days", "Longest run this year", True),
+      stat("This month", "2", None, "↓ from 5 last month", True),
+      stat("Average length", "1:40", " min", "Across 9 seizures")),
+    E("ul", {"className": "hb-fc-rows"}, *[
+      E("li", {"className": "hb-fc-row hb-fc-row-log"},
+        E("span", {"className": "hb-fc-when"}, d, E("small", {}, tm)),
+        E("span", {}, E("strong", {}, kind), E("span", {"className": "hb-fc-tags"}, *[E("span", {}, tag) for tag in tags])))
+      for d, tm, kind, tags in [("3 Nov", "9:42 pm", "Focal aware · 1m 12s", ["Poor sleep", "Missed dose"]),
+                                ("21 Oct", "7:15 am", "Tonic-clonic · 2m 05s", ["Stress", "Flashing lights"])]]),
+    dot_list("Most seizures followed nights under 6 hours' sleep"),
+    actions("Share with my neurologist", "First aid plan"),
+  ]),
+  ("Asthma", [
+    top("Green zone today", "This week"),
+    title("Know your zone, ", "at a glance."),
+    E("div", {"className": "hb-fc-zone", "role": "img", "aria-label": "Illustrative peak flow of 480 litres per minute, 92% of personal best, in the green zone"},
+      E("div", {"className": "hb-fc-zone-head"},
+        E("span", {}, E("span", {"className": "hb-fc-label"}, "Peak flow"), E("strong", {}, "480", E("small", {}, " L/min"))),
+        E("span", {"className": "hb-fc-zone-pct"}, "92% of personal best")),
+      E("div", {"className": "hb-fc-zone-bar", "aria-hidden": "true"}, E("i", {"className": "is-red"}), E("i", {"className": "is-amber"}), E("i", {"className": "is-green"}),
+        E("span", {"className": "hb-fc-zone-marker", "style": {"left": "92%"}})),
+      E("div", {"className": "hb-fc-zone-labels", "aria-hidden": "true"}, E("span", {}, "Red"), E("span", {}, "Amber"), E("span", {}, "Green"))),
+    E("div", {"className": "hb-fc-stats"},
+      stat("Reliever puffs", "2", None, "This week"),
+      stat("Night symptoms", "0", None, "Nights this week", True),
+      stat("Triggers", "2", None, "Pollen · cold air")),
+    dot_list("Peak flow dips on high-pollen days"),
+    actions("Open my action plan", "Share with GP"),
+  ]),
+]
+N, DUR = len(SLIDES), 7000
+
+def cls(base, i):
+    return Raw(f'"{base}"+(e==={i}?" is-active":"")', f"{base} is-active" if i == 0 else base)
+
+KEYS = ('c=>{let d=c.key==="ArrowRight"?1:c.key==="ArrowLeft"?-1:0;if(!d)return;c.preventDefault();'
+        f'let f=(e+d+{N})%{N};t(f);let g=c.currentTarget.querySelectorAll("[role=tab]")[f];g&&g.focus()}}')
+
+TABS = E("div", {"className": "hb-fc-tabs", "role": "tablist", "aria-label": "WellNest features", "onKeyDown": Raw(KEYS)},
+  *[E("button", {"type": "button", "role": "tab", "id": f"hb-fc-t{i}", "aria-controls": f"hb-fc-p{i}",
+                 "aria-selected": Raw(f"e==={i}", "true" if i == 0 else "false"), "tabIndex": Raw(f"e==={i}?0:-1", "0" if i == 0 else "-1"),
+                 "className": cls("hb-fc-tab", i), "onClick": Raw(f"()=>t({i})")},
+      label, E("span", {"className": "hb-fc-tab-bar", "aria-hidden": "true", "__key": Raw('"b"+e+(n?"p":"")')}))
+    for i, (label, _) in enumerate(SLIDES)])
+
+PANELS = E("div", {"className": "hb-fc-panels"},
+  *[E("div", {"className": cls("hb-fc-panel", i), "role": "tabpanel", "id": f"hb-fc-p{i}", "aria-labelledby": f"hb-fc-t{i}",
+              "aria-hidden": Raw(f"e!=={i}", "false" if i == 0 else "true")}, *content)
+    for i, (_, content) in enumerate(SLIDES)])
+
+CARD = E("div", {"className": Raw('"hb-hero-visual hb-fc-stage"+(n?" is-paused":"")', "hb-hero-visual hb-fc-stage"),
+                 "aria-label": "Illustrative preview of WellNest features", "data-hb-reveal": True,
+                 "onMouseEnter": Raw("()=>r(!0)"), "onMouseLeave": Raw("()=>r(!1)"),
+                 "onFocus": Raw("()=>r(!0)"), "onBlur": Raw("c=>{c.currentTarget.contains(c.relatedTarget)||r(!1)}")},
+  E("div", {"className": "hb-fc-glow", "aria-hidden": "true"}),
+  E("article", {"className": "hb-fc"}, TABS, PANELS, E("p", {"className": "hb-fc-note"}, "Illustrative preview · Example data")),
   E("div", {"className": "hb-fc-chip hb-fc-chip-dose", "aria-hidden": "true"},
     E("span", {"className": "hb-fc-check"}, CHECK),
     E("span", {}, E("strong", {}, "Gabapentin taken"), E("small", {}, "8:02 am · on time"))),
@@ -88,15 +173,27 @@ CARD = E("div", {"className": "hb-hero-visual hb-fc-stage", "aria-label": "Illus
     E("strong", {}, "14"), E("span", {}, "days seizure-free")),
 )
 
+COMPONENT_JS = ("function tv(){let[e,t]=(0,p.useState)(0),[n,r]=(0,p.useState)(!1),[o,a]=(0,p.useState)(!1);"
+  '(0,p.useEffect)(()=>{try{a(window.matchMedia("(prefers-reduced-motion: reduce)").matches)}catch{}},[]);'
+  f"(0,p.useEffect)(()=>{{if(n||o)return;let s=setTimeout(()=>t(c=>(c+1)%{N}),{DUR});return()=>clearTimeout(s)}},[e,n,o]);"
+  "return @@JSX@@}")
+
 # ---------- render to React calls (bundle) and HTML (prerender) ----------
 def jsx(node):
     if isinstance(node, str):
         return json.dumps(node, ensure_ascii=False)
+    if isinstance(node, Raw):
+        return node.js
     tag, attrs, children = node
-    props = []
+    props, react_key = [], None
     for k, v in attrs.items():
+        if k == "__key":
+            react_key = v.js if isinstance(v, Raw) else json.dumps(v)
+            continue
         key = k if re.match(r"^[A-Za-z_$][\w$]*$", k) else json.dumps(k)
-        if isinstance(v, dict):
+        if isinstance(v, Raw):
+            v = v.js
+        elif isinstance(v, dict):
             v = "{" + ",".join(f"{kk}:{json.dumps(vv)}" for kk, vv in v.items()) + "}"
         elif v is True:
             v = "!0"
@@ -111,19 +208,28 @@ def jsx(node):
         fn = "R.jsxs"
     else:
         fn = "R.jsx"
-    return f"(0,{fn})({json.dumps(tag)},{{{','.join(props)}}})"
+    key_arg = f",{react_key}" if react_key else ""
+    return f"(0,{fn})({json.dumps(tag)},{{{','.join(props)}}}{key_arg})"
 
 HTML_ATTR = {"className": "class", "strokeWidth": "stroke-width", "strokeLinecap": "stroke-linecap",
              "strokeLinejoin": "stroke-linejoin", "stopColor": "stop-color", "stopOpacity": "stop-opacity",
-             "vectorEffect": "vector-effect"}
+             "vectorEffect": "vector-effect", "tabIndex": "tabindex"}
 def esc(s):
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 def html(node):
     if isinstance(node, str):
         return esc(node)
+    if isinstance(node, Raw):
+        return esc(node.html or "")
     tag, attrs, children = node
     out = []
     for k, v in attrs.items():
+        if k == "__key":
+            continue
+        if isinstance(v, Raw):
+            if v.html is None:
+                continue
+            v = v.html
         name = HTML_ATTR.get(k, k)
         if isinstance(v, dict):
             v = ";".join(f"{kk}:{vv}" for kk, vv in v.items())
@@ -145,7 +251,7 @@ STYLES = """
 .hb-fc-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 12px 7px 10px;border-radius:999px;background:#d8fa8d;color:#0b2621;font:700 12px/1 Geist,Inter,system-ui,sans-serif;letter-spacing:.01em}
 .hb-fc-pulse{width:8px;height:8px;border-radius:50%;background:#1f7a52;box-shadow:0 0 0 0 #1f7a5299;animation:hb-fc-pulse 2s ease-out infinite}
 .hb-fc-range{font:600 11px/1 Geist,Inter,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#bcd3c4}
-.hb-fc-title{margin:18px 0 18px;font:700 clamp(26px,3vw,32px)/1.05 Bricolage Grotesque,Geist,sans-serif;letter-spacing:-.03em;color:#f3faf0}
+.hb-fc-title{margin:16px 0 16px;font:700 clamp(26px,3vw,32px)/1.05 Bricolage Grotesque,Geist,sans-serif;letter-spacing:-.03em;color:#f3faf0}
 .hb-fc-title em{font:italic 400 1.08em/1 Instrument Serif,Georgia,serif;letter-spacing:-.01em;color:#d8fa8d}
 .hb-fc-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .hb-fc-stat{display:flex;flex-direction:column;gap:4px;padding:12px 12px 11px;border-radius:16px;background:#ffffff0d;border:1px solid #ffffff14;min-width:0}
@@ -156,7 +262,8 @@ STYLES = """
 .hb-fc-delta.hb-fc-down{color:#d8fa8d}
 .hb-fc-chart{position:relative;margin-top:16px;padding:14px 12px 8px;border-radius:18px;background:linear-gradient(180deg,#ffffff0a,#ffffff03);border:1px solid #ffffff12}
 .hb-fc-chart svg{display:block;width:100%;height:96px;overflow:visible}
-.hb-fc-line{filter:drop-shadow(0 0 6px #d8fa8d99);stroke-dasharray:900;stroke-dashoffset:900;animation:hb-fc-draw 2.2s .3s cubic-bezier(.3,.7,.2,1) forwards}
+.hb-fc-line{filter:drop-shadow(0 0 6px #d8fa8d99);stroke-dasharray:900;stroke-dashoffset:900}
+.hb-fc-panel.is-active .hb-fc-line{animation:hb-fc-draw 2.2s .25s cubic-bezier(.3,.7,.2,1) forwards}
 .hb-fc-axis{display:flex;justify-content:space-between;margin-top:6px;font:600 10px/1 Geist,Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#8fab9c}
 .hb-fc-insights{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
 .hb-fc-insights li{display:flex;align-items:center;gap:10px;font:500 13.5px/1.35 Geist,Inter,system-ui,sans-serif;color:#e4efe7}
@@ -175,22 +282,61 @@ STYLES = """
 .hb-fc-chip-streak{right:0;top:0;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 16px;transform:rotate(4deg);animation:hb-hover 9s .5s ease-in-out infinite;background:#d8fa8d;border-color:#ecffc4}
 .hb-fc-chip-streak strong{font:700 30px/1 Bricolage Grotesque,Geist,sans-serif;letter-spacing:-.03em}
 .hb-fc-chip-streak span{font-size:12px;font-weight:600;color:#2d5240}
+.hb-fc-tabs{display:flex;gap:4px;margin:0 0 18px;padding:4px;border-radius:999px;background:#ffffff0a;border:1px solid #ffffff14;width:max-content;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.hb-fc-tabs::-webkit-scrollbar{display:none}
+.hb-fc-tab{position:relative;flex:none;appearance:none;border:0;margin:0;background:transparent;color:#a9c4b5;font:600 12.5px/1 Geist,Inter,system-ui,sans-serif;padding:9px 13px 10px;border-radius:999px;cursor:pointer;overflow:hidden;transition:color .2s,background-color .2s}
+.hb-fc-tab:hover{color:#f3faf0}
+.hb-fc-tab.is-active{background:#ffffff17;color:#fff}
+.hb-fc-tab:focus-visible{outline:2px solid #d8fa8d;outline-offset:2px}
+.hb-fc-tab-bar{position:absolute;left:12px;right:12px;bottom:4px;height:2px;border-radius:2px;background:#d8fa8d;transform:scaleX(0);transform-origin:left;opacity:0}
+.hb-fc-tab.is-active .hb-fc-tab-bar{opacity:1;animation:hb-fc-progress 7s linear forwards}
+.is-paused .hb-fc-tab.is-active .hb-fc-tab-bar{animation:none;transform:scaleX(1)}
+.hb-fc-panels{display:grid}
+.hb-fc-panel{grid-area:1/1;min-width:0;opacity:0;visibility:hidden;transition:opacity .35s ease,visibility 0s linear .35s}
+.hb-fc-panel.is-active{opacity:1;visibility:visible;transition:opacity .45s ease}
+.hb-fc-panel.is-active>*{animation:hb-fc-rise .55s cubic-bezier(.2,.7,.2,1) both}
+.hb-fc-panel.is-active>:nth-child(2){animation-delay:.04s}.hb-fc-panel.is-active>:nth-child(3){animation-delay:.08s}.hb-fc-panel.is-active>:nth-child(4){animation-delay:.12s}.hb-fc-panel.is-active>:nth-child(5){animation-delay:.16s}.hb-fc-panel.is-active>:nth-child(6){animation-delay:.2s}
+.hb-fc-rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.hb-fc-stats+.hb-fc-rows{margin-top:10px}
+.hb-fc-row{display:grid;grid-template-columns:50px minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 12px;border-radius:14px;background:#ffffff0d;border:1px solid #ffffff12}
+.hb-fc-row strong{display:block;font:600 13.5px/1.2 Geist,Inter,system-ui,sans-serif;color:#fff}
+.hb-fc-row small{display:block;font:500 11.5px/1.3 Geist,Inter,system-ui,sans-serif;color:#a9c4b5;margin-top:2px}
+.hb-fc-time{font:700 14px/1 Bricolage Grotesque,Geist,sans-serif;color:#f3faf0;letter-spacing:-.01em}
+.hb-fc-status{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:999px;background:#2a9d6633;color:#a7f0c5;font:700 11px/1 Geist,Inter,system-ui,sans-serif;white-space:nowrap}
+.hb-fc-status svg{width:12px;height:12px}
+.hb-fc-status.is-due{background:transparent;box-shadow:inset 0 0 0 1px #d8fa8d99;color:#d8fa8d}
+.hb-fc-row-log{grid-template-columns:62px minmax(0,1fr)}
+.hb-fc-when{font:700 13.5px/1.1 Bricolage Grotesque,Geist,sans-serif;color:#f3faf0}
+.hb-fc-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.hb-fc-tags span{font:600 10.5px/1 Geist,Inter,system-ui,sans-serif;padding:4px 7px;border-radius:999px;background:#ffffff14;color:#cfe0d5}
+.hb-fc-zone{padding:14px 14px 10px;border-radius:18px;background:linear-gradient(180deg,#ffffff0d,#ffffff05);border:1px solid #ffffff14;margin-bottom:10px}
+.hb-fc-zone-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.hb-fc-zone-head strong{display:block;margin-top:4px;font:700 32px/1 Bricolage Grotesque,Geist,sans-serif;letter-spacing:-.03em;color:#fff}
+.hb-fc-zone-head strong small{font-size:14px;font-weight:600;color:#a9c4b5}
+.hb-fc-zone-pct{font:600 12px/1.2 Geist,Inter,system-ui,sans-serif;color:#d8fa8d;text-align:right}
+.hb-fc-zone-bar{position:relative;display:grid;grid-template-columns:50fr 30fr 20fr;gap:4px;height:10px;margin-top:14px}
+.hb-fc-zone-bar i{border-radius:6px}
+.hb-fc-zone-bar .is-red{background:#e0735e}.hb-fc-zone-bar .is-amber{background:#e9bd55}.hb-fc-zone-bar .is-green{background:#6fd39b;box-shadow:0 0 14px #6fd39b80}
+.hb-fc-zone-marker{position:absolute;top:-5px;width:4px;height:20px;margin-left:-2px;border-radius:3px;background:#fff;box-shadow:0 0 0 3px #0c2b25,0 0 12px #ffffffb3}
+.hb-fc-zone-labels{display:grid;grid-template-columns:50fr 30fr 20fr;gap:4px;margin-top:8px;font:600 10px/1 Geist,Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#8fab9c}
+@keyframes hb-fc-progress{to{transform:scaleX(1)}}
+@keyframes hb-fc-rise{from{opacity:0;transform:translateY(8px)}}
 @keyframes hb-fc-spin{to{--hb-fc-angle:360deg}}
 @keyframes hb-fc-pulse{0%{box-shadow:0 0 0 0 #1f7a5299}80%,to{box-shadow:0 0 0 9px #1f7a5200}}
 @keyframes hb-fc-draw{to{stroke-dashoffset:0}}
 @keyframes hb-fc-breathe{0%,to{opacity:.75;scale:1}50%{opacity:1;scale:1.05}}
 @media (width<=900px){.hb-hero-visual.hb-fc-stage{min-height:0;margin:20px auto 0;padding:52px 0 52px;transform:none}}
-@media (width<=650px){.hb-hero-visual.hb-fc-stage{padding:0 0 64px}.hb-fc{padding:22px 18px 18px;border-radius:24px;transform:none}.hb-fc-stats{gap:6px}.hb-fc-stat{padding:10px 9px}.hb-fc-stat strong{font-size:23px}.hb-fc-delta{font-size:10.5px}.hb-fc-chip-dose{left:4px;bottom:0;padding:9px 12px}.hb-fc-chip-streak{right:4px;top:auto;bottom:0;padding:8px 12px;transform:rotate(3deg)}.hb-fc-chip-streak strong{font-size:24px}.hb-fc-note{text-align:left}}
-@media (prefers-reduced-motion:reduce){.hb-fc,.hb-fc:before,.hb-fc-glow,.hb-fc-chip,.hb-fc-pulse{animation:none}.hb-fc-line{animation:none;stroke-dashoffset:0}}
+@media (width<=650px){.hb-hero-visual.hb-fc-stage{padding:0 0 64px}.hb-fc{padding:22px 18px 18px;border-radius:24px;transform:none}.hb-fc-stats{gap:6px}.hb-fc-stat{padding:10px 9px}.hb-fc-stat strong{font-size:23px}.hb-fc-delta{font-size:10.5px}.hb-fc-chip-dose{left:4px;bottom:0;padding:9px 12px}.hb-fc-chip-streak{right:4px;top:auto;bottom:0;padding:8px 12px;transform:rotate(3deg)}.hb-fc-chip-streak strong{font-size:24px}.hb-fc-note{text-align:left}.hb-fc-tab{font-size:11.5px;padding:8px 10px 9px}.hb-fc-row{grid-template-columns:44px minmax(0,1fr) auto;padding:8px 10px;gap:8px}.hb-fc-row-log{grid-template-columns:54px minmax(0,1fr)}.hb-fc-zone-head strong{font-size:27px}}
+@media (prefers-reduced-motion:reduce){.hb-fc,.hb-fc:before,.hb-fc-glow,.hb-fc-chip,.hb-fc-pulse,.hb-fc-panel.is-active>*{animation:none}.hb-fc-panel.is-active .hb-fc-line{animation:none}.hb-fc-line{stroke-dashoffset:0}.hb-fc-tab.is-active .hb-fc-tab-bar{animation:none;transform:scaleX(1)}.hb-fc-panel{transition:none}}
 /* hb-feature-card:end */
 """
 
 # ---------- apply ----------
 bundle = BUNDLE.read_text(encoding="utf-8")
-m = re.search(r"function tv\(\)\{return.*?\}(?=function nv\(\))", bundle, re.S)
-if not m:
+i, j = bundle.find("function tv(){"), bundle.find("function nv(){")
+if i < 0 or j < i:
     sys.exit("hero component tv() not found in the bundle")
-bundle = bundle[:m.start()] + "function tv(){return " + jsx(CARD) + "}" + bundle[m.end():]
+bundle = bundle[:i] + COMPONENT_JS.replace("@@JSX@@", jsx(CARD)) + bundle[j:]
 BUNDLE.write_text(bundle, encoding="utf-8")
 
 def replace_div(text, start):
