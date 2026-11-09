@@ -38,7 +38,8 @@
   .panes { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px; }
   .preview { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); }
   .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
-  .toolbar select { max-width: 260px; }
+  .toolbar select { max-width: 240px; }
+  select[hidden] { display: none; }
   select, .seg button, .btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: 13px; cursor: pointer; }
   select { padding-right: 28px; appearance: none; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2316372f' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 11px center; }
   .seg { display: inline-flex; gap: 2px; background: var(--soft); border-radius: 999px; padding: 2px; }
@@ -193,21 +194,39 @@
   function draftCount() { return Object.keys(drafts).length; }
 
   // Pages shown in the picker: .html files, without the folder twins (about/index.html).
+  // The picker: a few main pages, the dashboard and its sections (preview only —
+  // the app can't be edited here), and everything else behind "More pages…".
+  var MAIN = [["index.html", "Landing page"], ["pricing.html", "Pricing"], ["about.html", "About"], ["contact.html", "Contact"]];
+  var APP = [["dashboard", "Dashboard"], ["chronic-pain", "Chronic pain"], ["asthma", "Asthma"], ["epilepsy", "Epilepsy"], ["medications", "Medications"],
+    ["appointments", "Appointments"], ["emergency-plan", "Emergency plan"], ["care-circle", "Care circle"], ["exercises", "Exercises"],
+    ["reflection", "Reflection"], ["expenses", "Expenses"], ["achievements", "Achievements"], ["growth", "Growth"], ["settings", "Settings"]];
+  var HIDDEN = /^(404\.html|demo\.html|imported\/|ios-auth\/|landing\/|netlify\/)/;
+  function isApp(page) { return page.indexOf("app:") === 0; }
+  function isMain(page) { return isApp(page) || MAIN.some(function (m) { return m[0] === page; }); }
   function pages() {
     return files.map(function (f) { return f.path; }).filter(function (p) {
-      if (!/\.html$/.test(p)) return false;
+      if (!/\.html$/.test(p) || HIDDEN.test(p)) return false;
       var m = p.match(/^(.+)\/index\.html$/);
       return !(m && fileSet[m[1] + ".html"]);
-    }).sort(function (a, b) { return a === "index.html" ? -1 : b === "index.html" ? 1 : a.localeCompare(b); });
+    });
+  }
+  function morePages() {
+    return pages().filter(function (p) { return !isMain(p); }).sort(function (a, b) { return pageLabel(a).localeCompare(pageLabel(b)); });
   }
   function urlFor(path) {
+    if (isApp(path)) return "/" + path.slice(4);
     if (path === "index.html") return "/";
     if (path === "404.html") return "/404";
     return "/" + path.replace(/\/index\.html$/, "/").replace(/\.html$/, "");
   }
+  var WORDS = { crps: "CRPS", vs: "vs", faq: "FAQ", privacypolicy: "Privacy policy", termsofservice: "Terms of service", wellnest: "WellNest" };
   function pageLabel(path) {
-    if (path === "index.html") return "Home page";
-    return urlFor(path);
+    var m = MAIN.concat(APP.map(function (a) { return ["app:" + a[0], a[1]]; })).filter(function (x) { return x[0] === path; })[0];
+    if (m) return m[1];
+    var slug = path.replace(/(\/index)?\.html$/, "").split("/").pop();
+    var words = slug.split("-").map(function (w) { return WORDS[w] || w; });
+    var t = words.join(" ");
+    return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
   // ---------- edit blocks from the AI ----------
@@ -283,13 +302,20 @@
     var m = path.match(/^(.+)\.html$/);
     return Boolean(m && drafts[m[1] + "/index.html"]);
   }
+  function syncPicker(path) {
+    if (!ui.pageSel) return;
+    var more = !isMain(path);
+    ui.pageSel.value = more ? "more" : path;
+    ui.moreSel.hidden = !more;
+    if (more) ui.moreSel.value = path;
+  }
   function showPage(path) {
     prefs.page = path; persist();
-    if (ui.pageSel) ui.pageSel.value = path;
+    syncPicker(path);
     var drafted = hasDraftFor(path) && previewId;
     ui.frame.src = urlFor(path) + (drafted ? (urlFor(path).indexOf("?") < 0 ? "?" : "&") + "wn_preview=" + encodeURIComponent(previewId) + "&t=" + Date.now() : "");
     ui.mode.className = drafted ? "chip draft" : "chip";
-    ui.mode.textContent = drafted ? "With your changes" : "Live site";
+    ui.mode.textContent = drafted ? "With your changes" : isApp(path) ? "Live app · preview only" : "Live site";
   }
 
   // ---------- rendering ----------
@@ -443,9 +469,15 @@
     var r = await api("files");
     files = r.files; fileSet = {};
     files.forEach(function (f) { fileSet[f.path] = true; });
-    var list = pages();
-    if (list.indexOf(prefs.page) < 0) prefs.page = "index.html";
-    ui.pageSel.replaceChildren.apply(ui.pageSel, list.map(function (p) { return el("option", { value: p, text: pageLabel(p), selected: p === prefs.page }); }));
+    var more = morePages();
+    if (!isApp(prefs.page) && pages().indexOf(prefs.page) < 0) prefs.page = "index.html";
+    ui.pageSel.replaceChildren(
+      el("optgroup", { label: "Website" }, MAIN.filter(function (m) { return fileSet[m[0]]; }).map(function (m) { return el("option", { value: m[0], text: m[1] }); })
+        .concat(more.length ? [el("option", { value: "more", text: "More pages…" })] : [])),
+      el("optgroup", { label: "Dashboard (preview only)" }, APP.map(function (a) { return el("option", { value: "app:" + a[0], text: a[1] }); }))
+    );
+    ui.moreSel.replaceChildren.apply(ui.moreSel, more.map(function (p) { return el("option", { value: p, text: pageLabel(p) }); }));
+    syncPicker(prefs.page);
   }
 
   // ---------- screens ----------
@@ -476,7 +508,11 @@
     app.className = "panes";
     ui.frame = el("iframe", { title: "Website preview" });
     ui.stage = el("div", { class: "stage" + (prefs.device === "phone" ? " phone" : "") }, [el("div", { class: "frame" }, [ui.frame])]);
-    ui.pageSel = el("select", { "aria-label": "Page to preview", onchange: function () { showPage(ui.pageSel.value); } });
+    ui.pageSel = el("select", { "aria-label": "Page to preview", onchange: function () {
+      if (ui.pageSel.value === "more") { ui.moreSel.hidden = false; showPage(isMain(prefs.page) ? (ui.moreSel.value || morePages()[0]) : prefs.page); }
+      else showPage(ui.pageSel.value);
+    } });
+    ui.moreSel = el("select", { "aria-label": "More pages", hidden: true, onchange: function () { showPage(ui.moreSel.value); } });
     ui.mode = el("span", { class: "chip", text: "Live site" });
     var seg = el("div", { class: "seg", role: "group", "aria-label": "Preview size" }, ["desktop", "phone"].map(function (d) {
       return el("button", { type: "button", "aria-pressed": String(prefs.device === d), text: d === "desktop" ? "Desktop" : "Phone", onclick: function () {
@@ -485,7 +521,7 @@
         ui.stage.classList.toggle("phone", d === "phone");
       } });
     }));
-    var toolbar = el("div", { class: "toolbar" }, [ui.pageSel, seg, ui.mode, el("span", { class: "spacer" }),
+    var toolbar = el("div", { class: "toolbar" }, [ui.pageSel, ui.moreSel, seg, ui.mode, el("span", { class: "spacer" }),
       el("button", { type: "button", class: "btn", text: "Reload", onclick: function () { showPage(prefs.page); } }),
       el("button", { type: "button", class: "btn", text: "Open ↗", onclick: function () { window.open(ui.frame.src, "_blank", "noopener"); } })]);
 
