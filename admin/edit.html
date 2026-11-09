@@ -57,7 +57,12 @@
   iframe { border: 0; width: 100%; height: 100%; display: block; background: #fff; }
 
   .chat { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--surface); }
-  .chat-head { display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .chat-head { display: flex; gap: 8px; align-items: center; padding: 10px 14px 0; flex-wrap: wrap; }
+  .tool-row { padding: 8px 14px 10px; border-bottom: 1px solid var(--line); }
+  .seg.tools { display: flex; }
+  .seg.tools button { flex: 1; padding: 7px 10px; }
+  .seg.tools button:disabled { color: var(--muted); opacity: .55; cursor: not-allowed; }
+  .chat-head select { max-width: 190px; }
   .chat-head .label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-right: auto; }
   .log { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 12px; }
   .msg { max-width: 92%; padding: 10px 13px; border-radius: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -486,11 +491,18 @@
 
     var connected = Object.keys(status.providers).filter(function (k) { return status.providers[k].connected; });
     if (connected.indexOf(prefs.provider) < 0) prefs.provider = connected[0];
-    ui.provider = el("select", { "aria-label": "AI", onchange: function () { prefs.provider = ui.provider.value; persist(); loadModels(); } },
-      Object.keys(status.providers).map(function (k) {
-        var p = status.providers[k];
-        return el("option", { value: k, disabled: !p.connected, selected: k === prefs.provider, text: p.name + (p.connected ? "" : " (not connected)") });
-      }));
+    // The AI tools as buttons; the model for the chosen tool is the small picker above.
+    ui.provider = el("div", { class: "seg tools", role: "group", "aria-label": "AI" }, Object.keys(status.providers).map(function (k) {
+      var p = status.providers[k];
+      return el("button", { type: "button", "data-k": k, "aria-pressed": String(k === prefs.provider), disabled: !p.connected,
+        title: p.connected ? "Use " + p.name : p.name + " isn't connected — add " + p.secret + " in Cloudflare",
+        text: p.name, onclick: function () {
+          if (prefs.provider === k) return;
+          prefs.provider = k; persist();
+          ui.provider.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.k === k)); });
+          loadModels();
+        } });
+    }));
     ui.model = el("select", { "aria-label": "Model", onchange: function () { prefs.model[prefs.provider] = ui.model.value; persist(); } });
     ui.log = el("div", { class: "log", "aria-live": "polite" });
     ui.changes = el("div", { class: "changes" });
@@ -503,7 +515,8 @@
     app.replaceChildren(
       el("section", { class: "preview", "aria-label": "Preview" }, [toolbar, ui.stage]),
       el("section", { class: "chat", "aria-label": "Conversation" }, [
-        el("div", { class: "chat-head" }, [el("span", { class: "label", text: "Conversation" }), clear, ui.provider, ui.model]),
+        el("div", { class: "chat-head" }, [el("span", { class: "label", text: "Conversation" }), clear, ui.model]),
+        el("div", { class: "tool-row" }, [ui.provider]),
         ui.log, ui.changes, el("div", { class: "composer" }, [ui.input, ui.send]),
       ])
     );
