@@ -47,6 +47,11 @@ def fix_bundle(text):
     text = re.sub(r"(https://wellnest\.services/)([A-Za-z0-9-]+)\.html(?=`)", lambda m: m.group(1) + page_slug(m.group(2) + ".html"), text)
     text = re.sub(r"(https://wellnest\.services/|(?<=[>\s])wellnest\.services/)(" + "|".join(RENAMED) + r")(?=[`<\s])",
                   lambda m: m.group(1) + RENAMED[m.group(2)], text)
+    # Links the app draws: <a href> and router <Link to>. (Its router ignores case.)
+    text = re.sub(r"\b(href|to):`/(" + "|".join(RENAMED) + r")`", lambda m: f"{m.group(1)}:`/{RENAMED[m.group(2)]}`", text)
+    text = re.sub(r"\b(href|to):`/([a-z0-9-]+)\.html`", lambda m: f"{m.group(1)}:`/{page_slug(m.group(2) + '.html')}`", text)
+    # A page without its own canonical address falls back to /PageName: lower-case it.
+    text = text.replace("`/${e}`);document.title", "`/${e.toLowerCase()}`);document.title")
     return text
 
 def fix_sitemap(text):
