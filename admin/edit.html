@@ -424,7 +424,7 @@
     var box = ui.changes, n = draftCount();
     box.classList.toggle("on", n > 0);
     box.replaceChildren();
-    if (!n) return;
+    if (!n) { ui.trayPublish = null; publishState(); return; }
     box.appendChild(el("div", { class: "changes-head" }, [
       el("strong", { text: n + " unpublished change" + (n === 1 ? "" : "s") }),
       el("button", { type: "button", class: "btn quiet", text: "Discard all", onclick: function () {
@@ -467,9 +467,21 @@
         list,
       ]));
     }
-    var msg = el("input", { type: "text", "aria-label": "Describe this update", placeholder: "Describe this update", value: lastRequest() });
-    var pub = el("button", { type: "button", class: "btn primary", text: "Publish", onclick: function () { publish(msg.value, pub); } });
-    box.appendChild(el("div", { class: "publish" }, [msg, pub]));
+    ui.pubMsg = el("input", { type: "text", "aria-label": "Describe this update", placeholder: "Describe this update", value: lastRequest() });
+    ui.trayPublish = el("button", { type: "button", class: "btn primary", text: "Publish", onclick: function () { publish(); } });
+    box.appendChild(el("div", { class: "publish" }, [ui.pubMsg, ui.trayPublish]));
+    publishState();
+  }
+  // Both Publish buttons (top bar and changes list) show the same state.
+  var publishing = "";
+  function publishState() {
+    var n = draftCount();
+    if (ui.topPublish) {
+      ui.topPublish.disabled = !n || Boolean(publishing);
+      ui.topPublish.textContent = publishing || (n ? "Publish (" + n + ")" : "Publish");
+      ui.topPublish.title = n ? "Publish " + n + " change" + (n === 1 ? "" : "s") + " to wellnest.services" : "No unpublished changes";
+    }
+    if (ui.trayPublish) { ui.trayPublish.disabled = Boolean(publishing); ui.trayPublish.textContent = publishing || "Publish"; }
   }
   function clip(s) { s = String(s || ""); return s.length > 1200 ? s.slice(0, 1200) + "\n…" : s; }
   function lastRequest() {
@@ -553,11 +565,12 @@
     for (var i = 0; i < bytes.length; i += 0x8000) out += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
     return btoa(out);
   }
-  async function publish(message, btn) {
-    if (!draftCount()) return;
+  async function publish() {
+    if (!draftCount() || publishing) return;
+    var message = ui.pubMsg && ui.pubMsg.value.trim();
     var list = Object.keys(drafts).map(pageLabel).join(", ");
     if (!confirm("Publish these changes to wellnest.services?\n\n" + list + "\n\nThey'll be live in about 2 minutes.")) return;
-    btn.disabled = true; btn.textContent = "Publishing…";
+    publishing = "Publishing…"; publishState();
     try {
       var payload = {};
       Object.keys(drafts).forEach(function (p) { payload[p] = { content: drafts[p].content, sha: drafts[p].sha }; });
@@ -565,19 +578,19 @@
       var blobs = {};
       for (var f of Object.keys(appDrafts)) {
         if (!appDrafts[f].changed) continue;
-        btn.textContent = "Uploading app wording…";
+        publishing = "Uploading app wording…"; publishState();
         var b = await api("blob", toBase64(appDrafts[f].content));
         blobs[f] = { sha: b.sha, base: appDrafts[f].sha };
       }
-      btn.textContent = "Publishing…";
+      publishing = "Publishing…"; publishState();
       var r = await api("publish", { message: message || lastRequest(), files: payload, blobs: blobs });
-      drafts = {}; previewId = ""; appDrafts = {}; appBase = {}; pageNotes = {}; persist();
+      drafts = {}; previewId = ""; appDrafts = {}; appBase = {}; pageNotes = {}; publishing = ""; persist();
       chatOf(prefs.provider).push({ role: "note", content: "Published " + r.files.length + " file" + (r.files.length === 1 ? "" : "s") + ". The live site updates in about 2 minutes." });
       renderLog(); renderChanges(); showPage(prefs.page);
       loadFiles().catch(function () {});
     } catch (e) {
       chatOf(prefs.provider).push({ role: "error", content: "Couldn't publish: " + e.message });
-      btn.disabled = false; btn.textContent = "Publish";
+      publishing = ""; publishState();
       renderLog();
     }
   }
@@ -695,6 +708,7 @@
       } });
     }));
     var toolbar = el("div", { class: "toolbar" }, [ui.pageSel, ui.moreSel, seg, ui.mode, el("span", { class: "spacer" }),
+      ui.topPublish = el("button", { type: "button", class: "btn primary", text: "Publish", disabled: true, onclick: function () { publish(); } }),
       el("button", { type: "button", class: "btn", text: "Reload", onclick: function () { showPage(prefs.page); } }),
       el("button", { type: "button", class: "btn", text: "Open ↗", onclick: function () { window.open(ui.frame.src, "_blank", "noopener"); } })]);
 
