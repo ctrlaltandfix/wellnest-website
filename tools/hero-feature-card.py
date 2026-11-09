@@ -175,12 +175,12 @@ PANELS = E("div", {"className": "hb-fc-panels"},
               "aria-hidden": Raw(f"e!=={i}", "false" if i == 0 else "true")}, *content)
     for i, (_, content) in enumerate(SLIDES)])
 
-CARD = E("div", {"className": Raw('"hb-hero-visual hb-fc-stage"+(n?" is-paused":"")', "hb-hero-visual hb-fc-stage"),
+CARD = E("div", {"className": "hb-hero-visual hb-fc-stage",
                  "aria-label": "Illustrative preview of WellNest features", "data-hb-reveal": True,
                  "onMouseEnter": Raw("()=>r(!0)"), "onMouseLeave": Raw("()=>r(!1)"),
                  "onFocus": Raw("()=>r(!0)"), "onBlur": Raw("c=>{c.currentTarget.contains(c.relatedTarget)||r(!1)}")},
   E("div", {"className": "hb-fc-glow", "aria-hidden": "true"}),
-  E("article", {"className": "hb-fc"}, TABS, PANELS, E("p", {"className": "hb-fc-note"}, "Illustrative preview · Example data")),
+  E("article", {"className": Raw('"hb-fc"+(n?" is-paused":"")', "hb-fc")}, TABS, PANELS, E("p", {"className": "hb-fc-note"}, "Illustrative preview · Example data")),
   E("div", {"className": "hb-fc-chip hb-fc-chip-dose", "aria-hidden": "true"},
     E("span", {"className": "hb-fc-check"}, CHECK),
     E("span", {}, E("strong", {}, "Gabapentin taken"), E("small", {}, "8:02 am · on time"))),
