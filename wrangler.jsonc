@@ -23,5 +23,8 @@
   ],
   "observability": { "enabled": true },
   // Keep variables set in the Cloudflare dashboard (e.g. ADMIN_EMAILS) when deploying from GitHub.
-  "keep_vars": true
+  "keep_vars": true,
+  // Who can open /admin/analytics: SHA-256 of each admin's lower-case email, comma-separated.
+  // Make one with: printf '%s' 'you@example.com' | shasum -a 256
+  "vars": { "ADMIN_EMAIL_SHA256": "29467590a4eab177c0f7df700ab22ebf8cf0973b20074e961628ab27a9633fa0" }
 }

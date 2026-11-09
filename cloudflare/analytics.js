@@ -8,7 +8,7 @@
 // of IP + browser that changes every day, so a person can't be followed across
 // days; "session" is a random id kept in that browser tab only. Rows older than
 // 400 days are deleted automatically.
-import { json, fail, hmac, uuid, rateLimited } from "./lib.js";
+import { json, fail, hmac, uuid, rateLimited, sha256 } from "./lib.js";
 
 const BOTS = /bot|crawl|spider|slurp|headless|lighthouse|pingdom|preview|monitor|curl|wget|python|axios|node-fetch/i;
 const DAY = 86400000;
@@ -115,9 +115,13 @@ export async function handleCollect(request, env) {
   return new Response(null, { status: 204 });
 }
 
-export function isAnalyticsAdmin(env, user) {
+export async function isAnalyticsAdmin(env, user) {
   if (!user) return false;
   if (user.role === "admin") return true;
+  // ADMIN_EMAIL_SHA256 (wrangler.jsonc): SHA-256 of each admin's lower-case email,
+  // so admin addresses aren't readable in the public repo.
+  const hashes = String(env.ADMIN_EMAIL_SHA256 || "").toLowerCase().split(/[\s,;]+/).filter(Boolean);
+  if (hashes.length && hashes.includes(await sha256(String(user.email || "").trim().toLowerCase()))) return true;
   // Accepts "a@x.com", "a@x.com, b@y.com", one per line, or a pasted value still in quotes.
   const allowed = String(env.ADMIN_EMAILS || "").split(/[\s,;]+/)
     .map(s => s.replace(/^["'<\[]+|["'>\]]+$/g, "").trim().toLowerCase()).filter(Boolean);
@@ -125,10 +129,10 @@ export function isAnalyticsAdmin(env, user) {
 }
 
 export async function handleStats(request, env, user) {
-  if (!isAnalyticsAdmin(env, user)) {
+  if (!(await isAnalyticsAdmin(env, user))) {
     return fail(403, "This account can't see site statistics. Add its email to ADMIN_EMAILS in Cloudflare.", {
       signed_in_as: user?.email || null,
-      admin_emails_set: Boolean(String(env.ADMIN_EMAILS || "").trim()),
+      admin_emails_set: Boolean(String(env.ADMIN_EMAILS || env.ADMIN_EMAIL_SHA256 || "").trim()),
     });
   }
   const url = new URL(request.url);

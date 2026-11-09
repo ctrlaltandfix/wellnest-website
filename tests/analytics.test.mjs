@@ -29,7 +29,7 @@ function beacon(body, { ip = '1.2.3.4', ua = UA, country = 'AU' } = {}) {
   return r;
 }
 
-test('helpers', () => {
+test('helpers', async () => {
   assert.equal(cleanPath('/about.html?x=1#y'), '/about');
   assert.equal(cleanPath('/guides/'), '/guides');
   assert.equal(cleanPath('/index.html'), '/');
@@ -39,10 +39,13 @@ test('helpers', () => {
   assert.equal(sourceOf('', '', 'wellnest.services'), 'Direct');
   assert.equal(sourceOf('', 'Newsletter', 'wellnest.services'), 'newsletter');
   assert.equal(deviceOf(UA), 'Mobile');
-  assert.equal(isAnalyticsAdmin({ ADMIN_EMAILS: 'Me@Example.com, x@y.z' }, { email: 'me@example.com', role: 'user' }), true);
-  assert.equal(isAnalyticsAdmin({}, { email: 'me@example.com', role: 'user' }), false);
-  assert.equal(isAnalyticsAdmin({ ADMIN_EMAILS: '"me@example.com"' }, { email: 'me@example.com' }), true);
-  assert.equal(isAnalyticsAdmin({ ADMIN_EMAILS: 'a@b.c\nme@example.com;' }, { email: 'ME@example.com' }), true);
+  assert.equal(await isAnalyticsAdmin({ ADMIN_EMAILS: 'Me@Example.com, x@y.z' }, { email: 'me@example.com', role: 'user' }), true);
+  assert.equal(await isAnalyticsAdmin({}, { email: 'me@example.com', role: 'user' }), false);
+  const h = (await import('node:crypto')).createHash('sha256').update('me@example.com').digest('hex');
+  assert.equal(await isAnalyticsAdmin({ ADMIN_EMAIL_SHA256: 'abc,' + h }, { email: ' Me@Example.com ' }), true);
+  assert.equal(await isAnalyticsAdmin({ ADMIN_EMAIL_SHA256: h }, { email: 'other@example.com' }), false);
+  assert.equal(await isAnalyticsAdmin({ ADMIN_EMAILS: '"me@example.com"' }, { email: 'me@example.com' }), true);
+  assert.equal(await isAnalyticsAdmin({ ADMIN_EMAILS: 'a@b.c\nme@example.com;' }, { email: 'ME@example.com' }), true);
 });
 
 test('collects views and time on page, then reports them to an admin only', async () => {
