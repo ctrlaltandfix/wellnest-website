@@ -176,7 +176,8 @@ export async function handleStats(request, env, user) {
     ).bind(since),
     top("device", 5),
     top("browser", 8),
-    db.prepare("SELECT COUNT(DISTINCT session) AS n FROM page_views WHERE ts >= ?").bind(now - 30 * 60000),
+    // People active in the last 5 minutes (one person with two tabs counts once).
+    db.prepare("SELECT COUNT(DISTINCT visitor) AS n FROM page_views WHERE ts >= ?").bind(now - 5 * 60000),
   ]);
 
   return json({
