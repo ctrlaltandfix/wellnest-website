@@ -43,6 +43,11 @@ export function editable(path) {
 
 // about.html and about/index.html are the same page (GitHub Pages serves both
 // /about and /about/); a change to one is made to both.
+// The app's main file(s). The editor page updates their wording to match page
+// edits (see admin/apptext.js); they can't be edited directly.
+export const APP_FILE = /^assets\/index[A-Za-z0-9._-]*\.js$/;
+const MAX_APP_FILE = 1_900_000; // D1 keeps rows under 2 MB
+
 export function mirrorOf(path, tree) {
   let m = path.match(/^(.+)\.html$/);
   if (m && !m[1].endsWith("/index") && tree.has(m[1] + "/index.html")) return m[1] + "/index.html";
@@ -261,6 +266,8 @@ TO CREATE A NEW FILE:
 full contents
 >>>>>>> END
 
+IMPORTANT: after a page loads, the app redraws it from its own copy. Changes to wording inside existing elements are carried into the app automatically, so visitors see them. Changes to layout — adding, removing or moving elements, or changing links, images, classes or other attributes — only reach search engines and the moment before the app loads; visitors won't see them. So prefer wording changes, and if a request needs a layout change, do it but say clearly that visitors won't see it until the app itself is updated.
+
 Rules: read a file before editing it unless its contents are already in this conversation. Make the smallest change that does what was asked. Outside the blocks, say in one or two sentences what you changed. Nothing goes live until the owner presses Publish.`;
 }
 
@@ -336,6 +343,23 @@ async function handlePreviewSave(request, env) {
 const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", txt: "text/plain; charset=utf-8", xml: "application/xml", svg: "image/svg+xml", md: "text/plain; charset=utf-8", json: "application/json", webmanifest: "application/manifest+json" };
 
 // Called for page requests carrying ?wn_preview=ID: serve the draft if there is one.
+export function previewCookie(request) {
+  const m = (request.headers.get("Cookie") || "").match(/(?:^|;\s*)wn_preview=([A-Za-z0-9_-]{20,64})/);
+  return m ? m[1] : null;
+}
+
+// The preview frame's app file: requested without ?wn_preview, so the page that
+// was served as a preview leaves a short-lived cookie naming its preview.
+export async function servePreviewApp(request, env, url) {
+  const id = previewCookie(request);
+  const path = decodeURIComponent(url.pathname).replace(/^\/+/, "");
+  if (!id || request.method !== "GET" || !APP_FILE.test(path)) return null;
+  const row = await env.DB.prepare("SELECT content FROM editor_previews WHERE id = ? AND path = ? AND updated > ?")
+    .bind(id, path, Date.now() - PREVIEW_TTL).first();
+  if (!row) return null;
+  return new Response(row.content, { headers: { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store", "X-WellNest-Preview": "draft" } });
+}
+
 export async function servePreview(request, env, url) {
   const id = url.searchParams.get("wn_preview") || "";
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(id) || request.method !== "GET") return null;
@@ -348,11 +372,49 @@ export async function servePreview(request, env, url) {
     if (row) {
       const ext = (gp.match(/\.([a-z]+)$/i) || [])[1]?.toLowerCase() || "html";
       return new Response(stripBase(row.content), {
-        headers: { "Content-Type": TYPES[ext] || "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex", "X-WellNest-Preview": "draft" },
+        headers: {
+          "Content-Type": TYPES[ext] || "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex", "X-WellNest-Preview": "draft",
+          // lets this page's app file load with the same unpublished wording (15 minutes)
+          "Set-Cookie": `wn_preview=${id}; Path=/; Max-Age=900; Secure; HttpOnly; SameSite=Lax`,
+        },
       });
     }
   }
   return null;
+}
+
+// ---------- the app file (wording carried over from page edits) ----------
+// Streams the file straight through, so this stays cheap for a Free-plan Worker.
+async function handleAppFile(request, env, url) {
+  const path = url.searchParams.get("path") || "";
+  if (!APP_FILE.test(path)) return fail(400, "Not an app file.");
+  const tree = await listTree(env);
+  const entry = tree.find(f => f.path === path);
+  if (!entry) return fail(404, "Not found");
+  const res = await fetch(`https://api.github.com/repos/${REPO}/git/blobs/${entry.sha}`, {
+    headers: { Authorization: `Bearer ${env.GITHUB_TOKEN}`, Accept: "application/vnd.github.raw", "User-Agent": "wellnest-editor", "X-GitHub-Api-Version": "2022-11-28" },
+  });
+  if (!res.ok) return fail(502, `GitHub ${res.status} reading ${path}`);
+  return new Response(res.body, { headers: { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "private, no-store", "X-Sha": entry.sha } });
+}
+
+// Body: the file as base64 (made in the browser). Passed to GitHub as-is.
+async function handleBlob(request, env) {
+  const b64 = await request.text();
+  if (!b64 || b64.length > MAX_APP_FILE * 1.4 || !/^[A-Za-z0-9+/]+=*$/.test(b64)) return fail(400, "Invalid file.");
+  const blob = await gh(env, "/git/blobs", { method: "POST", body: `{"encoding":"base64","content":"${b64}"}` });
+  return json({ sha: blob.sha });
+}
+
+// Body: the patched app file (repo version) for preview ID.
+async function handlePreviewApp(request, env, url) {
+  const id = url.searchParams.get("id") || "", path = url.searchParams.get("path") || "";
+  if (!/^[A-Za-z0-9_-]{20,64}$/.test(id) || !APP_FILE.test(path)) return fail(400, "Invalid request.");
+  const content = await request.text();
+  if (!content || content.length > MAX_APP_FILE) return fail(413, "That's too large to preview.");
+  await env.DB.prepare("INSERT OR REPLACE INTO editor_previews (id, path, content, updated) VALUES (?, ?, ?, ?)")
+    .bind(id, path, stripBase(content), Date.now()).run();
+  return json({ ok: true });
 }
 
 // ---------- publish ----------
@@ -378,13 +440,24 @@ async function handlePublish(request, env, user) {
     writes.set(path, change.content);
     const twin = mirrorOf(path, paths);
     if (twin && !(twin in changes)) writes.set(twin, change.content);
+    // 404.html is a copy of the home page (it serves the app's other routes).
+    if (path === "index.html" && shas.get("404.html") === current && !("404.html" in changes)) writes.set("404.html", change.content);
+  }
+
+  // App files with the same wording changes, uploaded beforehand as blobs.
+  const blobs = body.blobs && typeof body.blobs === "object" ? Object.entries(body.blobs).slice(0, 5) : [];
+  const blobEntries = [];
+  for (const [path, b] of blobs) {
+    if (!APP_FILE.test(path) || !b || !/^[0-9a-f]{40}$/.test(b.sha || "")) return fail(400, `${path} can't be changed from the editor.`);
+    if ((b.base || null) !== (shas.get(path) || null)) return fail(409, `The app changed on GitHub since you started editing. Discard your changes and ask again.`, { path });
+    blobEntries.push({ path, mode: "100644", type: "blob", sha: b.sha });
   }
 
   const ref = await gh(env, `/git/ref/heads/${BRANCH}`);
   const head = await gh(env, `/git/commits/${ref.object.sha}`);
   const newTree = await gh(env, "/git/trees", {
     method: "POST",
-    body: JSON.stringify({ base_tree: head.tree.sha, tree: [...writes].map(([path, content]) => ({ path, mode: "100644", type: "blob", content })) }),
+    body: JSON.stringify({ base_tree: head.tree.sha, tree: [...writes].map(([path, content]) => ({ path, mode: "100644", type: "blob", content })).concat(blobEntries) }),
   });
   const commit = await gh(env, "/git/commits", {
     method: "POST",
@@ -395,7 +468,7 @@ async function handlePublish(request, env, user) {
     }),
   });
   await gh(env, `/git/refs/heads/${BRANCH}`, { method: "PATCH", body: JSON.stringify({ sha: commit.sha, force: false }) });
-  return json({ commit: commit.sha, url: `https://github.com/${REPO}/commit/${commit.sha}`, files: [...writes.keys()] });
+  return json({ commit: commit.sha, url: `https://github.com/${REPO}/commit/${commit.sha}`, files: [...writes.keys(), ...blobEntries.map(e => e.path)] });
 }
 
 // ---------- router ----------
@@ -430,6 +503,9 @@ export async function handleEditor(request, env, user, sub) {
     if (sub === "chat" && POST) return await handleChat(request, env);
     if (sub === "preview" && POST) return await handlePreviewSave(request, env);
     if (sub === "publish" && POST) return await handlePublish(request, env, user);
+    if (sub === "appfile" && GET) return await handleAppFile(request, env, url);
+    if (sub === "blob" && POST) return await handleBlob(request, env);
+    if (sub === "preview-app" && POST) return await handlePreviewApp(request, env, url);
   } catch (e) {
     if (e.github === 401) return fail(502, "GitHub rejected the GITHUB_TOKEN. It may have expired; make a new one and update it in Cloudflare.");
     if (e.github === 403 || e.github === 404 && sub === "publish") {

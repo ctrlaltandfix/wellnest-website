@@ -3,7 +3,7 @@
 import { SITE, json, fail, corsHeaders, ensureSchema, currentUser } from "./lib.js";
 import { handleIdentity, handleGoogleCallback } from "./identity.js";
 import { handleCollect, handleStats } from "./analytics.js";
-import { handleEditor, servePreview } from "./editor.js";
+import { handleEditor, servePreview, servePreviewApp, previewCookie } from "./editor.js";
 import { handleMe, handleEntities, handleUploads, handleFileSign, handleFileRaw, handleFunction } from "./data.js";
 
 const OLD_BASE = "/wellnest-website";
@@ -73,6 +73,11 @@ export default {
       await ensureSchema(env);
       const draft = await servePreview(request, env, url);
       if (draft) return draft;
+    }
+    if (url.pathname.startsWith("/assets/index") && previewCookie(request)) {
+      await ensureSchema(env);
+      const app = await servePreviewApp(request, env, url);
+      if (app) return app;
     }
     return env.ASSETS.fetch(request);
   },

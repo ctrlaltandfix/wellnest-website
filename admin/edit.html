@@ -93,6 +93,7 @@
   .diff { margin: 0 10px 10px; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
   .diff div { padding: 2px 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
   .diff .del { background: var(--bad-soft); color: #7a2c1a; } .diff .add { background: var(--mark-soft); color: #134a2f; }
+  .file .warn { margin: 0 10px 8px; padding: 6px 9px; border-radius: 8px; background: #fff4e0; color: #7a4a0c; font-size: 12px; }
   .diff .sep { height: 1px; padding: 0; background: var(--line); }
   .publish { display: flex; gap: 8px; }
   .publish input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; font-size: 13px; }
@@ -187,12 +188,15 @@
     try { localStorage.setItem("gotrue.user", JSON.stringify(u)); } catch (e) {}
     return true;
   }
-  async function api(path, body, retried) {
+  // body: undefined (GET), an object (JSON) or a string (sent as-is). raw: return the Response.
+  async function api(path, body, retried, raw) {
     var u = stored(), headers = {};
     if (u && u.token && u.token.access_token) headers.Authorization = "Bearer " + u.token.access_token;
-    if (body !== undefined) headers["Content-Type"] = "application/json";
-    var res = await fetch("/api/editor/" + path, { method: body === undefined ? "GET" : "POST", headers: headers, credentials: "include", body: body === undefined ? undefined : JSON.stringify(body) });
-    if (res.status === 401 && !retried && await refresh()) return api(path, body, true);
+    if (body !== undefined) headers["Content-Type"] = typeof body === "string" ? "text/plain" : "application/json";
+    var res = await fetch("/api/editor/" + path, { method: body === undefined ? "GET" : "POST", headers: headers, credentials: "include",
+      body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body) });
+    if (res.status === 401 && !retried && await refresh()) return api(path, body, true, raw);
+    if (raw && res.ok) return res;
     var data = await res.json().catch(function () { return {}; });
     if (!res.ok) { var e = new Error(data.error || ("Request failed (" + res.status + ")")); e.status = res.status; e.data = data; throw e; }
     return data;
@@ -208,6 +212,11 @@
   if (!chats) { chats = {}; var old = load(LS.chat, []); if (old.length) chats[prefs.provider || "anthropic"] = old; }
   function chatOf(k) { return chats[k] || (chats[k] = []); }
   var previewId = load(LS.preview, "");
+  // The app redraws each page from its own copy, so page wording changes are also
+  // made in the app file (admin/apptext.js). Recomputed from the drafts; not stored.
+  var APPTEXT = null;
+  function appText() { return APPTEXT || (APPTEXT = import("/admin/apptext.js")); }
+  var appBase = {}, appDrafts = {}, pageNotes = {}, appError = "";
   var busy = {}, unread = {};
   // Replies can arrive at the same time; apply their changes one at a time.
   var applying = Promise.resolve();
@@ -321,12 +330,46 @@
   }
 
   // ---------- preview ----------
+  async function computeApp() {
+    var mod = await appText(), byFile = {}, notes = {};
+    Object.keys(drafts).forEach(function (p) {
+      if (!/\.html$/.test(p)) return;
+      var d = drafts[p], note = { layout: 0, words: 0, isNew: !d.sha };
+      if (d.sha) (d.ops || []).forEach(function (op) {
+        var w = mod.wordingChanges(op.find, op.replace);
+        if (w.layout) { note.layout++; return; }
+        note.words += w.pairs.length;
+        mod.appFilesOf(d.content).forEach(function (f) { (byFile[f] = byFile[f] || []).push.apply(byFile[f], w.pairs); });
+      });
+      notes[p] = note;
+    });
+    var next = {};
+    for (var f of Object.keys(byFile)) {
+      if (!byFile[f].length) continue;
+      if (!appBase[f]) {
+        var res = await api("appfile?path=" + encodeURIComponent(f), undefined, false, true);
+        appBase[f] = { sha: res.headers.get("X-Sha"), text: await res.text() };
+      }
+      var out = mod.applyWording(appBase[f].text, byFile[f]);
+      next[f] = { sha: appBase[f].sha, content: out.code, applied: out.applied, skipped: out.skipped, changed: out.code !== appBase[f].text };
+    }
+    appDrafts = next; pageNotes = notes;
+  }
+
   async function syncPreview() {
     var payload = {};
     Object.keys(drafts).forEach(function (p) { payload[p] = drafts[p].content; });
-    if (!draftCount()) { previewId = ""; persist(); return; }
+    if (!draftCount()) { previewId = ""; appDrafts = {}; pageNotes = {}; persist(); return; }
     var r = await api("preview", { id: previewId || undefined, files: payload });
     previewId = r.id; persist();
+    appError = "";
+    try {
+      await computeApp();
+      for (var f of Object.keys(appDrafts)) {
+        if (appDrafts[f].changed) await api("preview-app?id=" + encodeURIComponent(previewId) + "&path=" + encodeURIComponent(f), appDrafts[f].content);
+      }
+    } catch (e) { appError = e.message; }
+    if (ui.changes) renderChanges();
   }
   function hasDraftFor(path) {
     if (drafts[path]) return true;
@@ -386,7 +429,7 @@
       el("strong", { text: n + " unpublished change" + (n === 1 ? "" : "s") }),
       el("button", { type: "button", class: "btn quiet", text: "Discard all", onclick: function () {
         if (!confirm("Discard all unpublished changes?")) return;
-        drafts = {}; persist(); syncPreview().catch(function () {}); renderChanges(); showPage(prefs.page);
+        drafts = {}; persist(); renderChanges(); syncPreview().catch(function () {}).then(function () { showPage(prefs.page); });
         chatOf(prefs.provider).push({ role: "note", content: "Discarded all changes." }); persist(); renderLog();
       } }),
     ]));
@@ -398,15 +441,32 @@
         if (op.find) diff.appendChild(el("div", { class: "del", text: clip(op.find) }));
         diff.appendChild(el("div", { class: "add", text: clip(op.replace) || "(removed)" }));
       });
+      var note = pageNotes[p];
+      var warn = note && note.isNew ? "New page: the app doesn't know this page yet, so visitors may see its “page not found” screen."
+        : note && note.layout ? "Includes a layout change: search engines will see it, but visitors won't, because the app redraws this page from its own copy." : "";
       box.appendChild(el("details", { class: "file" }, [
-        el("summary", {}, [el("span", { text: pageLabel(p) + (d.sha ? "" : "  (new)") }),
+        el("summary", {}, [el("span", { text: (warn ? "⚠ " : "") + pageLabel(p) + (d.sha ? "" : "  (new)") }),
           /\.html$/.test(p) ? el("button", { type: "button", class: "btn quiet", text: "Preview", onclick: function (e) { e.preventDefault(); showPage(p); } }) : null,
           el("button", { type: "button", class: "btn quiet", text: "Undo", onclick: function (e) {
-            e.preventDefault(); delete drafts[p]; persist(); syncPreview().catch(function () {}); renderChanges(); showPage(prefs.page);
+            e.preventDefault(); delete drafts[p]; persist(); renderChanges(); syncPreview().catch(function () {}).then(function () { showPage(prefs.page); });
           } })]),
+        warn ? el("div", { class: "warn", text: warn }) : null,
         diff,
       ]));
     });
+    // What the app will show (its copy of the wording).
+    var apps = Object.keys(appDrafts), applied = [], skipped = [];
+    apps.forEach(function (f) { applied = applied.concat(appDrafts[f].applied); skipped = skipped.concat(appDrafts[f].skipped); });
+    if (applied.length || skipped.length || appError) {
+      var list = el("div", { class: "diff" });
+      applied.forEach(function (a) { list.appendChild(el("div", { class: "add", text: "“" + a.from + "” → “" + a.to + "”" + (a.count > 1 ? "   (" + a.count + " places across the site)" : "") })); });
+      skipped.forEach(function (a) { list.appendChild(el("div", { class: "del", text: "Not in app: “" + a.from + "” — " + a.reason })); });
+      if (appError) list.appendChild(el("div", { class: "del", text: "Couldn't update the app's wording: " + appError }));
+      box.appendChild(el("details", { class: "file", open: skipped.length || appError ? true : null }, [
+        el("summary", {}, [el("span", { text: (skipped.length || appError ? "⚠ " : "✓ ") + "App wording — " + applied.length + " phrase" + (applied.length === 1 ? "" : "s") + " updated" })]),
+        list,
+      ]));
+    }
     var msg = el("input", { type: "text", "aria-label": "Describe this update", placeholder: "Describe this update", value: lastRequest() });
     var pub = el("button", { type: "button", class: "btn primary", text: "Publish", onclick: function () { publish(msg.value, pub); } });
     box.appendChild(el("div", { class: "publish" }, [msg, pub]));
@@ -488,6 +548,11 @@
     if (retry) return send(retry, true, k);
   }
 
+  function toBase64(text) {
+    var bytes = new TextEncoder().encode(text), out = "";
+    for (var i = 0; i < bytes.length; i += 0x8000) out += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(out);
+  }
   async function publish(message, btn) {
     if (!draftCount()) return;
     var list = Object.keys(drafts).map(pageLabel).join(", ");
@@ -496,8 +561,17 @@
     try {
       var payload = {};
       Object.keys(drafts).forEach(function (p) { payload[p] = { content: drafts[p].content, sha: drafts[p].sha }; });
-      var r = await api("publish", { message: message || lastRequest(), files: payload });
-      drafts = {}; previewId = ""; persist();
+      // App files first, as blobs (they're large); the commit then includes them.
+      var blobs = {};
+      for (var f of Object.keys(appDrafts)) {
+        if (!appDrafts[f].changed) continue;
+        btn.textContent = "Uploading app wording…";
+        var b = await api("blob", toBase64(appDrafts[f].content));
+        blobs[f] = { sha: b.sha, base: appDrafts[f].sha };
+      }
+      btn.textContent = "Publishing…";
+      var r = await api("publish", { message: message || lastRequest(), files: payload, blobs: blobs });
+      drafts = {}; previewId = ""; appDrafts = {}; appBase = {}; pageNotes = {}; persist();
       chatOf(prefs.provider).push({ role: "note", content: "Published " + r.files.length + " file" + (r.files.length === 1 ? "" : "s") + ". The live site updates in about 2 minutes." });
       renderLog(); renderChanges(); showPage(prefs.page);
       loadFiles().catch(function () {});
