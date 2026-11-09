@@ -430,7 +430,7 @@
       b.setAttribute("aria-pressed", String(k === prefs.provider));
       b.classList.toggle("busy", Boolean(busy[k]));
       b.classList.toggle("unread", Boolean(unread[k]) && !busy[k]);
-      b.title = !status.providers[k].connected ? b.title : busy[k] ? nameOf(k) + " is working…" : unread[k] ? nameOf(k) + " has a new reply" : "Use " + nameOf(k);
+      b.title = !status.providers[k].connected ? b.title : status.providers[k].free && !busy[k] && !unread[k] ? "Free — runs on Cloudflare, no API key" : busy[k] ? nameOf(k) + " is working…" : unread[k] ? nameOf(k) + " has a new reply" : "Use " + nameOf(k);
     });
     if (ui.send) ui.send.disabled = Boolean(busy[prefs.provider]);
   }
@@ -516,7 +516,7 @@
       var r = await api("models?provider=" + encodeURIComponent(p));
       var list = r.models.slice();
       // Sensible default: a strong everyday model rather than the most expensive one.
-      var pref = { anthropic: [/sonnet/, /opus/, /./], openai: [/^gpt-\d+(\.\d+)?$/, /^gpt-\d/, /./], gemini: [/pro(?!.*(preview|exp))/, /pro/, /flash/, /./] }[p] || [/./];
+      var pref = { cloudflare: [/nemotron/, /gemma/, /./], anthropic: [/sonnet/, /opus/, /./], openai: [/^gpt-\d+(\.\d+)?$/, /^gpt-\d/, /./], gemini: [/pro(?!.*(preview|exp))/, /pro/, /flash/, /./] }[p] || [/./];
       var current = prefs.model[p];
       if (!current || !list.some(function (m) { return m.id === current; })) {
         for (var i = 0; i < pref.length && !current; i++) {
@@ -630,7 +630,7 @@
     ui.provider = el("div", { class: "seg tools", role: "group", "aria-label": "AI" }, Object.keys(status.providers).map(function (k) {
       var p = status.providers[k];
       return el("button", { type: "button", "data-k": k, "aria-pressed": String(k === prefs.provider), disabled: !p.connected,
-        title: p.connected ? "Use " + p.name : p.name + " isn't connected — add " + p.secret + " in Cloudflare",
+        title: p.connected ? "Use " + p.name : p.name + " isn't connected" + (p.secret ? " — add " + p.secret + " in Cloudflare" : ""),
         onclick: function () {
           if (prefs.provider === k) return;
           prefs.provider = k; unread[k] = false; persist();

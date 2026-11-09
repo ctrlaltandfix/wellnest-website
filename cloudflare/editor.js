@@ -7,6 +7,8 @@
 //   ANTHROPIC_API_KEY   Claude      (console.anthropic.com)
 //   OPENAI_API_KEY      ChatGPT     (platform.openai.com)
 //   GEMINI_API_KEY      Gemini      (aistudio.google.com)
+// Cloudflare AI needs no key: it uses the Worker's own "AI" binding (wrangler.jsonc)
+// and Cloudflare's free daily allowance on the free models listed in CF_MODELS.
 //
 //   GET  /api/editor/status            what's set up
 //   GET  /api/editor/models?provider=  models that key can use
@@ -93,7 +95,16 @@ const PROVIDERS = {
   anthropic: { name: "Claude", key: "ANTHROPIC_API_KEY" },
   openai: { name: "ChatGPT", key: "OPENAI_API_KEY" },
   gemini: { name: "Gemini", key: "GEMINI_API_KEY" },
+  cloudflare: { name: "Cloudflare AI", binding: "AI", free: true },
 };
+const connectedTo = (env, p) => Boolean(PROVIDERS[p].binding ? env[PROVIDERS[p].binding] : env[PROVIDERS[p].key]);
+
+// Free-plan Workers AI text models (Cloudflare moved some larger models to Workers Paid on 28 Jul 2026).
+export const CF_MODELS = [
+  { id: "@cf/nvidia/nemotron-3-120b-a12b", name: "Nemotron 3 120B (free)" },
+  { id: "@cf/google/gemma-4-26b-a4b-it", name: "Gemma 4 26B (free)" },
+  { id: "@cf/zai-org/glm-4.7-flash", name: "GLM 4.7 Flash (free)" },
+];
 
 async function provFetch(url, init, who) {
   const res = await fetch(url, init);
@@ -112,6 +123,7 @@ async function provFetch(url, init, who) {
 }
 
 async function listModels(env, provider) {
+  if (provider === "cloudflare") return CF_MODELS;
   if (provider === "anthropic") {
     const d = await provFetch("https://api.anthropic.com/v1/models?limit=100", {
       headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
@@ -183,6 +195,22 @@ export async function callModel(env, provider, model, system, messages) {
     }, "ChatGPT");
     return d.choices?.[0]?.message?.content || "";
   }
+  if (provider === "cloudflare") {
+    let out;
+    try {
+      out = await env.AI.run(model, {
+        // These models read text only; a screenshot is mentioned so the reply makes sense.
+        messages: [{ role: "system", content: system }, ...messages.map(m => ({ role: m.role, content: m.images?.length ? `${m.content}\n\n(The owner attached ${m.images.length} screenshot(s), which this model can't see.)` : m.content }))],
+        max_tokens: 8000,
+      });
+    } catch (e) {
+      const msg = String(e?.message || e);
+      const hint = /5035|Workers Paid|403/.test(msg) ? " (This model now needs Cloudflare's Workers Paid plan; pick another free model.)"
+        : /3036|neurons|daily|limit|429/i.test(msg) ? " (Today's free Cloudflare AI allowance may be used up; it resets daily.)" : "";
+      throw Object.assign(new Error(`Cloudflare AI said: ${msg}${hint}`), { status: 502 });
+    }
+    return typeof out?.response === "string" ? out.response : out?.choices?.[0]?.message?.content || out?.result?.response || "";
+  }
   if (provider === "gemini") {
     const d = await provFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
@@ -244,7 +272,7 @@ async function handleChat(request, env) {
   const body = await request.json();
   const provider = String(body.provider || "");
   if (!PROVIDERS[provider]) return fail(400, "Choose an AI provider.");
-  if (!env[PROVIDERS[provider].key]) return fail(400, `${PROVIDERS[provider].name} isn't connected yet. Add ${PROVIDERS[provider].key} in Cloudflare.`);
+  if (!connectedTo(env, provider)) return fail(400, `${PROVIDERS[provider].name} isn't connected yet.`);
   const model = String(body.model || "").slice(0, 120);
   if (!model) return fail(400, "Choose a model.");
   const drafts = body.drafts && typeof body.drafts === "object" ? body.drafts : {};
@@ -377,14 +405,14 @@ export async function handleEditor(request, env, user, sub) {
     return json({
       repo: REPO,
       github: Boolean(env.GITHUB_TOKEN),
-      providers: Object.fromEntries(Object.entries(PROVIDERS).map(([k, v]) => [k, { name: v.name, connected: Boolean(env[v.key]), secret: v.key }])),
+      providers: Object.fromEntries(Object.entries(PROVIDERS).map(([k, v]) => [k, { name: v.name, connected: connectedTo(env, k), secret: v.key || null, free: Boolean(v.free) }])),
     });
   }
   if (!env.GITHUB_TOKEN) return fail(503, "GitHub isn't connected yet. Add GITHUB_TOKEN in Cloudflare.");
   try {
     if (sub === "models" && GET) {
       const provider = url.searchParams.get("provider");
-      if (!PROVIDERS[provider] || !env[PROVIDERS[provider]?.key]) return fail(400, "That AI isn't connected.");
+      if (!PROVIDERS[provider] || !connectedTo(env, provider)) return fail(400, "That AI isn't connected.");
       return json({ models: await listModels(env, provider) });
     }
     if (sub === "files" && GET) {

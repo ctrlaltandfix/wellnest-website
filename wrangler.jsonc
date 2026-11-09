@@ -18,6 +18,8 @@
     "not_found_handling": "404-page",
     "run_worker_first": true
   },
+  // Cloudflare AI in Edit WellNest (free models, no API key).
+  "ai": { "binding": "AI" },
   "d1_databases": [
     { "binding": "DB", "database_name": "wellnest-db", "database_id": "7d75ba9d-cc5f-4d23-8235-94de919602a4" }
   ],

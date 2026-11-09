@@ -177,3 +177,26 @@ test('screenshots reach each AI in its own format; bad or excess images are drop
     assert.match(sent, /\(see screenshot\)/);
   }
 });
+
+test('Cloudflare AI: free models through the Worker binding, no key needed', async () => {
+  const w = fakeWorld();
+  const calls = [];
+  const AI = { run: async (model, input) => { calls.push({ model, input }); return calls.length === 1 ? { response: 'READ: about.html' } : { choices: [{ message: { content: 'Done.\n<<<<<<< EDIT about.html\n<p>About WellNest</p>\n=======\n<p>Hi</p>\n>>>>>>> END' } }] }; } };
+  const e = { ...env(), ANTHROPIC_API_KEY: '', OPENAI_API_KEY: '', GEMINI_API_KEY: '', AI };
+  const s = await (await handleEditor(req('status'), e, OWNER, 'status')).json();
+  assert.equal(s.providers.cloudflare.connected, true);
+  assert.equal(s.providers.cloudflare.free, true);
+  const models = (await (await handleEditor(req('models?provider=cloudflare'), e, OWNER, 'models')).json()).models;
+  assert.ok(models.length >= 2 && models.every(m => m.id.startsWith('@cf/')));
+  const r = await (await handleEditor(req('chat', { provider: 'cloudflare', model: models[0].id, messages: [{ role: 'user', content: 'hi', images: [{ type: 'image/png', data: 'AAAA' }] }] }), e, OWNER, 'chat')).json();
+  assert.match(r.reply, /EDIT about\.html/);
+  assert.equal(calls[0].input.messages[0].role, 'system');
+  assert.match(calls[0].input.messages[1].content, /can't see/);       // screenshot mentioned, not sent
+  assert.equal(w.calls.ai.length, 0);                                   // no outside AI was called
+
+  const off = await (await handleEditor(req('status'), { ...e, AI: undefined }, OWNER, 'status')).json();
+  assert.equal(off.providers.cloudflare.connected, false);
+  const paid = { ...e, AI: { run: async () => { throw new Error('5035: requires Workers Paid'); } } };
+  const err = await (await handleEditor(req('chat', { provider: 'cloudflare', model: 'x', messages: [{ role: 'user', content: 'hi' }] }), paid, OWNER, 'chat')).json();
+  assert.match(err.error, /Workers Paid plan; pick another free model/);
+});
