@@ -8,84 +8,125 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Matches the wellnest.services landing page: dark green hero, Bricolage Grotesque
+     headlines, lime accents with Instrument Serif italics, a lime band, then cream. */
   :root {
-    --bg: #f4f1ea; --surface: #fffdf8; --ink: #0d1f17; --ink-2: #2d3b32; --muted: #6b7770;
-    --line: #e4ded1; --grid: #ece7dc; --mark: #1f7a4d; --mark-soft: #dcebe1; --accent: #164b30;
-    --up: #1f7a4d; --down: #a3412a; --focus: #00cc66;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0d1f17; --surface: #13271d; --ink: #f4f1ea; --ink-2: #d6dcd5; --muted: #98a59d;
-      --line: #22392d; --grid: #1c3226; --mark: #3aa66a; --mark-soft: #1e3b2b; --accent: #c8f76b;
-      --up: #6fcf97; --down: #f0937a;
-    }
+    --hero: #081e1b; --hero-2: #0f2c25; --on-hero: #f6fbf4; --on-hero-2: #bbd0c5; --hero-line: rgba(246,251,244,.12);
+    --lime: #d8fb96; --lime-ink: #10251c;
+    --bg: #f8f8f3; --surface: #ffffff; --ink: #16372f; --ink-2: #33524a; --muted: #6b7d76;
+    --line: #e6e9e1; --grid: #eef0ea; --mark: #1f7a4d; --mark-soft: #e5f3e6; --up: #1f7a4d; --down: #b4472c;
+    --display: "Bricolage Grotesque", Geist, system-ui, sans-serif;
+    --serif: "Instrument Serif", Georgia, serif;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 Inter, system-ui, sans-serif; }
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
-  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 24px; }
-  .brand { font: 30px/1 "Instrument Serif", Georgia, serif; color: var(--ink); text-decoration: none; }
-  h1 { font-size: 15px; font-weight: 600; color: var(--muted); margin: 0; flex: 1; letter-spacing: .01em; }
-  .live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
-  .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--mark); box-shadow: 0 0 0 3px var(--mark-soft); }
-  .ranges { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
-  .ranges button { border: 0; background: none; color: var(--ink-2); font: 500 13px Inter, sans-serif; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
-  .ranges button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
-  button:focus-visible, summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Geist, Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1184px; margin: 0 auto; padding: 0 24px; }
+  button:focus-visible, summary:focus-visible, a:focus-visible, .chart:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  main button:focus-visible, main summary:focus-visible, main .chart:focus-visible { outline-color: var(--mark); }
 
-  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; min-width: 0; }
-  .tile .label { font-size: 13px; color: var(--muted); }
-  .tile .value { font-size: 30px; font-weight: 700; letter-spacing: -.02em; margin-top: 4px; font-variant-numeric: tabular-nums; }
-  .tile .delta { font-size: 13px; margin-top: 2px; color: var(--muted); }
-  .delta .up { color: var(--up); font-weight: 600; } .delta .down { color: var(--down); font-weight: 600; }
+  /* ---- hero ---- */
+  .hero { background: radial-gradient(900px 500px at 85% 0%, rgba(216,251,150,.08), transparent 60%), radial-gradient(700px 500px at 0% 100%, rgba(31,122,77,.18), transparent 60%), linear-gradient(180deg, var(--hero), var(--hero-2)); color: var(--on-hero); padding-bottom: 40px; }
+  nav { display: flex; align-items: center; gap: 16px; padding: 22px 0; border-bottom: 1px solid var(--hero-line); }
+  .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--on-hero); text-decoration: none; font: 800 26px/1 var(--display); letter-spacing: -.04em; }
+  .brand img { width: 36px; height: auto; }
+  nav .spacer { flex: 1; }
+  nav a.back { color: var(--on-hero); text-decoration: none; font-weight: 600; font-size: 14px; }
+  nav a.cta { background: var(--lime); color: var(--lime-ink); text-decoration: none; font-weight: 700; font-size: 14px; padding: 11px 18px; border-radius: 999px; display: inline-flex; gap: 10px; align-items: center; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 10px; margin-top: 28px; padding: 8px 16px 8px 10px; border: 1px solid var(--hero-line); border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .12em; color: var(--on-hero-2); background: rgba(246,251,244,.03); }
+  .eyebrow i { width: 16px; height: 16px; border-radius: 50%; background: rgba(216,251,150,.18); display: grid; place-items: center; }
+  .eyebrow i::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--lime); }
+  .headline { margin: 22px 0 6px; font: 800 clamp(44px, 7vw, 76px)/.95 var(--display); letter-spacing: -.07em; color: var(--on-hero); }
+  .headline em { display: block; font: italic 400 clamp(36px, 5.4vw, 58px)/1.1 var(--serif); letter-spacing: -.01em; color: var(--lime); margin-top: 6px; }
+  .label { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  .hero .label { color: var(--on-hero-2); margin: 28px 0 10px; }
+  .ranges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ranges button { font: 600 15px Geist, Inter, sans-serif; color: var(--on-hero); background: rgba(246,251,244,.04); border: 1px solid rgba(246,251,244,.22); padding: 10px 18px; border-radius: 999px; cursor: pointer; }
+  .ranges button:hover { border-color: rgba(246,251,244,.45); }
+  .ranges button[aria-pressed="true"] { background: var(--lime); border-color: var(--lime); color: var(--lime-ink); }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 28px; }
+  .tile { background: rgba(246,251,244,.05); border: 1px solid var(--hero-line); border-radius: 20px; padding: 20px 22px; min-width: 0; backdrop-filter: blur(6px); }
+  .tile .k { font-size: 13px; color: var(--on-hero-2); }
+  .tile .value { font: 800 38px/1.05 var(--display); letter-spacing: -.05em; margin-top: 8px; font-variant-numeric: tabular-nums; }
+  .tile .delta { font-size: 13px; margin-top: 6px; color: var(--on-hero-2); }
+  .tile .up { color: var(--lime); font-weight: 600; } .tile .down { color: #ffb89c; font-weight: 600; }
 
-  .chart-card h2, .panel h2 { font-size: 14px; font-weight: 600; margin: 0 0 12px; display: flex; justify-content: space-between; gap: 8px; }
-  .chart-card h2 span, .panel h2 span { color: var(--muted); font-weight: 500; }
-  .chart { position: relative; height: 240px; }
+  /* ---- lime band ---- */
+  .band { background: var(--lime); color: var(--lime-ink); overflow: hidden; }
+  .band .wrap { display: flex; align-items: center; gap: 22px; padding-top: 18px; padding-bottom: 18px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .band .label { opacity: .7; letter-spacing: .16em; }
+  .band span.item { font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 13px; }
+  .band span.star { opacity: .55; }
+
+  /* ---- cream content ---- */
+  main { padding: 48px 0 12px; }
+  .section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 36px 0 14px; }
+  .section-title:first-child { margin-top: 0; }
+  .section-title h2 { margin: 0; font: 800 clamp(28px, 3.4vw, 40px)/1.05 var(--display); letter-spacing: -.06em; color: var(--ink); }
+  .section-title h2 em { font: italic 400 1.05em var(--serif); letter-spacing: -.01em; color: var(--mark); }
+  .section-title .label { color: var(--muted); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 22px 24px; min-width: 0; box-shadow: 0 1px 0 rgba(22,55,47,.03), 0 12px 32px -24px rgba(22,55,47,.25); }
+  .panel h3, .chart-card h3 { margin: 0 0 14px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font: 700 20px/1.2 var(--display); letter-spacing: -.03em; }
+  .panel h3 span, .chart-card h3 span { font: 600 11px Geist, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .chart { position: relative; height: 260px; }
   .chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
-  .chart .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 10px; padding: 8px 10px; font-size: 12px; white-space: nowrap; transform: translate(-50%, -110%); display: none; }
-  .tip strong { display: block; font-size: 15px; }
-  details { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .chart .tip { position: absolute; pointer-events: none; background: var(--hero); color: var(--on-hero); border-radius: 12px; padding: 9px 12px; font-size: 12px; white-space: nowrap; transform: translate(-50%, -115%); display: none; box-shadow: 0 10px 24px -10px rgba(8,30,27,.5); }
+  .tip strong { display: block; font: 800 17px var(--display); letter-spacing: -.03em; color: var(--lime); }
+  details { margin-top: 12px; font-size: 13px; color: var(--muted); }
+  summary { cursor: pointer; }
   details table { margin-top: 8px; }
 
-  .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-top: 12px; }
-  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
-  th { text-align: right; font-size: 12px; font-weight: 500; color: var(--muted); padding: 0 0 6px 8px; }
+  th { text-align: right; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0 0 8px 8px; }
   th:first-child { text-align: left; padding-left: 0; }
   td { padding: 0; border-top: 1px solid var(--grid); }
-  td.n { text-align: right; padding: 7px 0 7px 8px; color: var(--ink-2); white-space: nowrap; }
-  .bar { position: relative; padding: 7px 8px; min-width: 0; }
-  .bar b { position: absolute; inset: 3px auto 3px 0; background: var(--mark-soft); border-radius: 0 4px 4px 0; }
-  .bar span { position: relative; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  td.n { text-align: right; padding: 8px 0 8px 8px; color: var(--ink-2); white-space: nowrap; }
+  .bar { position: relative; padding: 8px 10px; min-width: 0; }
+  .bar b { position: absolute; inset: 4px auto 4px 0; background: var(--mark-soft); border-radius: 0 6px 6px 0; }
+  .bar span { position: relative; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
   .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
 
-  .notice { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 28px; max-width: 560px; margin: 40px auto; }
-  .notice h2 { margin: 0 0 8px; font: 26px/1.2 "Instrument Serif", Georgia, serif; }
+  .notice { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 32px; max-width: 620px; }
+  .notice h2 { margin: 0 0 10px; font: 800 30px/1.1 var(--display); letter-spacing: -.05em; }
   .notice p { margin: 8px 0; color: var(--ink-2); }
-  .notice a.btn { display: inline-block; margin-top: 12px; background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px; text-decoration: none; font-weight: 600; }
+  .notice a.btn { display: inline-block; margin-top: 14px; background: var(--hero); color: var(--lime); padding: 12px 20px; border-radius: 999px; text-decoration: none; font-weight: 700; }
   code { background: var(--mark-soft); padding: 1px 6px; border-radius: 6px; font-size: 13px; }
-  footer { margin-top: 20px; font-size: 12px; color: var(--muted); }
+  footer { padding: 28px 0 48px; font-size: 13px; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+  footer svg { flex: none; }
 
-  @media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, 1fr); } .grid, .grid3 { grid-template-columns: 1fr; } }
-  @media (max-width: 420px) { .tile .value { font-size: 24px; } .ranges button { padding: 6px 9px; } }
+  @media (max-width: 960px) { .tiles { grid-template-columns: repeat(2, 1fr); } .grid, .grid2 { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) {
+    .wrap { padding: 0 16px; } nav a.back { display: none; } .tile .value { font-size: 30px; }
+    .ranges button { padding: 8px 13px; font-size: 14px; } .card { padding: 18px; }
+    .section-title .label { display: none; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <a class="brand" href="/">wellnest</a>
-    <h1>Site statistics</h1>
-    <span class="live" id="live" hidden><i></i><span></span></span>
-    <div class="ranges" role="group" aria-label="Date range" id="ranges">
-      <button data-days="1">24h</button><button data-days="7">7 days</button><button data-days="30">30 days</button><button data-days="90">90 days</button><button data-days="365">12 months</button>
+<div class="hero">
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="/"><img src="/landing/homebeta-header-mark.webp" alt="" width="36" height="25">wellnest</a>
+      <span class="spacer"></span>
+      <a class="back" href="/">Back to site</a>
+      <a class="cta" href="/dashboard">Open app <span aria-hidden="true">↗</span></a>
+    </nav>
+    <div class="eyebrow"><i></i><span id="live">SITE STATISTICS</span></div>
+    <h1 class="headline" id="headline">Your visitors.<em>Loading the numbers…</em></h1>
+    <div class="label" id="range-label">Showing</div>
+    <div class="ranges" role="group" aria-labelledby="range-label" id="ranges">
+      <button data-days="1">24 hours</button><button data-days="7">7 days</button><button data-days="30">30 days</button><button data-days="90">90 days</button><button data-days="365">12 months</button>
     </div>
-  </header>
+    <div class="tiles" id="tiles"></div>
+  </div>
+</div>
+<div class="band"><div class="wrap" id="band"><span class="label">At a glance</span></div></div>
+<div class="wrap">
   <main id="main"><p class="empty">Loading…</p></main>
-  <footer>Counted on wellnest.services by WellNest's own server — no cookies, no IP addresses stored. Visitors are counted once per day.</footer>
+  <footer><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Counted by WellNest's own server — no cookies, no IP addresses stored. Visitors are counted once per day.</footer>
 </div>
 
 <script>
@@ -148,6 +189,8 @@
   }
 
   function notice(title, lines, link) {
+    headline("Site statistics.", "Nothing to show just yet.");
+    document.getElementById("tiles").replaceChildren();
     main.replaceChildren(el("div", { class: "notice" }, [el("h2", { text: title })].concat(lines.map(function (l) {
       return el("p", {}, Array.isArray(l) ? l : [l]);
     })).concat(link ? [el("a", { class: "btn", href: link[1], text: link[0] })] : [])));
@@ -165,12 +208,12 @@
     } else {
       d.textContent = "No earlier data to compare";
     }
-    return el("div", { class: "card tile" }, [el("div", { class: "label", text: label }), el("div", { class: "value", text: value }), d]);
+    return el("div", { class: "tile" }, [el("div", { class: "k", text: label }), el("div", { class: "value", text: value }), d]);
   }
 
   function table(title, rows, cols, opts) {
     opts = opts || {};
-    var card = el("section", { class: "card panel" }, [el("h2", { text: title }, opts.note ? [el("span", { text: opts.note })] : [])]);
+    var card = el("section", { class: "card panel" }, [el("h3", { text: title }, opts.note ? [el("span", { text: opts.note })] : [])]);
     if (!rows.length) { card.appendChild(el("p", { class: "empty", text: opts.empty || "Nothing yet for this period." })); return card; }
     var max = Math.max.apply(null, rows.map(function (r) { return r[cols[0].key] || 0; })) || 1;
     var head = el("tr", {}, [el("th", { text: opts.first || "" })].concat(cols.map(function (c) { return el("th", { text: c.label }); })));
@@ -202,7 +245,7 @@
                     : d.toLocaleDateString([], { day: "numeric", month: "short", year: data.days > 120 ? "2-digit" : undefined });
     };
 
-    var card = el("section", { class: "card chart-card" }, [el("h2", { text: "Visitors" }, [el("span", { text: hourly ? "per hour" : "per day" })])]);
+    var card = el("section", { class: "card chart-card" }, [el("h3", { text: "Visitors" }, [el("span", { text: "Hover for detail" })])]);
     var box = el("div", { class: "chart" });
     var tip = el("div", { class: "tip", role: "status" });
     card.appendChild(box);
@@ -270,31 +313,64 @@
   }
 
   // ---------- render ----------
+  function sectionTitle(text, accent, label) {
+    return el("div", { class: "section-title" }, [el("h2", {}, [text + " ", el("em", { text: accent })]), label ? el("span", { class: "label", text: label }) : null]);
+  }
+  var RANGE_WORDS = { 1: "in the last 24 hours.", 7: "in the last 7 days.", 30: "in the last 30 days.", 90: "in the last 90 days.", 365: "in the last 12 months." };
+  function headline(big, small) {
+    document.getElementById("headline").replaceChildren(document.createTextNode(big), el("em", { text: small }));
+  }
+  function band(items) {
+    var b = document.getElementById("band");
+    b.replaceChildren(el("span", { class: "label", text: "At a glance" }));
+    items.forEach(function (t, i) {
+      if (i) b.appendChild(el("span", { class: "star", text: "✳", "aria-hidden": "true" }));
+      b.appendChild(el("span", { class: "item", text: t }));
+    });
+  }
+
   function render(data) {
     var t = data.totals || {}, p = data.previous || {};
-    var live = document.getElementById("live");
-    live.hidden = false; live.querySelector("span").textContent = num(data.live) + " on the site now";
-    var period = data.days === 1 ? "24h" : data.days + " days";
+    var period = data.days === 1 ? "24 hours" : data.days === 365 ? "12 months" : data.days + " days";
+    document.getElementById("live").textContent = "SITE STATISTICS · " + num(data.live) + " ON THE SITE NOW";
+    headline(num(t.visitors) + " visitor" + (t.visitors === 1 ? "." : "s."), RANGE_WORDS[data.days] || "in this period.");
 
     if (!t.views) {
+      document.getElementById("tiles").replaceChildren();
+      band(["Waiting for the first visit"]);
       main.replaceChildren(el("div", { class: "notice" }, [el("h2", { text: "No visits counted yet" }),
-        el("p", { text: "Counting starts once this version of the site is live. Visits from then on will show up here within a few seconds." })]));
+        el("p", { text: "Visits show up here a few seconds after they happen. Open any page of wellnest.services in another tab, then refresh this page." })]));
       return;
     }
-    var tiles = el("div", { class: "tiles" }, [
+    document.getElementById("tiles").replaceChildren(
       tile("Visitors", num(t.visitors), t.visitors, p.visitors, false, period),
       tile("Page views", num(t.views), t.views, p.views, false, period),
       tile("Avg. time on site", dur(t.avg_session_seconds), t.avg_session_seconds, p.avg_session_seconds, false, period),
-      tile("Bounce rate", (t.bounce_rate || 0).toFixed(0) + "%", t.bounce_rate, p.bounce_rate, true, period),
-    ]);
+      tile("Bounce rate", (t.bounce_rate || 0).toFixed(0) + "%", t.bounce_rate, p.bounce_rate, true, period)
+    );
+    var topC = data.countries[0], topS = data.sources[0], topP = data.pages[0], topD = data.devices[0];
+    band([
+      topC && "Most from " + country(topC.name).replace(/^\S+\s+/, ""),
+      topP && "Top page " + pretty(topP.name),
+      topS && "Top source " + (topS.name === "Direct" ? "direct" : topS.name),
+      topD && Math.round(topD.visitors / Math.max(1, t.visitors) * 100) + "% on " + topD.name.toLowerCase(),
+    ].filter(Boolean));
+
     var visitorsCol = [{ key: "visitors", label: "Visitors" }, { key: "views", label: "Views" }];
     var pages = table("Top pages", data.pages, [{ key: "views", label: "Views" }, { key: "visitors", label: "Visitors" }, { key: "avg_seconds", label: "Avg. time", fmt: function (v) { return v ? dur(v) : "–"; } }], { first: "Page", name: pretty });
     var countries = table("Countries", data.countries, visitorsCol, { first: "Country", name: country });
-    var sources = table("Where visitors came from", data.sources, [{ key: "visitors", label: "Visitors" }], { first: "Source", name: function (n) { return n === "Direct" ? "Direct / typed in" : n; } });
+    var sources = table("Sources", data.sources, [{ key: "visitors", label: "Visitors" }], { first: "Source", name: function (n) { return n === "Direct" ? "Direct / typed in" : n; } });
     var campaigns = table("Campaigns", data.campaigns, [{ key: "visitors", label: "Visitors" }], { first: "utm_campaign", empty: "No links with utm_campaign visited in this period." });
     var devices = table("Devices", data.devices, visitorsCol, { first: "Device" });
     var browsers = table("Browsers", data.browsers, visitorsCol, { first: "Browser" });
-    main.replaceChildren(tiles, lineChart(data), el("div", { class: "grid" }, [pages, countries]), el("div", { class: "grid3" }, [sources, devices, browsers]), el("div", { class: "grid3" }, [campaigns]));
+    main.replaceChildren(
+      sectionTitle("Traffic,", "over time.", data.bucket < 86400000 ? "Per hour" : "Per day"),
+      lineChart(data),
+      sectionTitle("What they", "looked at.", "Pages & places"),
+      el("div", { class: "grid" }, [pages, countries]),
+      sectionTitle("How they", "found you.", "Sources & devices"),
+      el("div", { class: "grid2" }, [sources, campaigns, devices, browsers])
+    );
   }
 
   async function load() {
