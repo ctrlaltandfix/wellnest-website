@@ -4,9 +4,38 @@ import { SITE, json, fail, corsHeaders, ensureSchema, currentUser } from "./lib.
 import { handleIdentity, handleGoogleCallback } from "./identity.js";
 import { handleCollect, handleStats } from "./analytics.js";
 import { handleEditor, servePreview, servePreviewApp, previewCookie } from "./editor.js";
+import { handleIndexNow } from "./seo.js";
 import { handleMe, handleEntities, handleUploads, handleFileSign, handleFileRaw, handleFunction } from "./data.js";
 
 const OLD_BASE = "/wellnest-website";
+
+// Routes the app draws itself (they have no page file). From the app's router.
+const APP_ROUTES = new Set(["achievements", "appointments", "asthma", "care-circle", "chronic-pain", "confirm-free-kit", "dashboard",
+  "dashboard-beta", "email-preferences", "emergency-plan", "emergency-plan-shared", "epilepsy", "exercises", "expenses",
+  "free-symptom-diary-template", "growth", "login", "medications", "meeting-note-shared", "reflection", "settings", "start"]);
+const PUBLIC_APP_ROUTES = new Set(["free-symptom-diary-template"]);
+
+// Pages the old app linked to in capitals; they're served in lower case.
+const RENAMED = { "/pricing": true, "/privacypolicy": true, "/termsofservice": true };
+
+// The one address a page should be reached at, or null if `url` already is it.
+// /Pricing -> /pricing, /about.html -> /about, /index.html -> /, /about/ -> /about
+export async function cleanAddress(env, url) {
+  const p = url.pathname;
+  if (p === "/" || p.startsWith("/assets/") || p.startsWith("/api/") || p.startsWith("/admin") || url.searchParams.has("wn_preview")) return null;
+  if (p === "/index.html") return "/";
+  const lower = p.toLowerCase().replace(/\.html$/, "");
+  if (RENAMED[lower] && p !== lower) return lower;
+  const page = p.match(/^\/([A-Za-z0-9-]+)\.html$/);
+  if (page && page[1] !== "404") return "/" + page[1];
+  if (p.length > 1 && p.endsWith("/") && /^\/[A-Za-z0-9/-]+\/$/.test(p)) {
+    // Only when the page is really served without the slash (some folders need it).
+    const bare = p.replace(/\/+$/, "");
+    const head = await env.ASSETS.fetch(new Request(url.origin + bare, { method: "HEAD", redirect: "manual" }));
+    if (head.status === 200) return bare;
+  }
+  return null;
+}
 
 async function api(request, env, path) {
   await ensureSchema(env);
@@ -26,6 +55,7 @@ async function api(request, env, path) {
 
   if (path === "/api/analytics/stats" && request.method === "GET") return handleStats(request, env, user);
   if (parts[0] === "editor" && parts[1]) return handleEditor(request, env, user, parts[1]);
+  if (path === "/api/seo/indexnow") return handleIndexNow(request, env, user);
   if (path === "/api/auth/me") return handleMe(request, env, user);
   if (parts[0] === "entities" && parts[1]) return handleEntities(request, env, user, decodeURIComponent(parts[1]), parts[2] && decodeURIComponent(parts[2]));
   if (parts[0] === "uploads") return handleUploads(request, env, user, parts.slice(1));
@@ -44,7 +74,8 @@ export default {
     }
     // Old links with the GitHub Pages prefix -> the clean address
     if (url.pathname === OLD_BASE || url.pathname.startsWith(OLD_BASE + "/")) {
-      return Response.redirect(url.origin + (url.pathname.slice(OLD_BASE.length) || "/") + url.search, 301);
+      const next = new URL(url.origin + (url.pathname.slice(OLD_BASE.length) || "/") + url.search);
+      return Response.redirect(url.origin + ((await cleanAddress(env, next)) || next.pathname) + url.search, 301);
     }
 
     // The app's sign-in library also uses Netlify Identity's original address.
@@ -79,7 +110,27 @@ export default {
       const app = await servePreviewApp(request, env, url);
       if (app) return app;
     }
-    const res = await env.ASSETS.fetch(request);
+    // One address per page for search engines: permanent redirects from the
+    // variants (/Pricing, /about.html, /about/) to the address the page is served at.
+    if (request.method === "GET" || request.method === "HEAD") {
+      const clean = await cleanAddress(env, url);
+      if (clean) return Response.redirect(url.origin + clean + url.search, 301);
+    }
+
+    let res = await env.ASSETS.fetch(request);
+    // Pages that exist only inside the app (no file of their own) come back from the
+    // 404 page, which starts the app. Answer them as found, and keep the private ones
+    // out of search results.
+    const route = url.pathname.replace(/\/+$/, "").split("/")[1] || "";
+    if (res.status === 404 && APP_ROUTES.has(route)) {
+      res = new Response(res.body, { status: 200, headers: res.headers });
+      if (!PUBLIC_APP_ROUTES.has(route)) res.headers.set("X-Robots-Tag", "noindex");
+    }
+    // The workers.dev address serves the same site: keep it out of search results.
+    if (url.hostname.endsWith(".workers.dev")) {
+      res = new Response(res.body, res);
+      res.headers.set("X-Robots-Tag", "noindex");
+    }
     // Opening an ordinary page ends any preview in this browser, so the live site
     // never loads the editor's unpublished app copy.
     const dest = request.headers.get("Sec-Fetch-Dest");

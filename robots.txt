@@ -1,10 +1,15 @@
 # robots.txt for WellNest — https://wellnest.services
 # All crawlers, including AI assistants, are welcome to crawl the public site.
+# The API and the site's admin pages hold nothing for search results.
 
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /api/
+Disallow: /admin/
 
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /admin/
 
 Sitemap: https://wellnest.services/sitemap.xml

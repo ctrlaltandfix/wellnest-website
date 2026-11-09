@@ -20,6 +20,7 @@
 import { json, fail, now, randomToken } from "./lib.js";
 import { isAnalyticsAdmin } from "./analytics.js";
 import { stripBase } from "./sitepaths.js";
+import { submitIndexNow, pageUrl } from "./seo.js";
 
 export const REPO = "ctrlaltandfix/wellnest-website";
 const BRANCH = "main";
@@ -625,7 +626,11 @@ async function handlePublish(request, env, user) {
   });
   await gh(env, `/git/refs/heads/${BRANCH}`, { method: "PATCH", body: JSON.stringify({ sha: commit.sha, force: false }) });
   clearTreeCache();
-  return json({ commit: commit.sha, url: `https://github.com/${REPO}/commit/${commit.sha}`, files: [...writes.keys(), ...blobEntries.map(e => e.path)] });
+  // Tell search engines which pages changed (best effort; never blocks publishing).
+  const pages = [...writes.keys()].map(pageUrl).filter(Boolean);
+  let indexnow = null;
+  if (pages.length) { try { indexnow = await submitIndexNow(pages); } catch (e) { indexnow = { submitted: 0, error: String(e?.message || e) }; } }
+  return json({ indexnow, commit: commit.sha, url: `https://github.com/${REPO}/commit/${commit.sha}`, files: [...writes.keys(), ...blobEntries.map(e => e.path)] });
 }
 
 // GitHub token problems, in words the owner can act on (null if it isn't one).

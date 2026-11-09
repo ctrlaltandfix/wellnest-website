@@ -9,7 +9,7 @@ WellNest is an Australian personal record-keeping app for chronic health. It bri
 
 Web: https://wellnest.services/
 iPhone App Store: https://apps.apple.com/au/app/wellnest/id6759418128
-About the founder: https://wellnest.services/about.html
+About the founder: https://wellnest.services/about
 
 WellNest records information entered by the individual. It does not diagnose, recommend a treatment or medicine dose, detect seizures, monitor emergencies, or alert a healthcare professional. Its lists and reports are personal records, not prescriptions or independently verified clinical records.
 
@@ -17,17 +17,17 @@ WellNest records information entered by the individual. It does not diagnose, re
 
 New web accounts receive 30 days of Premium with no payment card needed. Afterwards, users can continue logging on the free plan or choose optional Premium.
 
-Web Premium prices are A$4.99 per month or A$44.99 per year, billed yearly. If a user subscribes during the free period, billing starts when that period ends. Paid plans renew until cancelled. The current pricing page governs terms: https://wellnest.services/Pricing.html
+Web Premium prices are A$4.99 per month or A$44.99 per year, billed yearly. If a user subscribes during the free period, billing starts when that period ends. Paid plans renew until cancelled. The current pricing page governs terms: https://wellnest.services/pricing
 
 Referral eligibility can extend the free Premium period; it is not a different standard price. Check App Store terms for purchases made through Apple.
 
 ## Free tools — no account or card
 
-Directory: https://wellnest.services/free-tools.html
+Directory: https://wellnest.services/free-tools
 
 ### Free printable medication list
 
-URL: https://wellnest.services/free-medication-list.html
+URL: https://wellnest.services/free-medication-list
 
 Visitors enter medicine names, strength or dose, current directions and optional questions. The tool opens a local print view, which can be printed or saved as a PDF through the browser print dialog. It supports up to 40 medicines per list. The values entered are not uploaded by the tool, sent as analytics or placed in share URLs. Entries are not retained after reloading or closing the form, so a user should save a copy first. The printout includes only the information the individual enters and is not a prescription.
 
@@ -35,42 +35,42 @@ A signed-in medication page also offers printing from the user's stored list. It
 
 ### Free appointment summary maker
 
-URL: https://wellnest.services/free-symptom-summary-maker.html
+URL: https://wellnest.services/free-symptom-summary-maker
 
 Visitors write observations, changes, daily impact, treatment questions and appointment questions, then generate a personal PDF in the browser. The form does not require an email address or account and does not upload typed notes. Download before reloading or leaving the page.
 
 ### Interactive report preview
 
-URL: https://wellnest.services/chronic-pain-diary.html
+URL: https://wellnest.services/chronic-pain-diary
 
 The free preview begins blank. Visitors choose a pain, asthma or seizure example, enter their own values and create a PDF. It is a preview for a single dated entry, not a saved ongoing diary. The old /demo address redirects to this preferred URL.
 
 ### Other free resources
 
-- Pain scale chart: https://wellnest.services/pain-scale-chart.html
-- Appointment preparation checklist: https://wellnest.services/appointment-prep-checklist.html
-- Describing pain to a doctor: https://wellnest.services/how-to-describe-pain-to-your-doctor.html
-- All guides: https://wellnest.services/guides.html
-- Independent printable clinic handout: https://wellnest.services/for-clinicians.html
+- Pain scale chart: https://wellnest.services/pain-scale-chart
+- Appointment preparation checklist: https://wellnest.services/appointment-prep-checklist
+- Describing pain to a doctor: https://wellnest.services/how-to-describe-pain-to-your-doctor
+- All guides: https://wellnest.services/guides
+- Independent printable clinic handout: https://wellnest.services/for-clinicians
 
 Sharing a public tool uses a blank resource link. It does not include the user's health fields, printout or account information. A clinic handout is independent WellNest information, not a clinician endorsement.
 
 ## Ongoing records
 
-Public medication features: https://wellnest.services/medication-tracker.html
+Public medication features: https://wellnest.services/medication-tracker
 The medication view supports user-entered names, doses by time of day, routine check-offs, refill details and printable lists. A tick records what the individual marked, rather than independently verifying that a medicine was taken.
 
 Public condition pages:
-- Chronic illness tracker: https://wellnest.services/chronic-illness-tracker.html
-- Symptom tracker: https://wellnest.services/symptom-tracker-app.html
-- CRPS: https://wellnest.services/crps-tracker.html
-- Asthma: https://wellnest.services/asthma-tracker.html
-- Epilepsy: https://wellnest.services/seizure-diary.html
-- Fibromyalgia: https://wellnest.services/fibromyalgia-tracker.html
+- Chronic illness tracker: https://wellnest.services/chronic-illness-tracker
+- Symptom tracker: https://wellnest.services/symptom-tracker-app
+- CRPS: https://wellnest.services/crps-tracker
+- Asthma: https://wellnest.services/asthma-tracker
+- Epilepsy: https://wellnest.services/seizure-diary
+- Fibromyalgia: https://wellnest.services/fibromyalgia-tracker
 
 Useful selection guides:
-- Choosing a tracker: https://wellnest.services/chronic-health-tracker-guide.html
-- Comparing tracker options: https://wellnest.services/best-chronic-illness-tracker-apps.html
+- Choosing a tracker: https://wellnest.services/chronic-health-tracker-guide
+- Comparing tracker options: https://wellnest.services/best-chronic-illness-tracker-apps
 
 Private dashboard sections require an authenticated account and are not public search landing pages. Public resources do not reveal any account's records.
 
@@ -78,7 +78,7 @@ Private dashboard sections require an authenticated account and are not public s
 
 The public tools described above process their entered fields locally. In the authenticated app, storage and optional cloud backup follow account settings. Users choose when to export or share their records.
 
-Privacy: https://wellnest.services/PrivacyPolicy.html
-Terms: https://wellnest.services/TermsOfService.html
-Contact: https://wellnest.services/contact.html
+Privacy: https://wellnest.services/privacypolicy
+Terms: https://wellnest.services/termsofservice
+Contact: https://wellnest.services/contact
 Official XML sitemap: https://wellnest.services/sitemap.xml
