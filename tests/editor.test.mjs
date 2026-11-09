@@ -396,3 +396,22 @@ test('long AI turns keep the connection alive; problems arrive as JSON', async (
   const bad = await (await handleEditor(req('chat', { provider: 'anthropic', model: 'm', messages: [{ role: 'user', content: 'hi' }] }), env(), OWNER, 'chat')).json();
   assert.match(bad.error, /GitHub rejected the GITHUB_TOKEN/);
 });
+
+test('"As edited" previews leave the app out, so it cannot redraw over the changes', async () => {
+  fakeWorld();
+  const e = env();
+  await ensureSchema(e);
+  await e.DB.prepare('CREATE TABLE IF NOT EXISTS editor_previews (id TEXT NOT NULL, path TEXT NOT NULL, content TEXT NOT NULL, updated INTEGER NOT NULL, PRIMARY KEY (id, path))').run();
+  const page = '<head><link rel="modulepreload" href="/wellnest' + '-website/assets/index-calendar-1.js"><script type="module" crossorigin src="/wellnest' + '-website/assets/index-calendar-1.js"></script><script src="/x.js"></script></head><h1>Track more.</h1>';
+  const { id } = await (await handleEditor(req('preview', { files: { 'index.html': page } }), e, OWNER, 'preview')).json();
+  const get = async q => servePreview(new Request('https://wellnest.services/' + q), e, new URL('https://wellnest.services/' + q));
+  const still = await get('?wn_preview=' + id + '&wn_static=1');
+  const html = await still.text();
+  assert.match(html, /Track more\./);
+  assert.doesNotMatch(html, /assets\/index-calendar|modulepreload/);  // app gone
+  assert.match(html, /<script src="\/x\.js"><\/script>/);             // other scripts kept
+  assert.equal(still.headers.get('Set-Cookie'), null);                // no app copy needed
+  const live = await get('?wn_preview=' + id);
+  assert.match(await live.text(), /assets\/index-calendar-1\.js/);    // Interactive keeps the app
+  assert.match(live.headers.get('Set-Cookie'), /wn_preview=/);
+});

@@ -507,6 +507,13 @@ export async function servePreviewApp(request, env, url) {
   return new Response(row.content, { headers: { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store", "X-WellNest-Preview": "draft" } });
 }
 
+// A page's HTML without the app's scripts (its module entry and preloads).
+export function withoutApp(html) {
+  return html
+    .replace(/<script\b[^>]*\bsrc=["'][^"']*\/assets\/index[^"']*\.js["'][^>]*>\s*<\/script>/gi, "")
+    .replace(/<link\b[^>]*\brel=["']modulepreload["'][^>]*>/gi, "");
+}
+
 export async function servePreview(request, env, url) {
   const id = url.searchParams.get("wn_preview") || "";
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(id) || request.method !== "GET") return null;
@@ -518,13 +525,15 @@ export async function servePreview(request, env, url) {
       .bind(id, gp, Date.now() - PREVIEW_TTL).first();
     if (row) {
       const ext = (gp.match(/\.([a-z]+)$/i) || [])[1]?.toLowerCase() || "html";
-      return new Response(stripBase(row.content), {
-        headers: {
-          "Content-Type": TYPES[ext] || "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex", "X-WellNest-Preview": "draft",
-          // lets this page's app file load with the same unpublished wording (15 minutes)
-          "Set-Cookie": `wn_preview=${id}; Path=/; Max-Age=900; Secure; HttpOnly; SameSite=Lax`,
-        },
-      });
+      const headers = { "Content-Type": TYPES[ext] || "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex", "X-WellNest-Preview": "draft" };
+      // "As edited": the page exactly as changed. The app is left out, so it can't
+      // redraw the page from its own (published) copy and hide the changes.
+      if (url.searchParams.get("wn_static") === "1" && ext === "html") {
+        return new Response(withoutApp(stripBase(row.content)), { headers: { ...headers, "X-WellNest-Preview": "draft-static" } });
+      }
+      // lets this page's app file load with the same unpublished wording (15 minutes)
+      headers["Set-Cookie"] = `wn_preview=${id}; Path=/; Max-Age=900; Secure; HttpOnly; SameSite=Lax`;
+      return new Response(stripBase(row.content), { headers });
     }
   }
   return null;

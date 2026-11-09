@@ -39,7 +39,7 @@
   .preview { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); }
   .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
   .toolbar select { max-width: 240px; }
-  select[hidden] { display: none; }
+  select[hidden], .seg[hidden] { display: none; }
   select, .seg button, .btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: 13px; cursor: pointer; }
   select { padding-right: 28px; appearance: none; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2316372f' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 11px center; }
   .seg { display: inline-flex; gap: 2px; background: var(--soft); border-radius: 999px; padding: 2px; }
@@ -417,13 +417,27 @@
     ui.moreSel.hidden = !more;
     if (more) ui.moreSel.value = path;
   }
+  // Drafted pages show "As edited" (the page exactly as changed, app paused) or
+  // "Interactive" (the app running; it carries wording changes only).
+  function previewView() { return prefs.view === "interactive" ? "interactive" : "edited"; }
   function showPage(path) {
     prefs.page = path; persist();
     syncPicker(path);
-    var drafted = hasDraftFor(path) && previewId;
-    ui.frame.src = urlFor(path) + (drafted ? (urlFor(path).indexOf("?") < 0 ? "?" : "&") + "wn_preview=" + encodeURIComponent(previewId) + "&t=" + Date.now() : "");
+    var drafted = hasDraftFor(path) && previewId, view = previewView();
+    ui.frame.src = urlFor(path) + (drafted ? (urlFor(path).indexOf("?") < 0 ? "?" : "&") + "wn_preview=" + encodeURIComponent(previewId)
+      + (view === "edited" ? "&wn_static=1" : "") + "&t=" + Date.now() : "");
     ui.mode.className = drafted ? "chip draft" : "chip";
-    ui.mode.textContent = drafted ? "With your changes" : isApp(path) ? "Live app · preview only" : "Live site";
+    var note = pageNotes[path] || pageNotes[path.replace(/\.html$/, "/index.html")] || {};
+    ui.mode.textContent = !drafted ? (isApp(path) ? "Live app · preview only" : "Live site")
+      : view === "edited" ? "With your changes"
+      : note.layout || appError ? "Interactive · wording changes only" : "With your changes · interactive";
+    ui.mode.title = !drafted ? "" : view === "edited"
+      ? "The page exactly as changed. Menus and animations are paused here so nothing redraws over your changes."
+      : "The page with the app running, as visitors get it. Only wording changes appear here; layout changes need an app update before visitors see them.";
+    if (ui.view) {
+      ui.view.hidden = !drafted;
+      ui.view.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.view === view)); });
+    }
   }
 
   // ---------- rendering ----------
@@ -769,7 +783,12 @@
         ui.stage.classList.toggle("phone", d === "phone");
       } });
     }));
-    var toolbar = el("div", { class: "toolbar" }, [ui.pageSel, ui.moreSel, seg, ui.mode, el("span", { class: "spacer" }),
+    ui.view = el("div", { class: "seg", role: "group", "aria-label": "How to preview your changes", hidden: true }, [["edited", "As edited"], ["interactive", "Interactive"]].map(function (v) {
+      return el("button", { type: "button", "data-view": v[0], "aria-pressed": String(previewView() === v[0]), text: v[1],
+        title: v[0] === "edited" ? "Your changes exactly as made (menus and animations paused)" : "With the app running, as visitors get it (wording changes only)",
+        onclick: function () { prefs.view = v[0]; persist(); showPage(prefs.page); } });
+    }));
+    var toolbar = el("div", { class: "toolbar" }, [ui.pageSel, ui.moreSel, seg, ui.mode, ui.view, el("span", { class: "spacer" }),
       ui.topPublish = el("button", { type: "button", class: "btn primary", text: "Publish", disabled: true, onclick: function () { publish(); } }),
       el("button", { type: "button", class: "btn", text: "Reload", onclick: function () { showPage(prefs.page); } }),
       el("button", { type: "button", class: "btn", text: "Open ↗", onclick: function () { window.open(ui.frame.src, "_blank", "noopener"); } })]);

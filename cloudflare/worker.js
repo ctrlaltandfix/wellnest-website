@@ -79,6 +79,15 @@ export default {
       const app = await servePreviewApp(request, env, url);
       if (app) return app;
     }
-    return env.ASSETS.fetch(request);
+    const res = await env.ASSETS.fetch(request);
+    // Opening an ordinary page ends any preview in this browser, so the live site
+    // never loads the editor's unpublished app copy.
+    const dest = request.headers.get("Sec-Fetch-Dest");
+    if (previewCookie(request) && (dest === "document" || dest === "iframe") && !url.pathname.startsWith("/assets/")) {
+      const out = new Response(res.body, res);
+      out.headers.append("Set-Cookie", "wn_preview=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax");
+      return out;
+    }
+    return res;
   },
 };
