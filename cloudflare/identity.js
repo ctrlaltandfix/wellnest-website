@@ -36,6 +36,13 @@ async function consumeToken(env, token, kind) {
   return env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(row.user_id).first();
 }
 
+async function renewRefreshToken(env, token) {
+  if (!token) return null;
+  const row = await env.DB.prepare("UPDATE tokens SET expires_at = ? WHERE token_hash = ? AND kind = 'refresh' AND expires_at > ? RETURNING user_id")
+    .bind(Date.now() + REFRESH_TTL * 1000, await sha256(String(token)), Date.now()).first();
+  return row && env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(row.user_id).first();
+}
+
 export async function issueSession(env, user) {
   const g = gotrueUser(user);
   const access = await signJwt(env, { sub: user.id, email: user.email, aud: "", app_metadata: g.app_metadata, user_metadata: g.user_metadata });
@@ -148,9 +155,14 @@ export async function handleIdentity(request, env, path) {
       return json(await issueSession(env, user));
     }
     if (body.grant_type === "refresh_token") {
-      const user = await consumeToken(env, body.refresh_token, "refresh");
+      // Refresh tokens are not rotated: the dashboard, /admin pages and other tabs each
+      // keep their own copy, and a one-time token used by one of them signed out the rest.
+      // The same token stays valid and its 60 days restart whenever it is used.
+      const user = await renewRefreshToken(env, body.refresh_token);
       if (!user || !user.confirmed_at) return json({ error: "invalid_grant", error_description: "Invalid Refresh Token" }, 400);
-      return json(await issueSession(env, user));
+      const g = gotrueUser(user);
+      const access = await signJwt(env, { sub: user.id, email: user.email, aud: "", app_metadata: g.app_metadata, user_metadata: g.user_metadata });
+      return json({ access_token: access, token_type: "bearer", expires_in: ACCESS_TOKEN_TTL, refresh_token: body.refresh_token });
     }
     return json({ error: "unsupported_grant_type", error_description: "Unsupported grant type" }, 400);
   }
