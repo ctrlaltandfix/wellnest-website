@@ -154,6 +154,12 @@ export default {
       res = new Response(res.body, { status: 200, headers: res.headers });
       if (!PUBLIC_APP_ROUTES.has(route)) res.headers.set("X-Robots-Tag", "noindex");
     }
+    // Text files (robots.txt, llms.txt) are UTF-8: say so, or browsers and some
+    // crawlers misread characters like "—".
+    if (res.status === 200 && /\.txt$/i.test(url.pathname) && !/charset/i.test(res.headers.get("Content-Type") || "")) {
+      res = new Response(res.body, res);
+      res.headers.set("Content-Type", "text/plain; charset=utf-8");
+    }
     // The workers.dev address serves the same site: keep it out of search results.
     if (url.hostname.endsWith(".workers.dev")) {
       res = new Response(res.body, res);

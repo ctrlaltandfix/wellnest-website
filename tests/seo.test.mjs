@@ -119,3 +119,21 @@ test('structured data: one block per page, valid, with share image and breadcrum
     assert.doesNotMatch(html, /favicon\.svg"\}/, file + ': PNG logo');
   }
 });
+
+// The homepage is the page Google crawls most; its footer must link to every
+// content page in the sitemap, in the page and in the app's copy (the app
+// redraws the page after loading). tools/footer-guides-links.py adds the row.
+test('homepage links (page and app) reach every sitemap page', async () => {
+  const { readFileSync } = await import('node:fs');
+  const root = new URL('..', import.meta.url).pathname;
+  const home = readFileSync(root + 'index.html', 'utf8');
+  const app = readFileSync(root + home.match(/assets\/index[^"/]*\.js/)[0], 'utf8');
+  const sitemap = readFileSync(root + 'sitemap.xml', 'utf8');
+  const pages = [...sitemap.matchAll(/<loc>https:\/\/wellnest\.services(\/[^<]*)<\/loc>/g)].map(m => m[1]).filter(p => p !== '/');
+  const inPage = new Set([...home.matchAll(/href="\/wellnest-website(\/[^"#?]*)"/g)].map(m => m[1].replace(/\.html$/, '')));
+  const missing = pages.filter(p => !inPage.has(p));
+  assert.deepEqual(missing, [], 'homepage HTML has no link to: ' + missing.join(', '));
+  for (const p of ['/pain-scale-chart', '/symptom-tracker-app', '/wellnest-vs-bearable', '/crps-symptoms-guide']) {
+    assert.ok(app.includes('href:`' + p + '`'), 'app homepage has no link to ' + p);
+  }
+});
