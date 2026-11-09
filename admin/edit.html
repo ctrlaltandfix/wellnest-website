@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Edit WellNest</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Same look as the landing page and /admin/analytics. */
+  :root {
+    --hero: #081e1b; --hero-2: #0f2c25; --on-hero: #f6fbf4; --on-hero-2: #bbd0c5; --hero-line: rgba(246,251,244,.12);
+    --lime: #d8fb96; --lime-ink: #10251c;
+    --bg: #f8f8f3; --surface: #ffffff; --ink: #16372f; --ink-2: #33524a; --muted: #6b7d76;
+    --line: #e6e9e1; --soft: #eef0ea; --mark: #1f7a4d; --mark-soft: #e5f3e6; --bad: #b4472c; --bad-soft: #fbe9e3;
+    --display: "Bricolage Grotesque", Geist, system-ui, sans-serif;
+    --serif: "Instrument Serif", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 Geist, Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; }
+  button, select, input, textarea { font: inherit; color: inherit; }
+  button:focus-visible, select:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; }
+
+  /* ---- top bar ---- */
+  header { background: linear-gradient(180deg, var(--hero), var(--hero-2)); color: var(--on-hero); display: flex; align-items: center; gap: 16px; padding: 10px 20px; flex: none; }
+  .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--on-hero); text-decoration: none; font: 800 21px/1 var(--display); letter-spacing: -.04em; }
+  .brand img { width: 30px; height: auto; }
+  header h1 { margin: 0; font: italic 400 22px/1 var(--serif); color: var(--lime); }
+  header .spacer { flex: 1; }
+  header a.link { color: var(--on-hero); text-decoration: none; font-weight: 600; font-size: 14px; }
+  header a.link:hover { color: var(--lime); }
+
+  /* ---- two panes: preview (left) and conversation (right) ---- */
+  .panes { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px; }
+  .preview { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .toolbar select { max-width: 260px; }
+  select, .seg button, .btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: 13px; cursor: pointer; }
+  select { padding-right: 28px; appearance: none; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2316372f' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 11px center; }
+  .seg { display: inline-flex; gap: 2px; background: var(--soft); border-radius: 999px; padding: 2px; }
+  .seg button { border: 0; background: none; padding: 5px 11px; }
+  .seg button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 1px 2px rgba(22,55,47,.15); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; background: var(--soft); color: var(--ink-2); }
+  .chip.draft { background: var(--lime); color: var(--lime-ink); }
+  .toolbar .spacer { flex: 1; }
+  .btn:hover, select:hover { border-color: #c9d1c6; }
+  .btn.primary { background: var(--hero); border-color: var(--hero); color: var(--lime); }
+  .btn.primary:disabled { opacity: .45; cursor: default; }
+  .btn.quiet { border-color: transparent; background: none; color: var(--muted); padding: 4px 8px; }
+  .stage { flex: 1; min-height: 0; display: grid; place-items: center; background: repeating-linear-gradient(45deg, #f1f2ec 0 10px, #f5f6f0 10px 20px); padding: 14px; overflow: auto; }
+  .frame { width: 100%; height: 100%; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 0 rgba(22,55,47,.05), 0 16px 40px -24px rgba(22,55,47,.35); border: 1px solid var(--line); }
+  .stage.phone .frame { width: 390px; max-width: 100%; height: min(844px, 100%); border-radius: 28px; border: 8px solid #16241c; }
+  iframe { border: 0; width: 100%; height: 100%; display: block; background: #fff; }
+
+  .chat { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--surface); }
+  .chat-head { display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .chat-head .label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-right: auto; }
+  .log { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 92%; padding: 10px 13px; border-radius: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.user { align-self: flex-end; background: var(--hero); color: var(--on-hero); border-bottom-right-radius: 5px; }
+  .msg.ai { align-self: flex-start; background: var(--soft); border-bottom-left-radius: 5px; }
+  .msg.note { align-self: center; max-width: 100%; background: none; color: var(--muted); font-size: 12px; text-align: center; padding: 2px 8px; }
+  .msg.error { align-self: stretch; max-width: 100%; background: var(--bad-soft); color: var(--bad); border-radius: 12px; }
+  .msg .who { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .65; margin-bottom: 3px; }
+  .msg .changed { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; white-space: normal; }
+  .msg .changed button { border: 0; border-radius: 999px; background: var(--lime); color: var(--lime-ink); font-size: 12px; font-weight: 600; padding: 3px 10px; cursor: pointer; }
+  .thinking { display: inline-flex; gap: 4px; } .thinking i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: dot 1.2s infinite ease-in-out; }
+  .thinking i:nth-child(2) { animation-delay: .15s; } .thinking i:nth-child(3) { animation-delay: .3s; }
+  @keyframes dot { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .thinking i { animation: none; opacity: .6; } }
+  .empty-chat { color: var(--muted); padding: 6px 2px; }
+  .empty-chat h2 { margin: 0 0 6px; font: 800 24px/1.1 var(--display); letter-spacing: -.05em; color: var(--ink); }
+  .empty-chat h2 em { font: italic 400 1.05em var(--serif); color: var(--mark); letter-spacing: 0; }
+  .ideas { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .ideas button { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 12px; cursor: pointer; color: var(--ink-2); }
+  .ideas button:hover { border-color: var(--mark); }
+
+  .changes { border-top: 1px solid var(--line); padding: 10px 14px; display: none; flex-direction: column; gap: 8px; background: #fbfcf8; max-height: 42%; overflow-y: auto; }
+  .changes.on { display: flex; }
+  .changes-head { display: flex; align-items: center; gap: 8px; }
+  .changes-head strong { font-size: 13px; margin-right: auto; }
+  .file { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .file summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 7px 10px; cursor: pointer; font-weight: 600; font-size: 13px; }
+  .file summary::-webkit-details-marker { display: none; }
+  .file summary span { margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .diff { margin: 0 10px 10px; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+  .diff div { padding: 2px 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .diff .del { background: var(--bad-soft); color: #7a2c1a; } .diff .add { background: var(--mark-soft); color: #134a2f; }
+  .diff .sep { height: 1px; padding: 0; background: var(--line); }
+  .publish { display: flex; gap: 8px; }
+  .publish input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; font-size: 13px; }
+
+  .composer { border-top: 1px solid var(--line); padding: 12px 14px 14px; display: flex; gap: 8px; align-items: flex-end; }
+  .composer textarea { flex: 1; min-width: 0; resize: none; border: 1px solid var(--line); border-radius: 16px; padding: 10px 13px; min-height: 44px; max-height: 180px; line-height: 1.4; }
+  .composer .btn.primary { padding: 10px 16px; }
+
+  /* ---- setup / sign-in screens ---- */
+  .screen { flex: 1; overflow-y: auto; padding: 40px 20px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 28px; max-width: 720px; margin: 0 auto; }
+  .card h2 { margin: 0 0 8px; font: 800 30px/1.1 var(--display); letter-spacing: -.05em; }
+  .card h2 em { font: italic 400 1.05em var(--serif); color: var(--mark); letter-spacing: 0; }
+  .card p { color: var(--ink-2); margin: 8px 0; }
+  .steps { list-style: none; padding: 0; margin: 18px 0 0; display: flex; flex-direction: column; gap: 10px; }
+  .steps li { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+  .steps li .tick { grid-row: span 2; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--soft); color: var(--muted); }
+  .steps li.done .tick { background: var(--mark); color: #fff; }
+  .steps li strong { font-size: 14px; }
+  .steps li div { color: var(--ink-2); font-size: 13px; }
+  .steps a { color: var(--mark); font-weight: 600; }
+  code { background: var(--mark-soft); padding: 1px 6px; border-radius: 6px; font-size: 12.5px; }
+  .card a.btn { display: inline-block; text-decoration: none; margin-top: 14px; }
+
+  @media (max-width: 900px) {
+    body { height: auto; min-height: 100%; }
+    .panes { grid-template-columns: 1fr; grid-template-rows: 55vh auto; }
+    .preview { border-right: 0; border-bottom: 1px solid var(--line); }
+    .chat { min-height: 70vh; }
+    header a.link.hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/"><img src="/landing/homebeta-header-mark.webp" alt="" width="30" height="21">wellnest</a>
+  <h1>Edit WellNest</h1>
+  <span class="spacer"></span>
+  <a class="link hide-sm" href="/admin/analytics">Statistics</a>
+  <a class="link hide-sm" href="/dashboard">Open app</a>
+  <a class="link" href="/" target="_blank" rel="noopener">Open site</a>
+</header>
+<div id="app" class="screen"><p style="color:var(--muted)">Loading…</p></div>
+
+<script>
+(function () {
+  "use strict";
+  var app = document.getElementById("app");
+  var LS = { drafts: "wn-editor-drafts", chat: "wn-editor-chat", prefs: "wn-editor-prefs", preview: "wn-editor-preview" };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k) || "null"); return v == null ? d : v; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  // ---------- DOM helper (textContent only: AI replies and file names are data) ----------
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    for (var k in attrs || {}) {
+      var v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === "text") n.textContent = v;
+      else if (k === "class") n.className = v;
+      else if (k.slice(0, 2) === "on") n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v === true ? "" : v);
+    }
+    (kids || []).forEach(function (c) { if (c) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return n;
+  }
+
+  // ---------- API with the site's own sign-in ----------
+  function stored() { try { return JSON.parse(localStorage.getItem("gotrue.user") || "null"); } catch (e) { return null; } }
+  async function refresh() {
+    var u = stored();
+    if (!u || !u.token || !u.token.refresh_token) return false;
+    var res = await fetch("/api/_identity/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(u.token.refresh_token) });
+    if (!res.ok) return false;
+    var t = await res.json();
+    u.token = Object.assign({}, u.token, t, { expires_at: Date.now() + (t.expires_in || 3600) * 1000 });
+    try { localStorage.setItem("gotrue.user", JSON.stringify(u)); } catch (e) {}
+    return true;
+  }
+  async function api(path, body, retried) {
+    var u = stored(), headers = {};
+    if (u && u.token && u.token.access_token) headers.Authorization = "Bearer " + u.token.access_token;
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    var res = await fetch("/api/editor/" + path, { method: body === undefined ? "GET" : "POST", headers: headers, credentials: "include", body: body === undefined ? undefined : JSON.stringify(body) });
+    if (res.status === 401 && !retried && await refresh()) return api(path, body, true);
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) { var e = new Error(data.error || ("Request failed (" + res.status + ")")); e.status = res.status; e.data = data; throw e; }
+    return data;
+  }
+
+  // ---------- state ----------
+  var status = null, files = [], fileSet = {};
+  var drafts = load(LS.drafts, {});   // path -> { sha, base, content, ops: [{find, replace}] }
+  var chat = load(LS.chat, []);       // { role: "user"|"assistant"|"note"|"error", content, changed? }
+  var prefs = load(LS.prefs, { provider: "", model: {}, page: "index.html", device: "desktop" });
+  var previewId = load(LS.preview, "");
+  var busy = false;
+  var ui = {};
+
+  function persist() { save(LS.drafts, drafts); save(LS.chat, chat.slice(-80)); save(LS.prefs, prefs); save(LS.preview, previewId); }
+  function draftCount() { return Object.keys(drafts).length; }
+
+  // Pages shown in the picker: .html files, without the folder twins (about/index.html).
+  function pages() {
+    return files.map(function (f) { return f.path; }).filter(function (p) {
+      if (!/\.html$/.test(p)) return false;
+      var m = p.match(/^(.+)\/index\.html$/);
+      return !(m && fileSet[m[1] + ".html"]);
+    }).sort(function (a, b) { return a === "index.html" ? -1 : b === "index.html" ? 1 : a.localeCompare(b); });
+  }
+  function urlFor(path) {
+    if (path === "index.html") return "/";
+    if (path === "404.html") return "/404";
+    return "/" + path.replace(/\/index\.html$/, "/").replace(/\.html$/, "");
+  }
+  function pageLabel(path) {
+    if (path === "index.html") return "Home page";
+    return urlFor(path);
+  }
+
+  // ---------- edit blocks from the AI ----------
+  var BLOCK = /<<<<<<< (EDIT|CREATE) ([^\n]+)\n([\s\S]*?)>>>>>>> END/g;
+  function parseBlocks(text) {
+    var out = [], m;
+    BLOCK.lastIndex = 0;
+    while ((m = BLOCK.exec(text))) {
+      var kind = m[1], path = m[2].trim(), body = m[3];
+      if (kind === "CREATE") { out.push({ kind: kind, path: path, content: body.replace(/\n$/, "") }); continue; }
+      var find, repl, i = body.indexOf("\n=======\n");
+      if (body.indexOf("=======\n") === 0) { find = ""; repl = body.slice(8); }
+      else if (i >= 0) { find = body.slice(0, i); repl = body.slice(i + 9); }
+      else { find = ""; repl = body; }
+      out.push({ kind: kind, path: path, find: find, replace: repl.replace(/\n$/, "") });
+    }
+    return out;
+  }
+  function stripBlocks(text) {
+    return text.replace(BLOCK, "").replace(/^\s*READ:\s*\S+\s*$/gm, "").replace(/\n{3,}/g, "\n\n").trim();
+  }
+  function count(hay, needle) {
+    if (!needle) return 0;
+    var n = 0, i = 0;
+    while ((i = hay.indexOf(needle, i)) !== -1) { n++; i += needle.length; if (n > 1) break; }
+    return n;
+  }
+
+  async function ensureDraft(path) {
+    if (drafts[path]) return drafts[path];
+    var f = await api("file?path=" + encodeURIComponent(path));
+    drafts[path] = { sha: f.sha, base: f.content, content: f.content, ops: [] };
+    return drafts[path];
+  }
+
+  async function applyBlocks(blocks) {
+    var changed = [], failed = [];
+    for (var b of blocks) {
+      try {
+        if (b.kind === "CREATE") {
+          if (fileSet[b.path] && !drafts[b.path]) await ensureDraft(b.path);
+          var d0 = drafts[b.path] || (drafts[b.path] = { sha: null, base: "", content: "", ops: [] });
+          d0.ops.push({ find: d0.content, replace: b.content });
+          d0.content = b.content;
+        } else {
+          var d = await ensureDraft(b.path);
+          // Tolerate a model that adds or drops one trailing newline in the copied text.
+          var find = b.find, n = count(d.content, find);
+          if (n !== 1 && find.endsWith("\n")) { find = find.slice(0, -1); n = count(d.content, find); }
+          if (n !== 1) { failed.push(b.path + (n === 0 ? ": the text to replace wasn't found" : ": the text to replace appears more than once")); continue; }
+          d.content = d.content.replace(find, function () { return b.replace; });
+          d.ops.push({ find: find, replace: b.replace });
+        }
+        if (drafts[b.path].content === drafts[b.path].base && drafts[b.path].sha) delete drafts[b.path];
+        if (changed.indexOf(b.path) < 0) changed.push(b.path);
+      } catch (e) {
+        failed.push(b.path + ": " + e.message);
+      }
+    }
+    return { changed: changed, failed: failed };
+  }
+
+  // ---------- preview ----------
+  async function syncPreview() {
+    var payload = {};
+    Object.keys(drafts).forEach(function (p) { payload[p] = drafts[p].content; });
+    if (!draftCount()) { previewId = ""; persist(); return; }
+    var r = await api("preview", { id: previewId || undefined, files: payload });
+    previewId = r.id; persist();
+  }
+  function hasDraftFor(path) {
+    if (drafts[path]) return true;
+    var m = path.match(/^(.+)\.html$/);
+    return Boolean(m && drafts[m[1] + "/index.html"]);
+  }
+  function showPage(path) {
+    prefs.page = path; persist();
+    if (ui.pageSel) ui.pageSel.value = path;
+    var drafted = hasDraftFor(path) && previewId;
+    ui.frame.src = urlFor(path) + (drafted ? (urlFor(path).indexOf("?") < 0 ? "?" : "&") + "wn_preview=" + encodeURIComponent(previewId) + "&t=" + Date.now() : "");
+    ui.mode.className = drafted ? "chip draft" : "chip";
+    ui.mode.textContent = drafted ? "With your changes" : "Live site";
+  }
+
+  // ---------- rendering ----------
+  function renderLog() {
+    var log = ui.log;
+    log.replaceChildren();
+    if (!chat.length) {
+      var ideas = ["Change the home page headline to “Track less. Feel more.”", "Fix any spelling mistakes on the pricing page", "Add a short FAQ about privacy to the about page", "Make the contact page mention we reply within 2 business days"];
+      log.appendChild(el("div", { class: "empty-chat" }, [
+        el("h2", {}, ["What should we ", el("em", { text: "change?" })]),
+        el("div", { text: "Describe the change in your own words. You'll see it in the preview before anything goes live." }),
+        el("div", { class: "ideas" }, ideas.map(function (t) { return el("button", { type: "button", text: t, onclick: function () { ui.input.value = t; ui.input.focus(); autosize(); } }); })),
+      ]));
+    }
+    chat.forEach(function (m) {
+      if (m.role === "user") log.appendChild(el("div", { class: "msg user", text: m.content }));
+      else if (m.role === "note") log.appendChild(el("div", { class: "msg note", text: m.content }));
+      else if (m.role === "error") log.appendChild(el("div", { class: "msg error", text: m.content }));
+      else {
+        var body = stripBlocks(m.content) || (m.changed && m.changed.length ? "Done." : "…");
+        var box = el("div", { class: "msg ai" }, [el("span", { class: "who", text: m.who || "AI" }), body]);
+        if (m.changed && m.changed.length) {
+          box.appendChild(el("div", { class: "changed" }, m.changed.map(function (p) {
+            return el("button", { type: "button", title: "Preview this page", text: "Changed " + pageLabel(p), onclick: function () { if (/\.html$/.test(p)) showPage(p); } });
+          })));
+        }
+        log.appendChild(box);
+      }
+    });
+    if (busy) log.appendChild(el("div", { class: "msg ai" }, [el("span", { class: "who", text: providerName() }), el("span", { class: "thinking", "aria-label": "Working" }, [el("i"), el("i"), el("i")])]));
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function renderChanges() {
+    var box = ui.changes, n = draftCount();
+    box.classList.toggle("on", n > 0);
+    box.replaceChildren();
+    if (!n) return;
+    box.appendChild(el("div", { class: "changes-head" }, [
+      el("strong", { text: n + " unpublished change" + (n === 1 ? "" : "s") }),
+      el("button", { type: "button", class: "btn quiet", text: "Discard all", onclick: function () {
+        if (!confirm("Discard all unpublished changes?")) return;
+        drafts = {}; persist(); syncPreview().catch(function () {}); renderChanges(); showPage(prefs.page);
+        chat.push({ role: "note", content: "Discarded all changes." }); persist(); renderLog();
+      } }),
+    ]));
+    Object.keys(drafts).sort().forEach(function (p) {
+      var d = drafts[p];
+      var diff = el("div", { class: "diff" });
+      d.ops.slice(-6).forEach(function (op, i) {
+        if (i) diff.appendChild(el("div", { class: "sep" }));
+        if (op.find) diff.appendChild(el("div", { class: "del", text: clip(op.find) }));
+        diff.appendChild(el("div", { class: "add", text: clip(op.replace) || "(removed)" }));
+      });
+      box.appendChild(el("details", { class: "file" }, [
+        el("summary", {}, [el("span", { text: pageLabel(p) + (d.sha ? "" : "  (new)") }),
+          /\.html$/.test(p) ? el("button", { type: "button", class: "btn quiet", text: "Preview", onclick: function (e) { e.preventDefault(); showPage(p); } }) : null,
+          el("button", { type: "button", class: "btn quiet", text: "Undo", onclick: function (e) {
+            e.preventDefault(); delete drafts[p]; persist(); syncPreview().catch(function () {}); renderChanges(); showPage(prefs.page);
+          } })]),
+        diff,
+      ]));
+    });
+    var msg = el("input", { type: "text", "aria-label": "Describe this update", placeholder: "Describe this update", value: lastRequest() });
+    var pub = el("button", { type: "button", class: "btn primary", text: "Publish", onclick: function () { publish(msg.value, pub); } });
+    box.appendChild(el("div", { class: "publish" }, [msg, pub]));
+  }
+  function clip(s) { s = String(s || ""); return s.length > 1200 ? s.slice(0, 1200) + "\n…" : s; }
+  function lastRequest() {
+    for (var i = chat.length - 1; i >= 0; i--) if (chat[i].role === "user") return chat[i].content.split("\n")[0].slice(0, 90);
+    return "Update website";
+  }
+  function providerName() { return status && status.providers[prefs.provider] ? status.providers[prefs.provider].name : "AI"; }
+  function autosize() { ui.input.style.height = "auto"; ui.input.style.height = Math.min(180, ui.input.scrollHeight) + "px"; }
+
+  // ---------- actions ----------
+  async function send(text, isRetry) {
+    if (busy || !text.trim()) return;
+    var model = prefs.model[prefs.provider];
+    if (!model) { chat.push({ role: "error", content: "Choose an AI and model first." }); renderLog(); return; }
+    if (!isRetry) chat.push({ role: "user", content: text.trim() });
+    busy = true; ui.send.disabled = true; renderLog(); persist();
+    try {
+      var history = chat.filter(function (m) { return m.role === "user" || m.role === "assistant"; }).map(function (m) { return { role: m.role, content: m.content }; });
+      if (isRetry) history.push({ role: "user", content: text });
+      var payloadDrafts = {};
+      Object.keys(drafts).forEach(function (p) { payloadDrafts[p] = drafts[p].content; });
+      var r = await api("chat", { provider: prefs.provider, model: model, messages: history, focus: prefs.page, drafts: payloadDrafts });
+      var blocks = parseBlocks(r.reply);
+      var result = await applyBlocks(blocks);
+      chat.push({ role: "assistant", content: r.reply, changed: result.changed, who: providerName() });
+      if (result.changed.length) {
+        await syncPreview();
+        var page = result.changed.filter(function (p) { return /\.html$/.test(p); })[0];
+        showPage(page ? page.replace(/^(.+)\/index\.html$/, function (_, a) { return fileSet[a + ".html"] ? a + ".html" : _; }) : prefs.page);
+      }
+      if (result.failed.length) {
+        busy = false;
+        if (!isRetry) {
+          chat.push({ role: "note", content: "Some changes didn't fit the page exactly, so " + providerName() + " is trying again…" });
+          renderLog();
+          return send("(Editor) These changes couldn't be applied: " + result.failed.join("; ") + ". Please read the file again if needed and redo only those changes, copying the existing text exactly.", true);
+        }
+        chat.push({ role: "error", content: "Some changes couldn't be applied: " + result.failed.join("; ") + ". Try asking again in different words." });
+      }
+    } catch (e) {
+      chat.push({ role: "error", content: e.message });
+    } finally {
+      busy = false; ui.send.disabled = false; persist(); renderLog(); renderChanges();
+    }
+  }
+
+  async function publish(message, btn) {
+    if (!draftCount()) return;
+    var list = Object.keys(drafts).map(pageLabel).join(", ");
+    if (!confirm("Publish these changes to wellnest.services?\n\n" + list + "\n\nThey'll be live in about 2 minutes.")) return;
+    btn.disabled = true; btn.textContent = "Publishing…";
+    try {
+      var payload = {};
+      Object.keys(drafts).forEach(function (p) { payload[p] = { content: drafts[p].content, sha: drafts[p].sha }; });
+      var r = await api("publish", { message: message || lastRequest(), files: payload });
+      drafts = {}; previewId = ""; persist();
+      chat.push({ role: "note", content: "Published " + r.files.length + " file" + (r.files.length === 1 ? "" : "s") + ". The live site updates in about 2 minutes." });
+      renderLog(); renderChanges(); showPage(prefs.page);
+      loadFiles().catch(function () {});
+    } catch (e) {
+      chat.push({ role: "error", content: "Couldn't publish: " + e.message });
+      btn.disabled = false; btn.textContent = "Publish";
+      renderLog();
+    }
+  }
+
+  async function loadModels() {
+    var p = prefs.provider;
+    ui.model.replaceChildren(el("option", { text: "Loading models…" }));
+    ui.model.disabled = true;
+    try {
+      var r = await api("models?provider=" + encodeURIComponent(p));
+      var list = r.models.slice();
+      // Sensible default: a strong everyday model rather than the most expensive one.
+      var pref = { anthropic: [/sonnet/, /opus/, /./], openai: [/^gpt-\d+(\.\d+)?$/, /^gpt-\d/, /./], gemini: [/pro(?!.*(preview|exp))/, /pro/, /flash/, /./] }[p] || [/./];
+      var current = prefs.model[p];
+      if (!current || !list.some(function (m) { return m.id === current; })) {
+        for (var i = 0; i < pref.length && !current; i++) {
+          var hit = list.filter(function (m) { return pref[i].test(m.id); })[0];
+          if (hit) current = hit.id;
+        }
+        prefs.model[p] = current; persist();
+      }
+      ui.model.replaceChildren.apply(ui.model, list.map(function (m) { return el("option", { value: m.id, text: m.name, selected: m.id === current }); }));
+      ui.model.disabled = false;
+    } catch (e) {
+      ui.model.replaceChildren(el("option", { text: "Couldn't load models" }));
+      chat.push({ role: "error", content: e.message }); renderLog();
+    }
+  }
+
+  async function loadFiles() {
+    var r = await api("files");
+    files = r.files; fileSet = {};
+    files.forEach(function (f) { fileSet[f.path] = true; });
+    var list = pages();
+    if (list.indexOf(prefs.page) < 0) prefs.page = "index.html";
+    ui.pageSel.replaceChildren.apply(ui.pageSel, list.map(function (p) { return el("option", { value: p, text: pageLabel(p), selected: p === prefs.page }); }));
+  }
+
+  // ---------- screens ----------
+  function notice(title, accent, kids) {
+    app.className = "screen";
+    app.replaceChildren(el("div", { class: "card" }, [el("h2", {}, [title + " ", el("em", { text: accent })])].concat(kids)));
+  }
+
+  function setupScreen() {
+    var where = el("span", {}, ["Cloudflare → ", el("strong", { text: "Workers & Pages → wellnest → Settings → Variables and Secrets" }), " → Add → type ", el("strong", { text: "Secret" })]);
+    function step(done, title, body) { return el("li", { class: done ? "done" : "" }, [el("span", { class: "tick", text: done ? "✓" : "" }), el("strong", { text: title }), el("div", {}, body)]); }
+    var pv = status.providers;
+    notice("Connect", "your accounts.", [
+      el("p", { text: "Edit WellNest needs a GitHub key to save changes to your site, and a key for at least one AI. Add each one as a secret in Cloudflare, then reload this page." }),
+      el("p", {}, ["Where: ", where, "."]),
+      el("ol", { class: "steps" }, [
+        step(status.github, "GitHub — required", ["Create a ", el("a", { href: "https://github.com/settings/personal-access-tokens/new", target: "_blank", rel: "noopener", text: "fine-grained token" }), " with access to only ", el("code", { text: status.repo }), " and permission ", el("strong", { text: "Contents: Read and write" }), ". Save it as ", el("code", { text: "GITHUB_TOKEN" }), "."]),
+        step(pv.anthropic.connected, "Claude", ["Create a key at ", el("a", { href: "https://console.anthropic.com/settings/keys", target: "_blank", rel: "noopener", text: "console.anthropic.com" }), " and save it as ", el("code", { text: "ANTHROPIC_API_KEY" }), "."]),
+        step(pv.openai.connected, "ChatGPT", ["Create a key at ", el("a", { href: "https://platform.openai.com/api-keys", target: "_blank", rel: "noopener", text: "platform.openai.com" }), " and save it as ", el("code", { text: "OPENAI_API_KEY" }), "."]),
+        step(pv.gemini.connected, "Gemini", ["Create a key at ", el("a", { href: "https://aistudio.google.com/apikey", target: "_blank", rel: "noopener", text: "aistudio.google.com" }), " and save it as ", el("code", { text: "GEMINI_API_KEY" }), "."]),
+      ]),
+      el("p", { text: "These API keys are separate from ChatGPT Plus, Claude Pro or Gemini subscriptions and are billed per use by each company — usually a few cents per change. You only need the AIs you want to use." }),
+      el("a", { class: "btn primary", href: location.pathname, text: "I've added them — reload" }),
+    ]);
+  }
+
+  function editorScreen() {
+    app.className = "panes";
+    ui.frame = el("iframe", { title: "Website preview" });
+    ui.stage = el("div", { class: "stage" + (prefs.device === "phone" ? " phone" : "") }, [el("div", { class: "frame" }, [ui.frame])]);
+    ui.pageSel = el("select", { "aria-label": "Page to preview", onchange: function () { showPage(ui.pageSel.value); } });
+    ui.mode = el("span", { class: "chip", text: "Live site" });
+    var seg = el("div", { class: "seg", role: "group", "aria-label": "Preview size" }, ["desktop", "phone"].map(function (d) {
+      return el("button", { type: "button", "aria-pressed": String(prefs.device === d), text: d === "desktop" ? "Desktop" : "Phone", onclick: function () {
+        prefs.device = d; persist();
+        seg.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.textContent.toLowerCase() === d)); });
+        ui.stage.classList.toggle("phone", d === "phone");
+      } });
+    }));
+    var toolbar = el("div", { class: "toolbar" }, [ui.pageSel, seg, ui.mode, el("span", { class: "spacer" }),
+      el("button", { type: "button", class: "btn", text: "Reload", onclick: function () { showPage(prefs.page); } }),
+      el("button", { type: "button", class: "btn", text: "Open ↗", onclick: function () { window.open(ui.frame.src, "_blank", "noopener"); } })]);
+
+    var connected = Object.keys(status.providers).filter(function (k) { return status.providers[k].connected; });
+    if (connected.indexOf(prefs.provider) < 0) prefs.provider = connected[0];
+    ui.provider = el("select", { "aria-label": "AI", onchange: function () { prefs.provider = ui.provider.value; persist(); loadModels(); } },
+      Object.keys(status.providers).map(function (k) {
+        var p = status.providers[k];
+        return el("option", { value: k, disabled: !p.connected, selected: k === prefs.provider, text: p.name + (p.connected ? "" : " (not connected)") });
+      }));
+    ui.model = el("select", { "aria-label": "Model", onchange: function () { prefs.model[prefs.provider] = ui.model.value; persist(); } });
+    ui.log = el("div", { class: "log", "aria-live": "polite" });
+    ui.changes = el("div", { class: "changes" });
+    ui.input = el("textarea", { rows: "1", placeholder: "Describe a change to the site…", "aria-label": "Message", oninput: autosize,
+      onkeydown: function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); go(); } } });
+    ui.send = el("button", { type: "button", class: "btn primary", text: "Send", onclick: go });
+    function go() { var t = ui.input.value; if (!t.trim() || busy) return; ui.input.value = ""; autosize(); send(t); }
+    var clear = el("button", { type: "button", class: "btn quiet", text: "New chat", title: "Start a new conversation (keeps your unpublished changes)", onclick: function () { chat = []; persist(); renderLog(); } });
+
+    app.replaceChildren(
+      el("section", { class: "preview", "aria-label": "Preview" }, [toolbar, ui.stage]),
+      el("section", { class: "chat", "aria-label": "Conversation" }, [
+        el("div", { class: "chat-head" }, [el("span", { class: "label", text: "Conversation" }), clear, ui.provider, ui.model]),
+        ui.log, ui.changes, el("div", { class: "composer" }, [ui.input, ui.send]),
+      ])
+    );
+    renderLog(); renderChanges();
+    loadModels();
+    loadFiles().then(function () { showPage(prefs.page); }).catch(function (e) { chat.push({ role: "error", content: e.message }); renderLog(); });
+    // Drafts saved in this browser need a fresh preview link (they expire after a day).
+    if (draftCount()) syncPreview().then(function () { showPage(prefs.page); }).catch(function () {});
+  }
+
+  async function start() {
+    try {
+      status = await api("status");
+    } catch (e) {
+      if (e.status === 401) {
+        notice("Sign in", "first.", [el("p", { text: "Sign in to WellNest with your admin account, then come back to this page." }),
+          el("a", { class: "btn primary", href: "/login?redirect=" + encodeURIComponent(location.pathname), text: "Sign in" })]);
+      } else if (e.status === 403) {
+        notice("Admins", "only.", [el("p", {}, ["You're signed in as ", el("strong", { text: (e.data && e.data.signed_in_as) || "an account" }), ", which isn't a site admin."])]);
+      } else {
+        notice("Couldn't", "load the editor.", [el("p", { text: e.message })]);
+      }
+      return;
+    }
+    var anyAI = Object.keys(status.providers).some(function (k) { return status.providers[k].connected; });
+    if (!status.github || !anyAI) return setupScreen();
+    editorScreen();
+  }
+  start();
+})();
+</script>
+</body>
+</html>

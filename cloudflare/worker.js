@@ -3,6 +3,7 @@
 import { SITE, json, fail, corsHeaders, ensureSchema, currentUser } from "./lib.js";
 import { handleIdentity, handleGoogleCallback } from "./identity.js";
 import { handleCollect, handleStats } from "./analytics.js";
+import { handleEditor, servePreview } from "./editor.js";
 import { handleMe, handleEntities, handleUploads, handleFileSign, handleFileRaw, handleFunction } from "./data.js";
 
 const OLD_BASE = "/wellnest-website";
@@ -24,6 +25,7 @@ async function api(request, env, path) {
   if (!user) return fail(401, "Authentication required");
 
   if (path === "/api/analytics/stats" && request.method === "GET") return handleStats(request, env, user);
+  if (parts[0] === "editor" && parts[1]) return handleEditor(request, env, user, parts[1]);
   if (path === "/api/auth/me") return handleMe(request, env, user);
   if (parts[0] === "entities" && parts[1]) return handleEntities(request, env, user, decodeURIComponent(parts[1]), parts[2] && decodeURIComponent(parts[2]));
   if (parts[0] === "uploads") return handleUploads(request, env, user, parts.slice(1));
@@ -66,6 +68,12 @@ export default {
       return out;
     }
 
+    // Edit WellNest: /page?wn_preview=ID shows that page with unpublished changes.
+    if (url.searchParams.has("wn_preview")) {
+      await ensureSchema(env);
+      const draft = await servePreview(request, env, url);
+      if (draft) return draft;
+    }
     return env.ASSETS.fetch(request);
   },
 };

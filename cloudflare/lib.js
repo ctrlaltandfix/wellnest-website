@@ -180,6 +180,9 @@ const SCHEMA = [
      country TEXT, source TEXT, campaign TEXT, device TEXT, browser TEXT,
      visitor TEXT NOT NULL, session TEXT NOT NULL, seconds INTEGER NOT NULL DEFAULT 0)`,
   `CREATE INDEX IF NOT EXISTS page_views_ts ON page_views (ts)`,
+  // Edit WellNest previews (cloudflare/editor.js): unpublished page drafts, kept 24 hours.
+  `CREATE TABLE IF NOT EXISTS editor_previews (
+     id TEXT NOT NULL, path TEXT NOT NULL, content TEXT NOT NULL, updated INTEGER NOT NULL, PRIMARY KEY (id, path))`,
 ];
 let schemaReady = false;
 export async function ensureSchema(env) {

@@ -10,6 +10,7 @@
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, extname, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { stripBase } from "../cloudflare/sitepaths.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "dist-cloudflare");
@@ -32,15 +33,6 @@ function addStats(html, rel) {
   return html.replace("</head>", STATS_TAG + "\n</head>");
 }
 
-function stripBase(text) {
-  return text
-    // escaped forms inside regular expressions, e.g. /^\/wellnest-website(?=\/|$)/
-    .split("\\/wellnest-website").join("")
-    // links, assets and app routes: /wellnest-website/x -> /x
-    .split(BASE + "/").join("/")
-    // the bare base (router basename, link-fixer constant) -> root
-    .split(BASE).join("");
-}
 
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });

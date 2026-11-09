@@ -9,6 +9,7 @@
     if (n.globalPrivacyControl || n.doNotTrack === "1" || window.doNotTrack === "1") return;
     if (!/(^|\.)wellnest\.services$|\.workers\.dev$/.test(location.hostname)) return;
     if (/^\/admin(\/|$)/.test(location.pathname)) return;
+    if (window.top !== window.self || /[?&]wn_preview=/.test(location.search)) return; // editor previews
 
     var END = "/api/analytics/collect";
     var rid = function () {
