@@ -65,7 +65,10 @@ async function gh(env, path, init = {}) {
   });
   if (!res.ok) {
     const text = (await res.text()).slice(0, 300);
-    const err = new Error(`GitHub ${res.status}: ${text}`);
+    let reason = text;
+    try { reason = JSON.parse(text).message || text; } catch {}
+    const err = new Error(`GitHub ${res.status}: ${reason}`);
+    err.reason = reason;
     err.status = res.status === 401 || res.status === 403 ? 502 : res.status === 404 ? 404 : 502;
     err.github = res.status;
     throw err;
@@ -429,7 +432,9 @@ export async function handleEditor(request, env, user, sub) {
     if (sub === "publish" && POST) return await handlePublish(request, env, user);
   } catch (e) {
     if (e.github === 401) return fail(502, "GitHub rejected the GITHUB_TOKEN. It may have expired; make a new one and update it in Cloudflare.");
-    if (e.github === 403 || e.github === 404 && sub === "publish") return fail(502, "GITHUB_TOKEN doesn't have permission to change this repo. It needs Contents: Read and write.");
+    if (e.github === 403 || e.github === 404 && sub === "publish") {
+      return fail(502, `GITHUB_TOKEN can read the repo but isn't allowed to change it. Its settings need Repository access → Only select repositories → ${REPO.split("/")[1]}, and Permissions → Contents → Read and write. (GitHub said: ${e.reason || e.github})`);
+    }
     if (e.status && e.status < 500) return fail(e.status, e.message);
     if (e.status === 502) return fail(502, e.message);
     throw e;
