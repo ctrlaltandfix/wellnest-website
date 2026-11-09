@@ -60,6 +60,11 @@ class Raw:
     def __init__(self, js, html=None):
         self.js, self.html = js, html
 
+class Pick:
+    """One of several subtrees chosen by the active slide (e); the prerender shows the first."""
+    def __init__(self, variants):
+        self.variants = variants
+
 def dot_list(*items):
     return E("ul", {"className": "hb-fc-insights"}, *[E("li", {}, E("span", {"className": "hb-fc-dot", "aria-hidden": "true"}), t) for t in items])
 
@@ -175,6 +180,9 @@ PANELS = E("div", {"className": "hb-fc-panels"},
               "aria-hidden": Raw(f"e!=={i}", "false" if i == 0 else "true")}, *content)
     for i, (_, content) in enumerate(SLIDES)])
 
+CHIPS = [('Report ready', 'PDF · last 30 days', '↓18%', 'less pain this month'), ('Pain logged', 'Lower back · 9:15 am', '4/10', 'pain today, easing'), ('Gabapentin taken', '8:02 am · on time', '96%', 'doses on time'), ('Seizure logged', '3 Nov · 1m 12s', '14', 'days seizure-free'), ('Peak flow logged', '480 L/min · green zone', '92%', 'of personal best')]
+assert len(CHIPS) == len(SLIDES)
+
 CARD = E("div", {"className": "hb-hero-visual hb-fc-stage",
                  "aria-label": "Illustrative preview of WellNest features", "data-hb-reveal": True,
                  "onMouseEnter": Raw("()=>r(!0)"), "onMouseLeave": Raw("()=>r(!1)"),
@@ -182,10 +190,13 @@ CARD = E("div", {"className": "hb-hero-visual hb-fc-stage",
   E("div", {"className": "hb-fc-glow", "aria-hidden": "true"}),
   E("article", {"className": Raw('"hb-fc"+(n?" is-paused":"")', "hb-fc")}, TABS, PANELS, E("p", {"className": "hb-fc-note"}, "Illustrative preview · Example data")),
   E("div", {"className": "hb-fc-chip hb-fc-chip-dose", "aria-hidden": "true"},
-    E("span", {"className": "hb-fc-check"}, CHECK),
-    E("span", {}, E("strong", {}, "Gabapentin taken"), E("small", {}, "8:02 am · on time"))),
+    Pick([E("div", {"className": "hb-fc-chip-in", "__key": f"d{i}"},
+            E("span", {"className": "hb-fc-check"}, CHECK),
+            E("span", {}, E("strong", {}, a), E("small", {}, b)))
+          for i, (a, b, _, _) in enumerate(CHIPS)])),
   E("div", {"className": "hb-fc-chip hb-fc-chip-streak", "aria-hidden": "true"},
-    E("strong", {}, "14"), E("span", {}, "days seizure-free")),
+    Pick([E("div", {"className": "hb-fc-chip-in", "__key": f"s{i}"}, E("strong", {}, c), E("span", {}, d))
+          for i, (_, _, c, d) in enumerate(CHIPS)])),
 )
 
 COMPONENT_JS = ("function tv(){let[e,t]=(0,p.useState)(0),[n,r]=(0,p.useState)(!1),[o,a]=(0,p.useState)(!1);"
@@ -199,6 +210,8 @@ def jsx(node):
         return json.dumps(node, ensure_ascii=False)
     if isinstance(node, Raw):
         return node.js
+    if isinstance(node, Pick):
+        return "[" + ",".join(jsx(v) for v in node.variants) + "][e]"
     tag, attrs, children = node
     props, react_key = [], None
     for k, v in attrs.items():
@@ -236,6 +249,8 @@ def html(node):
         return esc(node)
     if isinstance(node, Raw):
         return esc(node.html or "")
+    if isinstance(node, Pick):
+        return html(node.variants[0])
     tag, attrs, children = node
     out = []
     for k, v in attrs.items():
@@ -260,7 +275,7 @@ STYLES = """
 .hb-hero-visual.hb-fc-stage{height:auto;min-height:600px;padding:58px 0 58px;transform:translate(10px)}
 .hb-fc-glow{position:absolute;inset:8% 6% 12%;border-radius:50%;background:radial-gradient(closest-side,#d8fa8d40,#d8fa8d12 55%,transparent);filter:blur(30px);z-index:0;animation:hb-fc-breathe 7s ease-in-out infinite}
 @property --hb-fc-angle{syntax:"<angle>";inherits:false;initial-value:0deg}
-.hb-fc{position:relative;z-index:2;width:min(100%,480px);padding:26px 26px 20px;border-radius:28px;color:#f3faf0;background:linear-gradient(155deg,#15463c 0%,#0e3029 45%,#0a2420 100%);box-shadow:0 40px 90px #010d0f8c,0 0 0 1px #d8fa8d2e,inset 0 1px 0 #ffffff1f;animation:hb-hover 8s ease-in-out infinite;isolation:isolate}
+.hb-fc{position:relative;z-index:2;width:min(100%,480px);padding:26px 26px 20px;border-radius:28px;color:#f3faf0;background:linear-gradient(155deg,#15463c 0%,#0e3029 45%,#0a2420 100%);box-shadow:0 40px 90px #010d0f8c,0 0 0 1px #d8fa8d2e,inset 0 1px 0 #ffffff1f;isolation:isolate}
 .hb-fc:before{content:"";position:absolute;inset:-1.5px;border-radius:inherit;padding:1.5px;background:conic-gradient(from var(--hb-fc-angle),#d8fa8d00 0deg,#d8fa8d 60deg,#d8fa8d00 130deg,#d8fa8d00 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:hb-fc-spin 6s linear infinite;pointer-events:none;z-index:-1}
 .hb-fc-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .hb-fc-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 12px 7px 10px;border-radius:999px;background:#d8fa8d;color:#0b2621;font:700 12px/1 Geist,Inter,system-ui,sans-serif;letter-spacing:.01em}
@@ -290,6 +305,8 @@ STYLES = """
 .hb-fc-note{margin:14px 0 0;font:500 11px/1 Geist,Inter,system-ui,sans-serif;color:#86a394;text-align:right}
 .hb-fc-chip{position:absolute;z-index:3;display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:18px;background:#f3faf0;color:#16372f;box-shadow:0 22px 45px #010d0f59;border:1px solid #ffffffb3;font-family:Geist,Inter,system-ui,sans-serif}
 .hb-fc-chip strong{display:block;font-size:13.5px;font-weight:700;line-height:1.2}
+.hb-fc-chip-in{display:flex;align-items:center;gap:10px;animation:hb-fc-swap .45s cubic-bezier(.2,.7,.2,1) both}
+.hb-fc-chip-streak .hb-fc-chip-in{flex-direction:column;align-items:flex-start;gap:2px}
 .hb-fc-chip small{display:block;font-size:11.5px;color:#56715f;margin-top:2px}
 .hb-fc-chip-dose{left:0;bottom:6px;transform:rotate(-3deg);animation:hb-hover 7s 1s ease-in-out infinite}
 .hb-fc-check{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:#1f7a52;color:#fff}
@@ -346,6 +363,7 @@ STYLES = """
 .hb-fc-where{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 10px}
 .hb-fc-where .hb-fc-tags{margin:0}
 @keyframes hb-fc-grow{from{transform:scaleY(.15);opacity:.3}}
+@keyframes hb-fc-swap{from{opacity:0;transform:translateY(6px)}}
 @keyframes hb-fc-progress{to{transform:scaleX(1)}}
 @keyframes hb-fc-rise{from{opacity:0;transform:translateY(8px)}}
 @keyframes hb-fc-spin{to{--hb-fc-angle:360deg}}
@@ -354,7 +372,7 @@ STYLES = """
 @keyframes hb-fc-breathe{0%,to{opacity:.75;scale:1}50%{opacity:1;scale:1.05}}
 @media (width<=900px){.hb-hero-visual.hb-fc-stage{min-height:0;margin:20px auto 0;padding:52px 0 52px;transform:none}}
 @media (width<=650px){.hb-hero-visual.hb-fc-stage{padding:0 0 64px}.hb-fc{padding:22px 18px 18px;border-radius:24px;transform:none}.hb-fc-stats{gap:6px}.hb-fc-stat{padding:10px 9px}.hb-fc-stat strong{font-size:23px}.hb-fc-delta{font-size:10.5px}.hb-fc-chip-dose{left:4px;bottom:0;padding:9px 12px}.hb-fc-chip-streak{right:4px;top:auto;bottom:0;padding:8px 12px;transform:rotate(3deg)}.hb-fc-chip-streak strong{font-size:24px}.hb-fc-note{text-align:left}.hb-fc-tab{font-size:11.5px;padding:8px 10px 9px}.hb-fc-row{grid-template-columns:44px minmax(0,1fr) auto;padding:8px 10px;gap:8px}.hb-fc-row-log{grid-template-columns:54px minmax(0,1fr)}.hb-fc-zone-head strong{font-size:27px}}
-@media (prefers-reduced-motion:reduce){.hb-fc,.hb-fc:before,.hb-fc-glow,.hb-fc-chip,.hb-fc-pulse,.hb-fc-panel.is-active>*,.hb-fc-panel.is-active .hb-fc-day-bar{animation:none}.hb-fc-panel.is-active .hb-fc-line{animation:none}.hb-fc-line{stroke-dashoffset:0}.hb-fc-tab.is-active .hb-fc-tab-bar{animation:none;transform:scaleX(1)}.hb-fc-panel{transition:none}}
+@media (prefers-reduced-motion:reduce){.hb-fc-chip-in,.hb-fc,.hb-fc:before,.hb-fc-glow,.hb-fc-chip,.hb-fc-pulse,.hb-fc-panel.is-active>*,.hb-fc-panel.is-active .hb-fc-day-bar{animation:none}.hb-fc-panel.is-active .hb-fc-line{animation:none}.hb-fc-line{stroke-dashoffset:0}.hb-fc-tab.is-active .hb-fc-tab-bar{animation:none;transform:scaleX(1)}.hb-fc-panel{transition:none}}
 /* hb-feature-card:end */
 """
 
