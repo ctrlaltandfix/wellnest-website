@@ -286,3 +286,24 @@ test('Gemini free-tier errors are explained in a sentence', async () => {
   r = await (await handleEditor(req('chat', { provider: 'gemini', model: 'gemini-3.1-pro', messages: [{ role: 'user', content: 'hi' }] }), env(), OWNER, 'chat')).json();
   assert.match(r.error, /limit for gemini-3\.1-pro has been reached — it resets in about 3h59m50s/);
 });
+
+test('busy AI servers are retried, then explained', async () => {
+  const { RETRY_WAITS } = await import('../cloudflare/editor.js');
+  RETRY_WAITS.splice(0, RETRY_WAITS.length, 1, 1); // no real waiting in tests
+  fakeWorld();
+  const github = globalThis.fetch;
+  let tries = 0;
+  const busyThen = ok => { tries = 0; globalThis.fetch = async (u, i) => {
+    if (!String(u).includes('generativelanguage')) return github(u, i);
+    tries++;
+    return tries <= ok ? new Response('{"error":{"message":"This model is currently experiencing high demand."}}', { status: 503 })
+      : new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'Hello' }] } }] }), { status: 200 });
+  }; };
+  busyThen(2);
+  let r = await (await handleEditor(req('chat', { provider: 'gemini', model: 'g', messages: [{ role: 'user', content: 'hi' }] }), env(), OWNER, 'chat')).json();
+  assert.equal(r.reply, 'Hello');
+  assert.equal(tries, 3);
+  busyThen(9);
+  r = await (await handleEditor(req('chat', { provider: 'gemini', model: 'g', messages: [{ role: 'user', content: 'hi' }] }), env(), OWNER, 'chat')).json();
+  assert.match(r.error, /^Gemini is overloaded right now — its servers turned the request away 3 times\..*Gemini 2\.5 Flash.*Cloudflare AI/);
+});

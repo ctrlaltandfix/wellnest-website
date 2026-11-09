@@ -114,11 +114,26 @@ export const CF_MODELS = [
   { id: "@cf/zai-org/glm-4.7-flash", name: "GLM 4.7 Flash (free)" },
 ];
 
+// "Busy right now" answers (overloaded servers) usually clear in seconds: try
+// again twice before giving up. Waiting costs no CPU time on the Worker.
+const BUSY = new Set([500, 502, 503, 504, 529]);
+export const RETRY_WAITS = [3000, 8000];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
 async function provFetch(url, init, who) {
-  const res = await fetch(url, init);
-  const body = await res.text();
-  let data = null;
-  try { data = JSON.parse(body); } catch {}
+  let res, body, data, attempt = 0;
+  for (;;) {
+    res = await fetch(url, init);
+    body = await res.text();
+    data = null;
+    try { data = JSON.parse(body); } catch {}
+    if (!BUSY.has(res.status) || attempt >= RETRY_WAITS.length) break;
+    await sleep(RETRY_WAITS[attempt++]);
+  }
+  if (BUSY.has(res.status)) {
+    const other = who === "Gemini" ? "another Gemini model (e.g. Gemini 2.5 Flash), " : "another model, ";
+    throw Object.assign(new Error(`${who} is overloaded right now — its servers turned the request away ${attempt + 1} times. This usually clears within minutes. Try again shortly, or switch to ${other}or Cloudflare AI.`), { status: 502 });
+  }
   if (!res.ok) {
     const msg = data?.error?.message || data?.error?.type || body.slice(0, 200) || res.statusText;
     // Out-of-credit errors are about the API account, not a ChatGPT Plus / Claude Pro subscription.
