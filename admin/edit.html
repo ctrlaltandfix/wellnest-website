@@ -603,12 +603,17 @@
       var r = await api("models?provider=" + encodeURIComponent(p));
       var list = r.models.slice();
       // Sensible default: a strong everyday model rather than the most expensive one.
-      var pref = { cloudflare: [/nemotron/, /gemma/, /./], anthropic: [/sonnet/, /opus/, /./], openai: [/^gpt-\d+(\.\d+)?$/, /^gpt-\d/, /./], gemini: [/pro(?!.*(preview|exp))/, /pro/, /flash/, /./] }[p] || [/./];
+      // Gemini: a Flash model, because Google's free tier doesn't include the Pro models.
+      var pref = { cloudflare: [/nemotron/, /gemma/, /./], anthropic: [/sonnet/, /opus/, /./], openai: [/^gpt-\d+(\.\d+)?$/, /^gpt-\d/, /./],
+        gemini: [/^gemini-\d[\d.]*-flash(-preview)?$/, /flash(?!.*(lite|image|tts|live|audio|thinking))/, /flash/, /./] }[p] || [/./];
       var current = prefs.model[p];
+      // One-time: earlier versions picked a Gemini Pro model, which the free tier refuses.
+      if (p === "gemini" && !prefs.geminiFlash) { prefs.geminiFlash = true; if (/pro/.test(current || "")) current = null; }
       if (!current || !list.some(function (m) { return m.id === current; })) {
+        current = null;
         for (var i = 0; i < pref.length && !current; i++) {
-          var hit = list.filter(function (m) { return pref[i].test(m.id); })[0];
-          if (hit) current = hit.id;
+          var hits = list.filter(function (m) { return pref[i].test(m.id); }).sort(function (a, b) { return b.id.localeCompare(a.id, undefined, { numeric: true }); });
+          if (hits[0]) current = hits[0].id;
         }
         prefs.model[p] = current; persist();
       }

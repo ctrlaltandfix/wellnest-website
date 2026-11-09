@@ -123,6 +123,15 @@ async function provFetch(url, init, who) {
     const msg = data?.error?.message || data?.error?.type || body.slice(0, 200) || res.statusText;
     // Out-of-credit errors are about the API account, not a ChatGPT Plus / Claude Pro subscription.
     const billing = { Claude: "platform.claude.com → Settings → Billing", ChatGPT: "platform.openai.com → Settings → Billing", Gemini: "aistudio.google.com → Billing" }[who];
+    // Gemini's free-tier errors are long; say what they mean.
+    if (who === "Gemini" && /free_tier|Free Tier/.test(msg)) {
+      const model = (msg.match(/model: ([\w.-]+)/) || [])[1] || "this model";
+      const wait = (msg.match(/retry in ((?:\d+h)?(?:\d+m)?\d+)(?:\.\d+)?s/i) || [])[1];
+      const text = /limit: 0\b/.test(msg)
+        ? `${model} isn't included in Gemini's free tier. Choose a Flash model (for example Gemini 3 Flash or Gemini 2.5 Flash) in the model picker, or add billing to the key's Google project.`
+        : `Gemini's free-tier limit for ${model} has been reached${wait ? ` — it resets in about ${wait}s` : ""}. Try a Flash model, or wait.`;
+      throw Object.assign(new Error(`Gemini: ${text}`), { status: 502 });
+    }
     const hint = /credit|billing|quota|insufficient|balance|payment/i.test(msg)
       ? ` (API keys are billed separately from a ${who} subscription — add credit at ${billing}, for the same account the key was made in.)` : "";
     throw Object.assign(new Error(`${who} said: ${msg}${hint}`), { status: 502 });

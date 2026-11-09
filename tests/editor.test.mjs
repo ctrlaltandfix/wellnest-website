@@ -274,3 +274,15 @@ test('app wording: snippets that start or end mid-tag, as AIs copy them', () => 
   assert.deepEqual(wordingChanges('<h1>A b</h1><p>C d</p>', '<h1>A x</h1><p>C y</p>').pairs, [{ from: 'A b', to: 'A x' }, { from: 'C d', to: 'C y' }]);
   assert.equal(wordingChanges('<p>One</p><p>Two</p>', '<p>One</p>').layout, true);
 });
+
+test('Gemini free-tier errors are explained in a sentence', async () => {
+  fakeWorld();
+  const github = globalThis.fetch;
+  const quota = (limit) => { globalThis.fetch = async (u, i) => String(u).includes('generativelanguage') ? new Response(JSON.stringify({ error: { message: `You exceeded your current quota.\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: ${limit}, model: gemini-3.1-pro\nPlease retry in 3h59m50.524040559s.` } }), { status: 429 }) : github(u, i); };
+  quota(0);
+  let r = await (await handleEditor(req('chat', { provider: 'gemini', model: 'gemini-3.1-pro', messages: [{ role: 'user', content: 'hi' }] }), env(), OWNER, 'chat')).json();
+  assert.match(r.error, /^Gemini: gemini-3\.1-pro isn't included in Gemini's free tier\. Choose a Flash model/);
+  quota(5);
+  r = await (await handleEditor(req('chat', { provider: 'gemini', model: 'gemini-3.1-pro', messages: [{ role: 'user', content: 'hi' }] }), env(), OWNER, 'chat')).json();
+  assert.match(r.error, /limit for gemini-3\.1-pro has been reached — it resets in about 3h59m50s/);
+});
