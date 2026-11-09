@@ -1,0 +1,63 @@
+/* hb-features-polish:start
+   The section under the homepage hero, restyled in the hero's own language:
+   deep green glass, lime accents, one calm green palette. Styles only, so the
+   app (which redraws the page) keeps showing it. Edit here, then run
+   tools/features-polish.py to put it into the stylesheet. */
+.hb-site .hb-features{background:radial-gradient(60% 420px at 85% 0%,#d8fa8d2e,transparent 70%),linear-gradient(180deg,#f1f6ea 0,#f8f8f3 520px)}
+.hb-site .hb-features .hb-kicker{color:#1f5c47;background:#e3f0dc;border:1px solid #cbe0c8;border-radius:99px;gap:11px;padding:9px 15px 9px 13px}
+.hb-site .hb-features .hb-kicker-line{background:#2f9a6c;border-radius:50%;width:8px;height:8px;box-shadow:0 0 0 4px #2f9a6c26}
+.hb-site .hb-features .hb-section-intro h2{white-space:normal;text-wrap:balance;margin:24px 0 20px;font-size:clamp(2.3rem,4.5vw,4.7rem);line-height:1.04}
+.hb-site .hb-features .hb-section-intro h2 em{color:#2f7a5f}
+.hb-site .hb-features .hb-section-intro p{color:#3d5a4d;max-width:600px;font-size:17px}
+@media (width>900px){
+.hb-site .hb-features .hb-intro-grid{grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:28px 48px;margin-bottom:56px;display:grid}
+.hb-site .hb-features .hb-intro-aside{color:#e9f6e4;background:#16372f;border:0;border-radius:99px;align-items:center;gap:11px;max-width:none;margin:0 0 4px;padding:13px 20px 13px 16px;font-size:13px;font-weight:600;line-height:1.2;box-shadow:0 18px 34px -18px #16372f99}
+.hb-site .hb-features .hb-intro-aside:before{content:"";background:#d8fa8d;border-radius:50%;flex:none;width:8px;height:8px;box-shadow:0 0 10px #d8fa8d}
+}
+.hb-site .hb-features .hb-bento{gap:22px}
+.hb-site .hb-features .hb-feature-card{border-radius:32px}
+.hb-site .hb-features .hb-feature-card h3{text-wrap:balance;font-size:clamp(1.95rem,2.8vw,3.1rem);line-height:1.08}
+/* Wide card: the hero's dark glass */
+.hb-site .hb-features .hb-feature-card.hb-card-mint{color:#f3faf0;background:radial-gradient(70% 90% at 100% 0%,#d8fa8d24,transparent 60%),linear-gradient(155deg,#15463c 0%,#0e3029 48%,#0a2420 100%);border-color:#d8fa8d3d;box-shadow:inset 0 1px #ffffff1f,0 44px 80px -44px #0a2420cc}
+.hb-site .hb-features .hb-card-mint:after{border-color:#d8fa8d29;width:420px;height:420px;top:-150px;right:-110px}
+.hb-site .hb-features .hb-card-mint h3{color:#fff}
+.hb-site .hb-features .hb-card-mint h3 em{color:#d8fa8d}
+.hb-site .hb-features .hb-card-mint p{color:#c3d6ca}
+.hb-site .hb-features .hb-card-mint .hb-tag{color:#d8fa8d;background:#ffffff12;border-color:#ffffff29}
+.hb-site .hb-features .hb-card-mint .hb-tag svg{color:#0b2621;background:#d8fa8d;box-shadow:none}
+.hb-site .hb-features .hb-card-mint .hb-text-link{color:#f3faf0;border-bottom-color:#d8fa8d99}
+.hb-site .hb-features .hb-card-mint .hb-text-link svg{color:#d8fa8d}
+.hb-site .hb-features .hb-chart-art{background:linear-gradient(180deg,#ffffff12,#ffffff05);border-color:#ffffff24;border-radius:24px;padding:26px 26px 22px;transform:none;box-shadow:inset 0 1px #ffffff1a,0 34px 60px -34px #010d0fb3}
+.hb-site .hb-features .hb-art-mini-header{color:#f3faf0}
+.hb-site .hb-features .hb-art-mini-header span+span,.hb-site .hb-features .hb-chart-days{color:#8fab9c}
+.hb-site .hb-features .hb-sample-chart{overflow:visible}
+.hb-site .hb-features .hb-sample-chart path[stroke-dasharray]{stroke:#fff;opacity:.16}
+.hb-site .hb-features .hb-sample-chart path[stroke-linecap]{stroke:#d8fa8d;stroke-width:3.5px;filter:drop-shadow(0 0 7px #d8fa8d8c)}
+.hb-site .hb-features .hb-sample-chart stop{stop-color:#d8fa8d}
+.hb-site .hb-features .hb-sample-chart stop:first-child{stop-opacity:.3}
+.hb-site .hb-features .hb-sample-chart circle{fill:#d8fa8d;stroke:#0e3029}
+.hb-site .hb-features .hb-chart-pill{color:#0b2621;background:#d8fa8d}
+/* The two cards beneath: one green family in place of lilac and peach */
+.hb-site .hb-features .hb-feature-card.hb-card-lilac,.hb-site .hb-features .hb-feature-card.hb-card-peach{--feature-tone:#2f7a5f;--feature-tint:#e3f0dc;border-color:#d3e2d0;box-shadow:inset 0 1px #fff,0 34px 60px -44px #16372f73}
+.hb-site .hb-features .hb-feature-card.hb-card-lilac{background:radial-gradient(80% 60% at 100% 0%,#d8fa8d47,transparent 62%),linear-gradient(165deg,#fff,#f0f6e9)}
+.hb-site .hb-features .hb-feature-card.hb-card-peach{background:radial-gradient(80% 60% at 0% 100%,#bfe3c94d,transparent 62%),linear-gradient(165deg,#f3f8ec,#e4efdc)}
+.hb-site .hb-features .hb-card-lilac h3 em,.hb-site .hb-features .hb-card-peach h3 em{color:#2f7a5f}
+.hb-site .hb-features .hb-card-lilac .hb-tag,.hb-site .hb-features .hb-card-peach .hb-tag{background:#ffffffb3}
+.hb-site .hb-features .hb-report-art{transform:rotate(-3deg)translate(5%)}
+.hb-site .hb-features .hb-report-paper{background:linear-gradient(160deg,#fff,#f7fbf3);border-color:#d6e4d3;box-shadow:inset 0 1px #fff,0 -14px 44px -10px #16372f2e}
+.hb-site .hb-features .hb-report-logo{color:#3d5a4d}
+.hb-site .hb-features .hb-report-logo span{color:#2f9a6c}
+.hb-site .hb-features .hb-report-line{background:#e4ece1}
+.hb-site .hb-features .hb-report-bars i{background:linear-gradient(#1f7a52,#63b384)}
+.hb-site .hb-features .hb-report-bars i:nth-child(4){background:linear-gradient(#b9e86a,#d8fa8d)}
+.hb-site .hb-features .hb-report-stamp{color:#0b2621;background:#d8fa8d;border-radius:99px;padding:10px 15px;box-shadow:0 14px 26px -8px #16372f66}
+.hb-site .hb-features .hb-stack-visual{gap:12px;transform:none}
+.hb-site .hb-features .hb-stack-item{background:#fffffff2;border-color:#d3e2d0;border-radius:18px;padding:14px 18px 14px 14px;font-size:14px;box-shadow:inset 0 1px #fff,0 16px 28px -20px #16372f66}
+.hb-site .hb-features .hb-stack-item>svg{color:#fff;box-sizing:content-box;background:#1f7a52;border-radius:50%;padding:4px}
+.hb-site .hb-features .hb-stack-icon{border-radius:12px;width:40px;height:40px}
+@media (width<=650px){
+.hb-site .hb-features .hb-feature-card{border-radius:24px}
+.hb-site .hb-features .hb-section-intro p{font-size:16px}
+.hb-site .hb-features .hb-chart-art{border-radius:18px;padding:16px}
+}
+/* hb-features-polish:end */
