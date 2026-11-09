@@ -102,7 +102,11 @@ async function provFetch(url, init, who) {
   try { data = JSON.parse(body); } catch {}
   if (!res.ok) {
     const msg = data?.error?.message || data?.error?.type || body.slice(0, 200) || res.statusText;
-    throw Object.assign(new Error(`${who} said: ${msg}`), { status: 502 });
+    // Out-of-credit errors are about the API account, not a ChatGPT Plus / Claude Pro subscription.
+    const billing = { Claude: "platform.claude.com → Settings → Billing", ChatGPT: "platform.openai.com → Settings → Billing", Gemini: "aistudio.google.com → Billing" }[who];
+    const hint = /credit|billing|quota|insufficient|balance|payment/i.test(msg)
+      ? ` (API keys are billed separately from a ${who} subscription — add credit at ${billing}, for the same account the key was made in.)` : "";
+    throw Object.assign(new Error(`${who} said: ${msg}${hint}`), { status: 502 });
   }
   return data;
 }
