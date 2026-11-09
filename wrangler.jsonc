@@ -24,6 +24,8 @@
     { "binding": "DB", "database_name": "wellnest-db", "database_id": "7d75ba9d-cc5f-4d23-8235-94de919602a4" }
   ],
   "observability": { "enabled": true },
+  // Daily at 03:17 UTC: submit new and changed sitemap pages to IndexNow (cloudflare/seo.js).
+  "triggers": { "crons": ["17 3 * * *"] },
   // Keep variables set in the Cloudflare dashboard (e.g. ADMIN_EMAILS) when deploying from GitHub.
   "keep_vars": true,
   // Who can open /admin/analytics: SHA-256 of each admin's lower-case email, comma-separated.

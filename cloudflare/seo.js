@@ -47,3 +47,32 @@ export async function handleIndexNow(request, env, user) {
   const urls = Array.isArray(body.urls) && body.urls.length ? body.urls : await sitemapUrls(env, new URL(request.url).origin);
   return json(await submitIndexNow(urls));
 }
+
+// Daily (wrangler.jsonc "triggers"): tell IndexNow about every sitemap page that
+// is new or whose <lastmod> changed since the last successful submission, so Bing
+// (which also feeds ChatGPT search, DuckDuckGo and others) hears about changes
+// without anyone pressing a button. What was sent is kept in the config table.
+export function sitemapEntries(xml) {
+  return [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)].map(m => ({
+    url: (m[1].match(/<loc>([^<]+)<\/loc>/) || [])[1]?.trim(),
+    lastmod: (m[1].match(/<lastmod>([^<]+)<\/lastmod>/) || [])[1]?.trim() || "",
+  })).filter(e => e.url);
+}
+export async function scheduledIndexNow(env) {
+  const res = await env.ASSETS.fetch(new Request(SITE + "/sitemap.xml"));
+  if (!res.ok) return { submitted: 0, status: null };
+  const entries = sitemapEntries(await res.text());
+  const row = await env.DB.prepare("SELECT value FROM config WHERE key = 'indexnow_sent'").first();
+  let sent = {};
+  try { sent = JSON.parse(row?.value || "{}"); } catch {}
+  const changed = entries.filter(e => sent[e.url] !== e.lastmod);
+  if (!changed.length) return { submitted: 0, status: null };
+  const result = await submitIndexNow(changed.map(e => e.url));
+  if (result.ok) {
+    const next = {};
+    for (const e of entries) next[e.url] = changed.includes(e) ? e.lastmod : sent[e.url];
+    await env.DB.prepare("INSERT INTO config (key, value) VALUES ('indexnow_sent', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+      .bind(JSON.stringify(next)).run();
+  } else console.error("IndexNow", result.status, result.detail);
+  return result;
+}

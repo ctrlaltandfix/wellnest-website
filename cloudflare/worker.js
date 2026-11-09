@@ -4,7 +4,7 @@ import { SITE, json, fail, corsHeaders, ensureSchema, currentUser } from "./lib.
 import { handleIdentity, handleGoogleCallback } from "./identity.js";
 import { handleCollect, handleStats } from "./analytics.js";
 import { handleEditor, servePreview, servePreviewApp, previewCookie } from "./editor.js";
-import { handleIndexNow } from "./seo.js";
+import { handleIndexNow, scheduledIndexNow } from "./seo.js";
 import { handleMe, handleEntities, handleUploads, handleFileSign, handleFileRaw, handleFunction } from "./data.js";
 
 const OLD_BASE = "/wellnest-website";
@@ -73,6 +73,12 @@ async function api(request, env, path) {
 }
 
 export default {
+  // Daily: tell search engines about new and changed pages (cloudflare/seo.js).
+  async scheduled(event, env, ctx) {
+    await ensureSchema(env);
+    ctx.waitUntil(scheduledIndexNow(env));
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
 

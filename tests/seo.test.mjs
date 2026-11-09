@@ -137,3 +137,26 @@ test('homepage links (page and app) reach every sitemap page', async () => {
     assert.ok(app.includes('href:`' + p + '`'), 'app homepage has no link to ' + p);
   }
 });
+
+test('daily IndexNow job sends only new or changed pages, and remembers them', async () => {
+  const { scheduledIndexNow } = await import('../cloudflare/seo.js');
+  let xml = '<urlset><url><loc>https://wellnest.services/</loc><lastmod>2026-11-01</lastmod></url><url><loc>https://wellnest.services/about</loc><lastmod>2026-10-01</lastmod></url></urlset>';
+  const store = {};
+  const DB = { prepare: sql => ({
+    bind: v => ({ run: async () => { store.indexnow_sent = v; } }),
+    first: async () => store.indexnow_sent ? { value: store.indexnow_sent } : null,
+  }) };
+  const sentBodies = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { sentBodies.push(JSON.parse(init.body)); return new Response('', { status: 200 }); };
+  try {
+    const env = { DB, ASSETS: { fetch: async () => new Response(xml) } };
+    assert.equal((await scheduledIndexNow(env)).submitted, 2);
+    assert.equal((await scheduledIndexNow(env)).submitted, 0);   // nothing changed
+    xml = xml.replace('2026-10-01', '2026-11-09');
+    const r = await scheduledIndexNow(env);
+    assert.equal(r.submitted, 1);
+    assert.deepEqual(sentBodies.at(-1).urlList, ['https://wellnest.services/about']);
+    assert.equal(sentBodies.length, 2);
+  } finally { globalThis.fetch = realFetch; }
+});
