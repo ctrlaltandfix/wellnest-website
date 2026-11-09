@@ -62,6 +62,9 @@
   .tool-row { padding: 8px 14px 10px; border-bottom: 1px solid var(--line); }
   .seg.tools { display: flex; }
   .seg.tools button { flex: 1; padding: 7px 10px; }
+  .seg.tools .dot { display: none; width: 7px; height: 7px; border-radius: 50%; margin-left: 7px; vertical-align: 1px; }
+  .seg.tools .busy .dot { display: inline-block; background: var(--mark); animation: dot 1.2s infinite ease-in-out; }
+  .seg.tools .unread .dot { display: inline-block; background: #e0612f; }
   .seg.tools button:disabled { color: var(--muted); opacity: .55; cursor: not-allowed; }
   .chat-head select { max-width: 190px; }
   .chat-head .label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-right: auto; }
@@ -138,7 +141,7 @@
 (function () {
   "use strict";
   var app = document.getElementById("app");
-  var LS = { drafts: "wn-editor-drafts", chat: "wn-editor-chat", prefs: "wn-editor-prefs", preview: "wn-editor-preview" };
+  var LS = { drafts: "wn-editor-drafts", chat: "wn-editor-chat", chats: "wn-editor-chats", prefs: "wn-editor-prefs", preview: "wn-editor-preview" };
   function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k) || "null"); return v == null ? d : v; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
@@ -184,13 +187,22 @@
   // ---------- state ----------
   var status = null, files = [], fileSet = {};
   var drafts = load(LS.drafts, {});   // path -> { sha, base, content, ops: [{find, replace}] }
-  var chat = load(LS.chat, []);       // { role: "user"|"assistant"|"note"|"error", content, changed? }
   var prefs = load(LS.prefs, { provider: "", model: {}, page: "index.html", device: "desktop" });
+  // One conversation per AI, so each can keep working while you look at another.
+  // Messages: { role: "user"|"assistant"|"note"|"error", content, changed? }
+  var chats = load(LS.chats, null);
+  if (!chats) { chats = {}; var old = load(LS.chat, []); if (old.length) chats[prefs.provider || "anthropic"] = old; }
+  function chatOf(k) { return chats[k] || (chats[k] = []); }
   var previewId = load(LS.preview, "");
-  var busy = false;
+  var busy = {}, unread = {};
+  // Replies can arrive at the same time; apply their changes one at a time.
+  var applying = Promise.resolve();
+  function serial(fn) { var run = applying.then(fn, fn); applying = run.catch(function () {}); return run; }
   var ui = {};
 
-  function persist() { save(LS.drafts, drafts); save(LS.chat, chat.slice(-80)); save(LS.prefs, prefs); save(LS.preview, previewId); }
+  function persist() {
+    var trimmed = {}; Object.keys(chats).forEach(function (k) { trimmed[k] = chats[k].slice(-80); });
+    save(LS.drafts, drafts); save(LS.chats, trimmed); save(LS.prefs, prefs); save(LS.preview, previewId); }
   function draftCount() { return Object.keys(drafts).length; }
 
   // Pages shown in the picker: .html files, without the folder twins (about/index.html).
@@ -322,7 +334,7 @@
   function renderLog() {
     var log = ui.log;
     log.replaceChildren();
-    chat.forEach(function (m) {
+    chatOf(prefs.provider).forEach(function (m) {
       if (m.role === "user") log.appendChild(el("div", { class: "msg user", text: m.content }));
       else if (m.role === "note") log.appendChild(el("div", { class: "msg note", text: m.content }));
       else if (m.role === "error") log.appendChild(el("div", { class: "msg error", text: m.content }));
@@ -337,7 +349,7 @@
         log.appendChild(box);
       }
     });
-    if (busy) log.appendChild(el("div", { class: "msg ai" }, [el("span", { class: "who", text: providerName() }), el("span", { class: "thinking", "aria-label": "Working" }, [el("i"), el("i"), el("i")])]));
+    if (busy[prefs.provider]) log.appendChild(el("div", { class: "msg ai" }, [el("span", { class: "who", text: providerName() }), el("span", { class: "thinking", "aria-label": "Working" }, [el("i"), el("i"), el("i")])]));
     log.scrollTop = log.scrollHeight;
   }
 
@@ -351,7 +363,7 @@
       el("button", { type: "button", class: "btn quiet", text: "Discard all", onclick: function () {
         if (!confirm("Discard all unpublished changes?")) return;
         drafts = {}; persist(); syncPreview().catch(function () {}); renderChanges(); showPage(prefs.page);
-        chat.push({ role: "note", content: "Discarded all changes." }); persist(); renderLog();
+        chatOf(prefs.provider).push({ role: "note", content: "Discarded all changes." }); persist(); renderLog();
       } }),
     ]));
     Object.keys(drafts).sort().forEach(function (p) {
@@ -377,47 +389,74 @@
   }
   function clip(s) { s = String(s || ""); return s.length > 1200 ? s.slice(0, 1200) + "\n…" : s; }
   function lastRequest() {
-    for (var i = chat.length - 1; i >= 0; i--) if (chat[i].role === "user") return chat[i].content.split("\n")[0].slice(0, 90);
+    var c = chatOf(prefs.provider);
+    for (var i = c.length - 1; i >= 0; i--) if (c[i].role === "user") return c[i].content.split("\n")[0].slice(0, 90);
     return "Update website";
   }
-  function providerName() { return status && status.providers[prefs.provider] ? status.providers[prefs.provider].name : "AI"; }
+  function nameOf(k) { return status && status.providers[k] ? status.providers[k].name : "AI"; }
+  function providerName() { return nameOf(prefs.provider); }
+  function samePage(a, b) {
+    var twin = function (p) { return p.replace(/^(.+)\/index\.html$/, "$1.html"); };
+    return twin(a) === twin(b);
+  }
+  function refreshTools() {
+    if (!ui.provider) return;
+    ui.provider.querySelectorAll("button").forEach(function (b) {
+      var k = b.dataset.k;
+      b.setAttribute("aria-pressed", String(k === prefs.provider));
+      b.classList.toggle("busy", Boolean(busy[k]));
+      b.classList.toggle("unread", Boolean(unread[k]) && !busy[k]);
+      b.title = !status.providers[k].connected ? b.title : busy[k] ? nameOf(k) + " is working…" : unread[k] ? nameOf(k) + " has a new reply" : "Use " + nameOf(k);
+    });
+    if (ui.send) ui.send.disabled = Boolean(busy[prefs.provider]);
+  }
   function autosize() { ui.input.style.height = "auto"; ui.input.style.height = Math.min(180, ui.input.scrollHeight) + "px"; }
 
   // ---------- actions ----------
-  async function send(text, isRetry) {
-    if (busy || !text.trim()) return;
-    var model = prefs.model[prefs.provider];
-    if (!model) { chat.push({ role: "error", content: "Choose an AI and model first." }); renderLog(); return; }
-    if (!isRetry) chat.push({ role: "user", content: text.trim() });
-    busy = true; ui.send.disabled = true; renderLog(); persist();
+  // Each AI has its own conversation and can be working while you look at another.
+  async function send(text, isRetry, k) {
+    k = k || prefs.provider;
+    if (busy[k] || !text.trim()) return;
+    var name = nameOf(k), model = prefs.model[k], log = chatOf(k), retry = null;
+    if (!model) { log.push({ role: "error", content: "Choose a model for " + name + " first." }); renderLog(); return; }
+    if (!isRetry) log.push({ role: "user", content: text.trim() });
+    busy[k] = true; unread[k] = false; refreshTools(); renderLog(); persist();
     try {
-      var history = chat.filter(function (m) { return m.role === "user" || m.role === "assistant"; }).map(function (m) { return { role: m.role, content: m.content }; });
+      var history = log.filter(function (m) { return m.role === "user" || m.role === "assistant"; }).map(function (m) { return { role: m.role, content: m.content }; });
       if (isRetry) history.push({ role: "user", content: text });
       var payloadDrafts = {};
       Object.keys(drafts).forEach(function (p) { payloadDrafts[p] = drafts[p].content; });
-      var r = await api("chat", { provider: prefs.provider, model: model, messages: history, focus: prefs.page, drafts: payloadDrafts });
-      var blocks = parseBlocks(r.reply);
-      var result = await applyBlocks(blocks);
-      chat.push({ role: "assistant", content: r.reply, changed: result.changed, who: providerName() });
+      var r = await api("chat", { provider: k, model: model, messages: history, focus: prefs.page, drafts: payloadDrafts });
+      // Apply against the latest drafts (another AI may have changed them meanwhile).
+      var result = await serial(async function () {
+        var res = await applyBlocks(parseBlocks(r.reply));
+        if (res.changed.length) await syncPreview();
+        return res;
+      });
+      log.push({ role: "assistant", content: r.reply, changed: result.changed, who: name });
       if (result.changed.length) {
-        await syncPreview();
         var page = result.changed.filter(function (p) { return /\.html$/.test(p); })[0];
-        showPage(page ? page.replace(/^(.+)\/index\.html$/, function (_, a) { return fileSet[a + ".html"] ? a + ".html" : _; }) : prefs.page);
+        if (page) page = page.replace(/^(.+)\/index\.html$/, function (_, a) { return fileSet[a + ".html"] ? a + ".html" : _; });
+        if (k === prefs.provider && page) showPage(page);                 // you're watching this AI: jump to its change
+        else if (result.changed.some(function (p) { return samePage(p, prefs.page); })) showPage(prefs.page); // refresh the page on screen
+        else if (ui.mode) showPage(prefs.page);                           // keep your page; refresh its preview link
       }
       if (result.failed.length) {
-        busy = false;
         if (!isRetry) {
-          chat.push({ role: "note", content: "Some changes didn't fit the page exactly, so " + providerName() + " is trying again…" });
-          renderLog();
-          return send("(Editor) These changes couldn't be applied: " + result.failed.join("; ") + ". Please read the file again if needed and redo only those changes, copying the existing text exactly.", true);
+          log.push({ role: "note", content: "Some changes didn't fit the page exactly, so " + name + " is trying again…" });
+          retry = "(Editor) These changes couldn't be applied: " + result.failed.join("; ") + ". Please read the file again if needed and redo only those changes, copying the existing text exactly.";
+        } else {
+          log.push({ role: "error", content: "Some changes couldn't be applied: " + result.failed.join("; ") + ". Try asking again in different words." });
         }
-        chat.push({ role: "error", content: "Some changes couldn't be applied: " + result.failed.join("; ") + ". Try asking again in different words." });
       }
     } catch (e) {
-      chat.push({ role: "error", content: e.message });
+      log.push({ role: "error", content: e.message });
     } finally {
-      busy = false; ui.send.disabled = false; persist(); renderLog(); renderChanges();
+      busy[k] = false;
+      if (k !== prefs.provider) unread[k] = true;
+      persist(); refreshTools(); renderLog(); renderChanges();
     }
+    if (retry) return send(retry, true, k);
   }
 
   async function publish(message, btn) {
@@ -430,11 +469,11 @@
       Object.keys(drafts).forEach(function (p) { payload[p] = { content: drafts[p].content, sha: drafts[p].sha }; });
       var r = await api("publish", { message: message || lastRequest(), files: payload });
       drafts = {}; previewId = ""; persist();
-      chat.push({ role: "note", content: "Published " + r.files.length + " file" + (r.files.length === 1 ? "" : "s") + ". The live site updates in about 2 minutes." });
+      chatOf(prefs.provider).push({ role: "note", content: "Published " + r.files.length + " file" + (r.files.length === 1 ? "" : "s") + ". The live site updates in about 2 minutes." });
       renderLog(); renderChanges(); showPage(prefs.page);
       loadFiles().catch(function () {});
     } catch (e) {
-      chat.push({ role: "error", content: "Couldn't publish: " + e.message });
+      chatOf(prefs.provider).push({ role: "error", content: "Couldn't publish: " + e.message });
       btn.disabled = false; btn.textContent = "Publish";
       renderLog();
     }
@@ -461,7 +500,7 @@
       ui.model.disabled = false;
     } catch (e) {
       ui.model.replaceChildren(el("option", { text: "Couldn't load models" }));
-      chat.push({ role: "error", content: e.message }); renderLog();
+      chatOf(prefs.provider).push({ role: "error", content: e.message }); renderLog();
     }
   }
 
@@ -532,12 +571,11 @@
       var p = status.providers[k];
       return el("button", { type: "button", "data-k": k, "aria-pressed": String(k === prefs.provider), disabled: !p.connected,
         title: p.connected ? "Use " + p.name : p.name + " isn't connected — add " + p.secret + " in Cloudflare",
-        text: p.name, onclick: function () {
+        onclick: function () {
           if (prefs.provider === k) return;
-          prefs.provider = k; persist();
-          ui.provider.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.k === k)); });
-          loadModels();
-        } });
+          prefs.provider = k; unread[k] = false; persist();
+          refreshTools(); renderLog(); renderChanges(); loadModels();
+        } }, [p.name, el("i", { class: "dot", "aria-hidden": "true" })]);
     }));
     ui.model = el("select", { "aria-label": "Model", onchange: function () { prefs.model[prefs.provider] = ui.model.value; persist(); } });
     ui.log = el("div", { class: "log", "aria-live": "polite" });
@@ -545,8 +583,8 @@
     ui.input = el("textarea", { rows: "1", placeholder: "Describe a change to the site…", "aria-label": "Message", oninput: autosize,
       onkeydown: function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); go(); } } });
     ui.send = el("button", { type: "button", class: "btn primary", text: "Send", onclick: go });
-    function go() { var t = ui.input.value; if (!t.trim() || busy) return; ui.input.value = ""; autosize(); send(t); }
-    var clear = el("button", { type: "button", class: "btn quiet", text: "New chat", title: "Start a new conversation (keeps your unpublished changes)", onclick: function () { chat = []; persist(); renderLog(); } });
+    function go() { var t = ui.input.value; if (!t.trim() || busy[prefs.provider]) return; ui.input.value = ""; autosize(); send(t); }
+    var clear = el("button", { type: "button", class: "btn quiet", text: "New chat", title: "Start a new conversation (keeps your unpublished changes)", onclick: function () { if (busy[prefs.provider]) return; chats[prefs.provider] = []; persist(); renderLog(); } });
 
     app.replaceChildren(
       el("section", { class: "preview", "aria-label": "Preview" }, [toolbar, ui.stage]),
@@ -556,9 +594,9 @@
         ui.log, ui.changes, el("div", { class: "composer" }, [ui.input, ui.send]),
       ])
     );
-    renderLog(); renderChanges();
+    renderLog(); renderChanges(); refreshTools();
     loadModels();
-    loadFiles().then(function () { showPage(prefs.page); }).catch(function (e) { chat.push({ role: "error", content: e.message }); renderLog(); });
+    loadFiles().then(function () { showPage(prefs.page); }).catch(function (e) { chatOf(prefs.provider).push({ role: "error", content: e.message }); renderLog(); });
     // Drafts saved in this browser need a fresh preview link (they expire after a day).
     if (draftCount()) syncPreview().then(function () { showPage(prefs.page); }).catch(function () {});
   }
