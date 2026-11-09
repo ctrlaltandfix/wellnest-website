@@ -176,6 +176,7 @@ test('screenshots reach each AI in its own format; bad or excess images are drop
         ...Array(7).fill({ type: 'image/jpeg', data: png })] },
     ] }), env(), OWNER, 'chat');
     assert.equal(res.status, 200, provider);
+    assert.equal((await res.json()).reply, 'Thanks, I can see it.', provider);
     const sent = JSON.stringify(w.calls.ai[0]);
     const count = (sent.match(/ZmFrZS1wbmc=/g) || []).length;
     assert.equal(count, 6, `${provider}: newest 6 valid images only`);
@@ -306,4 +307,92 @@ test('busy AI servers are retried, then explained', async () => {
   busyThen(9);
   r = await (await handleEditor(req('chat', { provider: 'gemini', model: 'g', messages: [{ role: 'user', content: 'hi' }] }), env(), OWNER, 'chat')).json();
   assert.match(r.error, /^Gemini is overloaded right now — its servers turned the request away 3 times\..*Gemini 2\.5 Flash.*Cloudflare AI/);
+});
+
+test('Cloudflare AI: a busy free model is retried, then another free model answers', async () => {
+  const { RETRY_WAITS, CF_MODELS } = await import('../cloudflare/editor.js');
+  RETRY_WAITS.splice(0, RETRY_WAITS.length, 1, 1);
+  fakeWorld();
+  const tried = [];
+  const AI = { run: async (model) => { tried.push(model); if (model === CF_MODELS[0].id) throw new Error('3040: Capacity temporarily exceeded'); return { response: 'Hi from backup' }; } };
+  const e = { ...env(), AI };
+  const r = await (await handleEditor(req('chat', { provider: 'cloudflare', model: CF_MODELS[0].id, messages: [{ role: 'user', content: 'hi' }] }), e, OWNER, 'chat')).json();
+  assert.equal(r.reply, 'Hi from backup');
+  assert.deepEqual(tried, [CF_MODELS[0].id, CF_MODELS[0].id, CF_MODELS[1].id]); // retried once, then switched
+  assert.equal(r.model_used, CF_MODELS[1].id);
+  assert.equal(r.model_name, CF_MODELS[1].name);
+
+  // Used-up daily allowance: no point trying the other free models.
+  tried.length = 0;
+  const spent = { ...env(), AI: { run: async (m) => { tried.push(m); throw new Error('3036: daily free allocation of neurons used'); } } };
+  const err = await (await handleEditor(req('chat', { provider: 'cloudflare', model: CF_MODELS[0].id, messages: [{ role: 'user', content: 'hi' }] }), spent, OWNER, 'chat')).json();
+  assert.match(err.error, /allowance may be used up; it resets daily/);
+  assert.equal(tried.length, 1);
+});
+
+test('dropped connections and short rate limits are retried', async () => {
+  const { RETRY_WAITS } = await import('../cloudflare/editor.js');
+  RETRY_WAITS.splice(0, RETRY_WAITS.length, 1, 1);
+  fakeWorld();
+  const github = globalThis.fetch;
+  let tries = 0;
+  globalThis.fetch = async (u, i) => {
+    if (!String(u).includes('anthropic')) return github(u, i);
+    tries++;
+    if (tries === 1) throw new TypeError('Network connection lost.');
+    if (tries === 2) return new Response('{"error":{"type":"rate_limit_error","message":"slow down"}}', { status: 429, headers: { 'retry-after': '0.001' } });
+    return new Response(JSON.stringify({ content: [{ type: 'text', text: 'Third time lucky' }] }), { status: 200 });
+  };
+  const r = await (await handleEditor(req('chat', { provider: 'anthropic', model: 'm', messages: [{ role: 'user', content: 'hi' }] }), env(), OWNER, 'chat')).json();
+  assert.equal(r.reply, 'Third time lucky');
+  assert.equal(tries, 3);
+
+  // An out-of-credit 429 isn't waited on; it's explained.
+  tries = 0;
+  globalThis.fetch = async (u, i) => String(u).includes('openai') ? (tries++, new Response('{"error":{"message":"You exceeded your current quota, please check your plan and billing details."}}', { status: 429 })) : github(u, i);
+  const q = await (await handleEditor(req('chat', { provider: 'openai', model: 'm', messages: [{ role: 'user', content: 'hi' }] }), env(), OWNER, 'chat')).json();
+  assert.equal(tries, 1);
+  assert.match(q.error, /add credit at platform\.openai\.com/);
+  assert.equal(q.retryable, false);
+});
+
+test('long conversations send only the newest messages that fit', async () => {
+  const { trimHistory } = await import('../cloudflare/editor.js');
+  const big = n => 'x'.repeat(n);
+  const msgs = [{ role: 'user', content: big(500) }, { role: 'assistant', content: big(500) }, { role: 'user', content: big(500) }, { role: 'assistant', content: big(500) }, { role: 'user', content: 'latest' }];
+  const out = trimHistory(msgs, 1200);
+  assert.equal(out.at(-1).content, 'latest');
+  assert.equal(out[0].role, 'user');                    // starts on the owner's turn
+  assert.ok(out.length < msgs.length);
+  assert.equal(trimHistory([{ role: 'user', content: big(5000) }], 1000)[0].content.length, 1000); // a huge single message is cut, not dropped
+
+  const w = fakeWorld();
+  w.say('ok');
+  const many = Array.from({ length: 30 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: `m${i} ` + big(20_000) }));
+  const AI = { run: async (model, input) => { AI.sent = input; return { response: 'ok' }; } };
+  await (await handleEditor(req('chat', { provider: 'cloudflare', model: '@cf/x', messages: many.slice(0, 29) }), { ...env(), AI }, OWNER, 'chat')).json();
+  const chars = AI.sent.messages.slice(1).reduce((n, m) => n + m.content.length, 0);
+  assert.ok(chars <= 60_000, 'free models get a shorter history: ' + chars);
+  assert.match(AI.sent.messages.at(-1).content, /^m28 /);
+});
+
+test('long AI turns keep the connection alive; problems arrive as JSON', async () => {
+  const { KEEPALIVE_MS } = await import('../cloudflare/editor.js');
+  const was = KEEPALIVE_MS.value;
+  KEEPALIVE_MS.value = 5;
+  fakeWorld();
+  const AI = { run: async () => { await new Promise(r => setTimeout(r, 40)); return { response: 'Slow but fine' }; } };
+  const res = await handleEditor(req('chat', { provider: 'cloudflare', model: '@cf/x', messages: [{ role: 'user', content: 'hi' }] }), { ...env(), AI }, OWNER, 'chat');
+  const text = await res.text();
+  KEEPALIVE_MS.value = was;
+  assert.match(text, /^ +\{/);                         // spaces while working, then the answer
+  assert.equal(JSON.parse(text).reply, 'Slow but fine');
+
+  // A rejected GitHub token is still explained in words.
+  (await import('../cloudflare/editor.js')).clearTreeCache();
+  fakeWorld();
+  const github = globalThis.fetch;
+  globalThis.fetch = async (u, i) => String(u).includes('git/trees') ? new Response('{"message":"Bad credentials"}', { status: 401 }) : github(u, i);
+  const bad = await (await handleEditor(req('chat', { provider: 'anthropic', model: 'm', messages: [{ role: 'user', content: 'hi' }] }), env(), OWNER, 'chat')).json();
+  assert.match(bad.error, /GitHub rejected the GITHUB_TOKEN/);
 });

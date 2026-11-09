@@ -74,6 +74,7 @@
   .msg.ai { align-self: flex-start; background: var(--soft); border-bottom-left-radius: 5px; }
   .msg.note { align-self: center; max-width: 100%; background: none; color: var(--muted); font-size: 12px; text-align: center; padding: 2px 8px; }
   .msg.error { align-self: stretch; max-width: 100%; background: var(--bad-soft); color: var(--bad); border-radius: 12px; }
+  .msg.error .try-again { display: block; margin-top: 8px; padding: 6px 12px; font-size: 13px; }
   .msg .who { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .65; margin-bottom: 3px; }
   .msg .changed { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; white-space: normal; }
   .msg .changed button { border: 0; border-radius: 999px; background: var(--lime); color: var(--lime-ink); font-size: 12px; font-weight: 600; padding: 3px 10px; cursor: pointer; }
@@ -200,6 +201,39 @@
     var data = await res.json().catch(function () { return {}; });
     if (!res.ok) { var e = new Error(data.error || ("Request failed (" + res.status + ")")); e.status = res.status; e.data = data; throw e; }
     return data;
+  }
+
+  // One AI turn. The server sends spaces while the AI works, then one JSON object
+  // (an error arrives as { error, retryable }). Gives up after CHAT_TIMEOUT.
+  var CHAT_TIMEOUT = 8 * 60 * 1000;
+  async function chat(body) {
+    var ctrl = new AbortController(), timer = setTimeout(function () { ctrl.abort(); }, CHAT_TIMEOUT), res, text;
+    try {
+      res = await chatRequest(body, ctrl.signal, false);
+      text = await res.text();
+    } catch (e) {
+      var err = new Error(ctrl.signal.aborted
+        ? "No answer after " + Math.round(CHAT_TIMEOUT / 60000) + " minutes. The AI may be overloaded — try again, or pick a faster model."
+        : "Lost the connection to WellNest before the reply arrived. Check your internet connection, then try again.");
+      err.retryable = !ctrl.signal.aborted; err.network = true;
+      throw err;
+    } finally { clearTimeout(timer); }
+    var data = null;
+    try { data = JSON.parse(text); } catch (e) {}
+    if (!data || data.error || !res.ok) {
+      var e2 = new Error((data && data.error) || "Request failed (" + res.status + "). Please try again.");
+      e2.status = (data && data.status) || res.status;
+      e2.retryable = data ? Boolean(data.retryable) : res.status >= 500;
+      throw e2;
+    }
+    return data;
+  }
+  async function chatRequest(body, signal, retried) {
+    var u = stored(), headers = { "Content-Type": "application/json" };
+    if (u && u.token && u.token.access_token) headers.Authorization = "Bearer " + u.token.access_token;
+    var res = await fetch("/api/editor/chat", { method: "POST", headers: headers, credentials: "include", body: JSON.stringify(body), signal: signal });
+    if (res.status === 401 && !retried && await refresh()) return chatRequest(body, signal, true);
+    return res;
   }
 
   // ---------- state ----------
@@ -396,7 +430,8 @@
   function renderLog() {
     var log = ui.log;
     log.replaceChildren();
-    chatOf(prefs.provider).forEach(function (m) {
+    var list = chatOf(prefs.provider);
+    list.forEach(function (m) {
       if (m.role === "user") {
         var shots = (m.shots || []).length ? el("div", { class: "shots" }, m.shots.map(function (x) {
           return el("img", { src: x.thumb, alt: "Screenshot", title: "Click to enlarge", onclick: function () { lightbox(x.full || x.thumb); } });
@@ -404,7 +439,11 @@
         log.appendChild(el("div", { class: "msg user" }, [shots, m.content || ""]));
       }
       else if (m.role === "note") log.appendChild(el("div", { class: "msg note", text: m.content }));
-      else if (m.role === "error") log.appendChild(el("div", { class: "msg error", text: m.content }));
+      else if (m.role === "error") {
+        var k = prefs.provider, last = list[list.length - 1] === m;
+        var tryAgain = m.again && last && !busy[k] ? el("button", { type: "button", class: "btn quiet try-again", text: "Try again", onclick: function () { send("", false, k, null, true); } }) : null;
+        log.appendChild(el("div", { class: "msg error" }, [el("span", { text: m.content }), tryAgain]));
+      }
       else {
         var body = stripBlocks(m.content) || (m.changed && m.changed.length ? "Done." : "…");
         var box = el("div", { class: "msg ai" }, [el("span", { class: "who", text: m.who || "AI" }), body]);
@@ -490,6 +529,8 @@
     return "Update website";
   }
   function nameOf(k) { return status && status.providers[k] ? status.providers[k].name : "AI"; }
+  var modelNames = {};  // model id -> name shown in the picker
+  function modelName(k, id) { return modelNames[id] || String(id || "The model").replace(/^@cf\/[^/]+\//, ""); }
   function providerName() { return nameOf(prefs.provider); }
   function samePage(a, b) {
     var twin = function (p) { return p.replace(/^(.+)\/index\.html$/, "$1.html"); };
@@ -510,13 +551,15 @@
 
   // ---------- actions ----------
   // Each AI has its own conversation and can be working while you look at another.
-  async function send(text, isRetry, k, shots) {
+  // again: send the conversation as it stands (after a failed message), without a new message.
+  async function send(text, isRetry, k, shots, again) {
     k = k || prefs.provider;
     shots = shots || [];
-    if (busy[k] || (!text.trim() && !shots.length)) return;
+    if (busy[k] || (!again && !text.trim() && !shots.length)) return;
     var name = nameOf(k), model = prefs.model[k], log = chatOf(k), retry = null;
     if (!model) { log.push({ role: "error", content: "Choose a model for " + name + " first." }); renderLog(); return; }
-    if (!isRetry) log.push(shots.length ? { role: "user", content: text.trim(), shots: shots } : { role: "user", content: text.trim() });
+    if (again) { while (log.length && (log[log.length - 1].role === "error" || log[log.length - 1].role === "note")) log.pop(); }
+    else if (!isRetry) log.push(shots.length ? { role: "user", content: text.trim(), shots: shots } : { role: "user", content: text.trim() });
     busy[k] = true; unread[k] = false; refreshTools(); renderLog(); persist();
     try {
       // Screenshots go with their message while this tab still has them (after a reload only the thumbnails remain).
@@ -527,7 +570,19 @@
       if (isRetry) history.push({ role: "user", content: text });
       var payloadDrafts = {};
       Object.keys(drafts).forEach(function (p) { payloadDrafts[p] = drafts[p].content; });
-      var r = await api("chat", { provider: k, model: model, messages: history, focus: prefs.page, drafts: payloadDrafts });
+      var payload = { provider: k, model: model, messages: history, focus: prefs.page, drafts: payloadDrafts }, r;
+      try { r = await chat(payload); }
+      catch (e) {
+        // A dropped connection or a brief hiccup: try once more by itself.
+        if (!e.retryable) throw e;
+        var note = { role: "note", content: (e.network ? "The connection dropped" : "That didn't go through") + ", so " + name + " is trying again…" };
+        log.push(note); renderLog();
+        try { r = await chat(payload); }
+        finally { var at = log.indexOf(note); if (at >= 0) log.splice(at, 1); }
+      }
+      if (r.model_used && k === "cloudflare") {
+        log.push({ role: "note", content: modelName(k, model) + " was busy, so " + (r.model_name || r.model_used) + " answered instead." });
+      }
       // Apply against the latest drafts (another AI may have changed them meanwhile).
       var result = await serial(async function () {
         var res = await applyBlocks(parseBlocks(r.reply));
@@ -551,7 +606,8 @@
         }
       }
     } catch (e) {
-      log.push({ role: "error", content: e.message });
+      // Keep the message: "Try again" sends it without retyping.
+      log.push({ role: "error", content: e.message, again: e.status !== 400 && e.status !== 403 });
     } finally {
       busy[k] = false;
       if (k !== prefs.provider) unread[k] = true;
@@ -602,6 +658,7 @@
     try {
       var r = await api("models?provider=" + encodeURIComponent(p));
       var list = r.models.slice();
+      list.forEach(function (m) { modelNames[m.id] = m.name; });
       // Sensible default: a strong everyday model rather than the most expensive one.
       // Gemini: a Flash model, because Google's free tier doesn't include the Pro models.
       var pref = { cloudflare: [/nemotron/, /gemma/, /./], anthropic: [/sonnet/, /opus/, /./], openai: [/^gpt-\d+(\.\d+)?$/, /^gpt-\d/, /./],

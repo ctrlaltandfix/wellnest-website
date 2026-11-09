@@ -114,25 +114,58 @@ export const CF_MODELS = [
   { id: "@cf/zai-org/glm-4.7-flash", name: "GLM 4.7 Flash (free)" },
 ];
 
-// "Busy right now" answers (overloaded servers) usually clear in seconds: try
-// again twice before giving up. Waiting costs no CPU time on the Worker.
-const BUSY = new Set([500, 502, 503, 504, 529]);
+// "Busy right now" answers (overloaded servers), short rate limits, dropped
+// connections and stalled calls usually clear in seconds: try again twice before
+// giving up. Waiting costs no CPU time on the Worker.
+const BUSY = new Set([408, 500, 502, 503, 504, 520, 522, 524, 529]);
 export const RETRY_WAITS = [3000, 8000];
+// One AI call may take this long before it is treated as stalled and retried.
+export const CALL_TIMEOUT = { ms: 120_000 };
+const MAX_RATE_WAIT = 20_000;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const busyError = (who, other, tries) => Object.assign(new Error(`${who} is overloaded right now — its servers turned the request away ${tries} times. This usually clears within minutes. Try again shortly, or switch to ${other}or Cloudflare AI.`), { status: 502, retryable: true });
+
+// Seconds to wait from a 429 answer, when it's a short wait (not a used-up daily quota).
+function rateWait(res, data) {
+  const h = Number(res.headers.get("retry-after"));
+  if (Number.isFinite(h) && h > 0) return h * 1000;
+  const m = String(data?.error?.message || "").match(/(?:try again|retry) in (\d+(?:\.\d+)?)\s*(ms|s)\b/i);
+  return m ? Number(m[1]) * (m[2].toLowerCase() === "ms" ? 1 : 1000) : 2000;
+}
 
 async function provFetch(url, init, who) {
   let res, body, data, attempt = 0;
+  const other = who === "Gemini" ? "another Gemini model (e.g. Gemini 2.5 Flash), " : "another model, ";
   for (;;) {
-    res = await fetch(url, init);
-    body = await res.text();
-    data = null;
-    try { data = JSON.parse(body); } catch {}
-    if (!BUSY.has(res.status) || attempt >= RETRY_WAITS.length) break;
-    await sleep(RETRY_WAITS[attempt++]);
+    let wait = null;
+    try {
+      res = await fetch(url, { ...init, signal: AbortSignal.timeout(CALL_TIMEOUT.ms) });
+      body = await res.text();
+      data = null;
+      try { data = JSON.parse(body); } catch {}
+      if (BUSY.has(res.status)) wait = RETRY_WAITS[attempt];
+      else if (res.status === 429 && !/free_tier|Free Tier|quota|credit|billing|insufficient|balance|payment/i.test(body)) {
+        const w = rateWait(res, data);
+        if (w <= MAX_RATE_WAIT) wait = Math.max(w, RETRY_WAITS[attempt] ?? 0);
+      }
+    } catch (e) {
+      // No answer at all: the connection dropped or the call stalled.
+      if (attempt >= RETRY_WAITS.length) {
+        const stalled = e?.name === "TimeoutError" || e?.name === "AbortError";
+        throw Object.assign(new Error(stalled
+          ? `${who} took too long to answer (over ${Math.round(CALL_TIMEOUT.ms / 1000)} seconds, ${attempt + 1} tries). Try a shorter request, a faster model, or Cloudflare AI.`
+          : `Couldn't reach ${who} (${e?.message || e}). Try again shortly.`), { status: 502, retryable: true });
+      }
+      await sleep(RETRY_WAITS[attempt++]);
+      continue;
+    }
+    if (wait == null || attempt >= RETRY_WAITS.length) break;
+    await sleep(wait);
+    attempt++;
   }
-  if (BUSY.has(res.status)) {
-    const other = who === "Gemini" ? "another Gemini model (e.g. Gemini 2.5 Flash), " : "another model, ";
-    throw Object.assign(new Error(`${who} is overloaded right now — its servers turned the request away ${attempt + 1} times. This usually clears within minutes. Try again shortly, or switch to ${other}or Cloudflare AI.`), { status: 502 });
+  if (BUSY.has(res.status)) throw busyError(who, other, attempt + 1);
+  if (res.status === 429 && !/free_tier|Free Tier|quota|credit|billing|insufficient|balance|payment/i.test(body)) {
+    throw Object.assign(new Error(`${who} is limiting how often requests can be sent right now. Wait a minute and try again, or switch to ${other}or Cloudflare AI.`), { status: 502, retryable: true });
   }
   if (!res.ok) {
     const msg = data?.error?.message || data?.error?.type || body.slice(0, 200) || res.statusText;
@@ -209,8 +242,17 @@ export function toGemini(m) {
   return { role: m.role === "assistant" ? "model" : "user", parts: [...(m.images || []).map(i => ({ inlineData: { mimeType: i.type, data: i.data } })), { text: m.content }] };
 }
 
+// A Workers AI call, given up on (and retried) if it stalls.
+async function runCloudflare(env, model, input) {
+  let timer;
+  const stall = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`timed out after ${Math.round(CALL_TIMEOUT.ms / 1000)} seconds`)), CALL_TIMEOUT.ms); });
+  try { return await Promise.race([env.AI.run(model, input), stall]); }
+  finally { clearTimeout(timer); }
+}
+
 // messages: [{ role: "user" | "assistant", content: string, images?: [...] }]
-export async function callModel(env, provider, model, system, messages) {
+// info.model is set to the model that answered (Cloudflare AI may use another free one).
+export async function callModel(env, provider, model, system, messages, info = {}) {
   if (provider === "anthropic") {
     const d = await provFetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -228,20 +270,39 @@ export async function callModel(env, provider, model, system, messages) {
     return d.choices?.[0]?.message?.content || "";
   }
   if (provider === "cloudflare") {
-    let out;
-    try {
-      out = await env.AI.run(model, {
-        // These models read text only; a screenshot is mentioned so the reply makes sense.
-        messages: [{ role: "system", content: system }, ...messages.map(m => ({ role: m.role, content: m.images?.length ? `${m.content}\n\n(The owner attached ${m.images.length} screenshot(s), which this model can't see.)` : m.content }))],
-        max_tokens: 8000,
-      });
-    } catch (e) {
-      const msg = String(e?.message || e);
-      const hint = /5035|Workers Paid|403/.test(msg) ? " (This model now needs Cloudflare's Workers Paid plan; pick another free model.)"
-        : /3036|neurons|daily|limit|429/i.test(msg) ? " (Today's free Cloudflare AI allowance may be used up; it resets daily.)" : "";
-      throw Object.assign(new Error(`Cloudflare AI said: ${msg}${hint}`), { status: 502 });
+    const input = {
+      // These models read text only; a screenshot is mentioned so the reply makes sense.
+      messages: [{ role: "system", content: system }, ...messages.map(m => ({ role: m.role, content: m.images?.length ? `${m.content}\n\n(The owner attached ${m.images.length} screenshot(s), which this model can't see.)` : m.content }))],
+      max_tokens: 8000,
+    };
+    // The free models are shared and are sometimes at capacity: retry, then let
+    // another free model answer instead of failing the message.
+    const order = [model, ...CF_MODELS.map(m => m.id).filter(id => id !== model)];
+    let first = null;
+    for (const id of order) {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const out = await runCloudflare(env, id, input);
+          const text = typeof out?.response === "string" ? out.response : out?.choices?.[0]?.message?.content || out?.result?.response || "";
+          if (!text.trim()) throw new Error("The model sent back an empty reply.");
+          info.model = id;
+          return text;
+        } catch (e) {
+          const msg = String(e?.message || e);
+          if (!first) first = msg;
+          console.error("Cloudflare AI failed", JSON.stringify({ model: id, attempt, error: msg.slice(0, 300) }));
+          // Used-up daily allowance is account-wide: no other free model will work either.
+          if (/3036|neurons|daily/i.test(msg)) throw Object.assign(new Error(`Cloudflare AI said: ${msg} (Today's free Cloudflare AI allowance may be used up; it resets daily at 10–11 am Sydney time.)`), { status: 502 });
+          // Paid-only or too-long requests won't succeed on a retry of the same model.
+          const retrySame = !/5035|Workers Paid|403|context|too long|too many tokens|maximum.*tokens/i.test(msg);
+          if (!retrySame || attempt >= 1) break;
+          await sleep(RETRY_WAITS[0]);
+        }
+      }
     }
-    return typeof out?.response === "string" ? out.response : out?.choices?.[0]?.message?.content || out?.result?.response || "";
+    const hint = /5035|Workers Paid|403/.test(first) ? " (This model now needs Cloudflare's Workers Paid plan; pick another free model.)"
+      : /context|too long|too many tokens|maximum.*tokens/i.test(first) ? " (The conversation is too long for this model — press New chat and ask again.)" : "";
+    throw Object.assign(new Error(`Cloudflare AI said: ${first}${hint} The other free models couldn't answer either; try again in a minute.`), { status: 502, retryable: !hint });
   }
   if (provider === "gemini") {
     const d = await provFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
@@ -302,49 +363,111 @@ export function hasEdits(text) {
   return /<<<<<<< (EDIT|CREATE) /.test(text);
 }
 
-async function handleChat(request, env) {
-  const body = await request.json();
+// How much earlier conversation is sent with each message (characters, about 4
+// per token). Older messages are left out first, so long chats keep working and
+// stay quick. The free Cloudflare models take less.
+const HISTORY_BUDGET = { cloudflare: 60_000, other: 300_000 };
+export function trimHistory(messages, budget) {
+  const out = [];
+  let used = 0;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    const size = m.content.length + (m.images?.length || 0) * 1000;
+    if (out.length && used + size > budget) break;
+    // The newest message always goes, cut down if it's huge on its own.
+    out.unshift(used + size > budget ? { ...m, content: m.content.slice(0, budget) } : m);
+    used += size;
+  }
+  while (out.length > 1 && out[0].role !== "user") out.shift(); // start on the owner's turn
+  return out;
+}
+
+// The repo's file list changes only when something is published: reuse it briefly.
+let treeCache = null;
+async function cachedTree(env) {
+  if (treeCache && Date.now() - treeCache.at < 60_000) return treeCache.tree;
+  const tree = await listTree(env);
+  treeCache = { at: Date.now(), tree };
+  return tree;
+}
+export function clearTreeCache() { treeCache = null; }
+
+async function runChat(env, body) {
   const provider = String(body.provider || "");
-  if (!PROVIDERS[provider]) return fail(400, "Choose an AI provider.");
-  if (!connectedTo(env, provider)) return fail(400, `${PROVIDERS[provider].name} isn't connected yet.`);
+  if (!PROVIDERS[provider]) throw Object.assign(new Error("Choose an AI provider."), { status: 400 });
+  if (!connectedTo(env, provider)) throw Object.assign(new Error(`${PROVIDERS[provider].name} isn't connected yet.`), { status: 400 });
   const model = String(body.model || "").slice(0, 120);
-  if (!model) return fail(400, "Choose a model.");
+  if (!model) throw Object.assign(new Error("Choose a model."), { status: 400 });
   const drafts = body.drafts && typeof body.drafts === "object" ? body.drafts : {};
   // Newest screenshots win if there are more than MAX_IMAGES in the conversation.
   const budget = { left: MAX_IMAGES };
-  const messages = (Array.isArray(body.messages) ? body.messages : [])
+  const messages = trimHistory((Array.isArray(body.messages) ? body.messages : [])
     .filter(m => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
     .slice(-30).reverse()
     .map(m => ({ role: m.role, content: m.content.slice(0, 200_000) || "(see screenshot)", images: m.role === "user" ? cleanImages(m.images, budget) : [] }))
-    .reverse();
-  if (!messages.length || messages[messages.length - 1].role !== "user") return fail(400, "Nothing to send.");
+    .reverse(), provider === "cloudflare" ? HISTORY_BUDGET.cloudflare : HISTORY_BUDGET.other);
+  if (!messages.length || messages[messages.length - 1].role !== "user") throw Object.assign(new Error("Nothing to send."), { status: 400 });
 
-  const tree = await listTree(env);
+  const tree = await cachedTree(env);
   const names = tree.map(f => f.path).filter(editable)
     .filter(p => !/^(.+)\/index\.html$/.test(p) || !tree.some(f => f.path === p.replace(/\/index\.html$/, ".html")));
   const system = systemPrompt(names, body.focus);
 
-  const reads = [];
+  const reads = [], info = {};
   let reply = "";
   for (let round = 0; round <= MAX_READ_ROUNDS; round++) {
-    reply = await callModel(env, provider, model, system, messages);
-    const want = readRequests(reply).slice(0, 6);
+    reply = await callModel(env, provider, info.model || model, system, messages, info);
+    const want = [...new Set(readRequests(reply))].slice(0, 6);
     if (!want.length || hasEdits(reply) || round === MAX_READ_ROUNDS) break;
-    const parts = [];
-    for (const path of want) {
-      if (!editable(path)) { parts.push(`${path}: can't be read or edited here.`); continue; }
+    // Fetch the requested files at the same time rather than one after another.
+    const parts = await Promise.all(want.map(async path => {
+      if (!editable(path)) return `${path}: can't be read or edited here.`;
       try {
         const content = typeof drafts[path] === "string" ? drafts[path] : (await readFile(env, path)).content;
-        parts.push(`=== ${path} ===\n${content}\n=== end of ${path} ===`);
         reads.push(path);
+        return `=== ${path} ===\n${content}\n=== end of ${path} ===`;
       } catch (e) {
-        parts.push(`${path}: not found.`);
+        return `${path}: not found.`;
       }
-    }
+    }));
     messages.push({ role: "assistant", content: reply });
     messages.push({ role: "user", content: `(Editor) Here are the files you asked for:\n\n${parts.join("\n\n")}` });
   }
-  return json({ reply, reads });
+  const out = { reply, reads };
+  if (info.model && info.model !== model) {
+    out.model_used = info.model;
+    out.model_name = (CF_MODELS.find(m => m.id === info.model) || {}).name || info.model;
+  }
+  return out;
+}
+
+// An AI turn can take a minute or more. The answer is sent as one JSON object,
+// with a space every 15 seconds before it so browsers and networks don't drop
+// a connection that looks idle (JSON allows leading spaces). Errors arrive in
+// the same JSON as { error, retryable }.
+export const KEEPALIVE_MS = { value: 15_000 };
+async function handleChat(request, env) {
+  const body = await request.json();
+  const started = Date.now();
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const enc = new TextEncoder();
+  const tick = setInterval(() => { writer.write(enc.encode(" ")).catch(() => {}); }, KEEPALIVE_MS.value);
+  (async () => {
+    let result;
+    try {
+      result = await runChat(env, body);
+    } catch (err) {
+      const e = explainGitHub(err, "chat") || err;
+      const status = e?.status && e.status < 600 ? e.status : 500;
+      console.error("Editor chat failed", JSON.stringify({ provider: body?.provider, model: body?.model, status, seconds: Math.round((Date.now() - started) / 1000), error: String(e?.message || e).slice(0, 500) }));
+      result = { error: status >= 500 && status !== 502 ? "Something went wrong. Please try again." : e.message, status, retryable: Boolean(e?.retryable) || (status >= 500 && status !== 502) };
+    } finally {
+      clearInterval(tick);
+    }
+    try { await writer.write(enc.encode(JSON.stringify(result))); await writer.close(); } catch {}
+  })();
+  return new Response(readable, { status: 200, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Accel-Buffering": "no" } });
 }
 
 // ---------- preview ----------
@@ -492,7 +615,17 @@ async function handlePublish(request, env, user) {
     }),
   });
   await gh(env, `/git/refs/heads/${BRANCH}`, { method: "PATCH", body: JSON.stringify({ sha: commit.sha, force: false }) });
+  clearTreeCache();
   return json({ commit: commit.sha, url: `https://github.com/${REPO}/commit/${commit.sha}`, files: [...writes.keys(), ...blobEntries.map(e => e.path)] });
+}
+
+// GitHub token problems, in words the owner can act on (null if it isn't one).
+function explainGitHub(e, sub) {
+  if (e?.github === 401) return Object.assign(new Error("GitHub rejected the GITHUB_TOKEN. It may have expired; make a new one and update it in Cloudflare."), { status: 502 });
+  if (e?.github === 403 || e?.github === 404 && sub === "publish") {
+    return Object.assign(new Error(`GITHUB_TOKEN can read the repo but isn't allowed to change it. Its settings need Repository access → Only select repositories → ${REPO.split("/")[1]}, and Permissions → Contents → Read and write. (GitHub said: ${e.reason || e.github})`), { status: 502 });
+  }
+  return null;
 }
 
 // ---------- router ----------
@@ -531,10 +664,8 @@ export async function handleEditor(request, env, user, sub) {
     if (sub === "blob" && POST) return await handleBlob(request, env);
     if (sub === "preview-app" && POST) return await handlePreviewApp(request, env, url);
   } catch (e) {
-    if (e.github === 401) return fail(502, "GitHub rejected the GITHUB_TOKEN. It may have expired; make a new one and update it in Cloudflare.");
-    if (e.github === 403 || e.github === 404 && sub === "publish") {
-      return fail(502, `GITHUB_TOKEN can read the repo but isn't allowed to change it. Its settings need Repository access → Only select repositories → ${REPO.split("/")[1]}, and Permissions → Contents → Read and write. (GitHub said: ${e.reason || e.github})`);
-    }
+    const known = explainGitHub(e, sub);
+    if (known) return fail(502, known.message);
     if (e.status && e.status < 500) return fail(e.status, e.message);
     if (e.status === 502) return fail(502, e.message);
     throw e;
