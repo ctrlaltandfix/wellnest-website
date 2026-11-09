@@ -16,6 +16,10 @@ const APP_ROUTES = new Set(["achievements", "appointments", "asthma", "care-circ
   "free-symptom-diary-template", "growth", "login", "medications", "meeting-note-shared", "reflection", "settings", "start"]);
 const PUBLIC_APP_ROUTES = new Set(["free-symptom-diary-template"]);
 
+// Old app pages under their current names (lower-case keys; matched case-insensitively).
+const LEGACY = { "/home": "/", "/landing": "/", "/careteam": "/care-circle", "/journal": "/reflection", "/chronicpain": "/chronic-pain",
+  "/emergency": "/emergency-plan", "/dashboardpainmodal": "/dashboard", "/asthmaactionplan": "/asthma", "/contacts": "/care-circle" };
+
 // Pages the old app linked to in capitals; they're served in lower case.
 const RENAMED = { "/pricing": true, "/privacypolicy": true, "/termsofservice": true };
 
@@ -25,8 +29,11 @@ export async function cleanAddress(env, url) {
   const p = url.pathname;
   if (p === "/" || p.startsWith("/assets/") || p.startsWith("/api/") || p.startsWith("/admin") || url.searchParams.has("wn_preview")) return null;
   if (p === "/index.html") return "/";
-  const lower = p.toLowerCase().replace(/\.html$/, "");
+  const lower = p.toLowerCase().replace(/\.html$/, "").replace(/\/+$/, "");
   if (RENAMED[lower] && p !== lower) return lower;
+  // Addresses from the previous version of the app (Google still visits them).
+  if (LEGACY[lower] !== undefined) return LEGACY[lower];
+  if (/[A-Z]/.test(p) && APP_ROUTES.has(lower.slice(1))) return lower;   // /Dashboard -> /dashboard
   const page = p.match(/^\/([A-Za-z0-9-]+)\.html$/);
   if (page && page[1] !== "404") return "/" + page[1];
   if (p.length > 1 && p.endsWith("/") && /^\/[A-Za-z0-9/-]+\/$/.test(p)) {

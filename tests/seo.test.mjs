@@ -22,7 +22,12 @@ test('every page has one address: variants redirect to it', async () => {
   assert.equal(await clean('/free-tools.html'), '/free-tools');
   assert.equal(await clean('/index.html'), '/');
   assert.equal(await clean('/about/'), '/about');
-  assert.equal(await clean('/landing/'), null);        // only served with the slash: left alone
+  assert.equal(await clean('/some-folder/'), null);    // only served with the slash: left alone
+  // old app addresses Google still visits
+  for (const [from, to] of [['/home', '/'], ['/Landing', '/'], ['/CareTeam', '/care-circle'], ['/Journal', '/reflection'], ['/ChronicPain', '/chronic-pain'],
+    ['/Emergency', '/emergency-plan'], ['/dashboardPainModal', '/dashboard'], ['/Asthma', '/asthma'], ['/Epilepsy', '/epilepsy'], ['/Dashboard', '/dashboard']])
+    assert.equal(await clean(from), to, from);
+  assert.equal(await clean('/asthma'), null);          // already right
   for (const ok of ['/', '/about', '/pricing', '/assets/index-X.js', '/api/auth/me', '/admin/edit', '/404.html', '/about.html?wn_preview=abcdefghijklmnopqrstu'])
     assert.equal(await clean(ok), null, ok);
 
