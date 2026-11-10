@@ -1,0 +1,22 @@
+{
+  "webcredentials": {
+    "apps": [
+      "ZJ3T7365MJ.app.bitrig.chrisgreenfield.wellnest"
+    ]
+  },
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "ZJ3T7365MJ.app.bitrig.chrisgreenfield.wellnest"
+        ],
+        "components": [
+          {
+            "/": "/ios-auth/*"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -82,6 +82,33 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // Apple App Site Association for iOS Universal Links and Associated Domains
+    if (url.pathname === "/.well-known/apple-app-site-association" || url.pathname === "/apple-app-site-association") {
+      const aasa = {
+        webcredentials: {
+          apps: ["ZJ3T7365MJ.app.bitrig.chrisgreenfield.wellnest"]
+        },
+        applinks: {
+          apps: [],
+          details: [
+            {
+              appIDs: ["ZJ3T7365MJ.app.bitrig.chrisgreenfield.wellnest"],
+              components: [
+                { "/": "/ios-auth/*" }
+              ]
+            }
+          ]
+        }
+      };
+      return new Response(JSON.stringify(aasa), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=3600"
+        }
+      });
+    }
+
     // One address for the site: www -> wellnest.services
     if (url.hostname === "www.wellnest.services") {
       return Response.redirect(SITE + url.pathname + url.search, 301);

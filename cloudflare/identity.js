@@ -75,6 +75,9 @@ async function sendConfirmation(env, user) {
 
 function safeRedirect(target) {
   try {
+    if (typeof target === "string" && (target.startsWith("wellnest://") || target.startsWith("wellnest:"))) {
+      return target;
+    }
     const u = new URL(target);
     if (ALLOWED_ORIGINS.has(u.origin)) return u.origin + u.pathname;
   } catch { /* fall through */ }
@@ -234,7 +237,10 @@ export async function handleIdentity(request, env, path) {
 export async function handleGoogleCallback(request, env) {
   const url = new URL(request.url);
   const state = await verifyJwt(env, url.searchParams.get("state"));
-  const back = (target, hash) => Response.redirect(`${target}#${hash}`, 302);
+  const back = (target, hash) => {
+    const dest = `${target}#${hash}`;
+    return new Response(null, { status: 302, headers: { "Location": dest } });
+  };
   const target = state?.purpose === "google" ? state.rt : `${SITE}/login`;
   if (!state || state.purpose !== "google") return back(target, "error=access_denied&error_description=" + encodeURIComponent("Sign-in expired. Please try again."));
   if (url.searchParams.get("error")) return back(target, "error=access_denied&error_description=" + encodeURIComponent("Google sign-in was cancelled."));
