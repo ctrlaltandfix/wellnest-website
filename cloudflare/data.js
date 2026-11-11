@@ -1,5 +1,6 @@
 // WellNest data APIs on Cloudflare (same contract the app used on Netlify):
 // /api/auth/me, /api/entities/*, uploads and private files, /api/functions/*.
+import { billingFunction } from "./billing.js";
 import { SITE, json, fail, now, uuid, currentUser, hmac, hmacVerify, rateLimited, sendEmail, emailLayout } from "./lib.js";
 
 const ENTITY_RE = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
@@ -229,10 +230,16 @@ export async function handleFunction(request, env, name) {
   try { b = await body(request); } catch { /* empty */ }
   switch (name) {
     case "growthAccess":
-      // Payments are not set up on Cloudflare yet, so everyone has full access.
-      return json({ premium: true, plan: "full", referralApplied: false });
     case "syncSubscription":
-      return json({ synced: false });
+    case "createCheckout":
+    case "billingPortal":
+      // Billing with Stripe (billing.js).
+      try {
+        return await billingFunction(env, request, name, await currentUser(env, request), b);
+      } catch (e) {
+        if (!e.status) throw e;
+        return json({ error: e.message }, e.status);
+      }
     case "onNewUserSignup":
     case "emailPreferences":
       return json({ success: true });

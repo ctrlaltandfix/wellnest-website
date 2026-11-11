@@ -3,6 +3,7 @@
 // and its API backed by the D1 database "wellnest-db".
 // Secrets (set in the Cloudflare dashboard, never in this file):
 //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, RESEND_API_KEY
+//   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET (billing; see cloudflare/billing.js)
 // Variables (set in the dashboard): ADMIN_EMAILS - who can open /admin/analytics
 {
   "$schema": "node_modules/wrangler/config-schema.json",
