@@ -196,3 +196,12 @@ test('the Worker routes the webhook (no sign-in) and the admin status page (sign
   assert.equal(hook.status, 400);                                       // reached the handler, bad signature
   assert.equal((await worker.fetch(new Request('https://wellnest.services/api/billing/status'), e)).status, 401);
 });
+
+test("Stripe's 'Send test event' (made-up customer) is acknowledged, not an error", async () => {
+  const fake = { id: 'sub_000', customer: 'cus_00000000000000', status: 'active', items: { data: [] }, metadata: {} };
+  const res = await handleStripeWebhook(signed({ type: 'customer.subscription.updated', data: { object: fake } }), env);
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { received: true, matched: false });
+  const cs = await handleStripeWebhook(signed({ type: 'checkout.session.completed', data: { object: { mode: 'subscription', subscription: 'sub_missing', customer: 'cus_0' } } }), env);
+  assert.equal(cs.status, 200);
+});

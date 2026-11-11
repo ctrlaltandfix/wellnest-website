@@ -252,7 +252,9 @@ async function userForCustomer(env, customerId, metaUser) {
   const r = await env.DB.prepare("SELECT user_id FROM subscriptions WHERE customer_id = ?").bind(customerId).first();
   if (r) return r.user_id;
   // A subscription from before the move: match the customer's email to an account.
-  const c = await stripe(env, "GET", "customers/" + customerId);
+  // (Stripe's "Send test event" uses made-up customers: no account, but not an error.)
+  let c = null;
+  try { c = await stripe(env, "GET", "customers/" + customerId); } catch { return null; }
   if (!c?.email) return null;
   const u = await env.DB.prepare("SELECT id FROM users WHERE email = ? COLLATE NOCASE").bind(c.email).first();
   return u?.id || null;
@@ -268,7 +270,9 @@ export async function handleStripeWebhook(request, env) {
   const event = JSON.parse(payload);
   const obj = event.data?.object || {};
   if (event.type === "checkout.session.completed" && obj.mode === "subscription" && obj.subscription) {
-    const sub = await stripe(env, "GET", "subscriptions/" + obj.subscription);
+    let sub;
+    try { sub = await stripe(env, "GET", "subscriptions/" + obj.subscription); }
+    catch { console.error("Stripe webhook: subscription not found", obj.subscription); return json({ received: true, matched: false }); }
     const userId = await userForCustomer(env, obj.customer, obj.client_reference_id || obj.metadata?.user_id);
     if (userId) await applySubscription(env, userId, sub);
   } else if (event.type?.startsWith("customer.subscription.")) {
@@ -278,7 +282,10 @@ export async function handleStripeWebhook(request, env) {
       const subs = await stripe(env, "GET", "subscriptions", { customer: obj.customer, status: "all", limit: 20 });
       const sub = best(subs.data || []) || obj;
       await applySubscription(env, userId, sub);
-    } else console.error("Stripe webhook: no account for customer", obj.customer);
+    } else {
+      console.error("Stripe webhook: no account for customer", obj.customer);
+      return json({ received: true, matched: false });
+    }
   }
   return json({ received: true });
 }
