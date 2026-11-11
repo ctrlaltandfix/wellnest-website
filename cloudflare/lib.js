@@ -14,7 +14,7 @@ const ACCESS_TTL = 3600; // seconds
 export function json(body, status = 200, extra = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "private, no-store", ...extra },
+    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "private, no-store", ...extra },
   });
 }
 export const fail = (status, error, extra = {}) => json({ error, msg: error, error_description: error, ...extra }, status);
