@@ -263,8 +263,11 @@ async function userForCustomer(env, customerId, metaUser) {
 export async function handleStripeWebhook(request, env) {
   if (request.method !== "POST") return fail(405, "Use POST.");
   const payload = await request.text();
-  if (!(await verifyStripeSignature(env.STRIPE_WEBHOOK_SECRET, payload, request.headers.get("Stripe-Signature")))) {
-    console.error("Stripe webhook: bad signature", env.STRIPE_WEBHOOK_SECRET ? "" : "(STRIPE_WEBHOOK_SECRET missing)");
+  const header = request.headers.get("Stripe-Signature");
+  let valid = false;
+  for (const secret of await webhookSecrets(env)) if (await verifyStripeSignature(secret, payload, header)) { valid = true; break; }
+  if (!valid) {
+    console.error("Stripe webhook: bad signature");
     return fail(400, "Invalid signature");
   }
   const event = JSON.parse(payload);
@@ -290,16 +293,51 @@ export async function handleStripeWebhook(request, env) {
   return json({ received: true });
 }
 
+// Signing secrets accepted for webhooks: STRIPE_WEBHOOK_SECRET from Cloudflare, and
+// the one Stripe returned when /api/billing/status?fix=webhook created the endpoint
+// (kept in the database's config table, server-side only).
+const SAVED_SECRET = "stripe_webhook_secret";
+export async function webhookSecrets(env) {
+  const out = [];
+  if (env.STRIPE_WEBHOOK_SECRET) out.push(env.STRIPE_WEBHOOK_SECRET);
+  try {
+    const r = await env.DB.prepare("SELECT value FROM config WHERE key = ?").bind(SAVED_SECRET).first();
+    if (r?.value) out.push(r.value);
+  } catch {}
+  return out;
+}
+
+// Point Stripe at this site: create the webhook endpoint (or add missing events to it).
+async function fixWebhook(env) {
+  const hooks = (await stripe(env, "GET", "webhook_endpoints", { limit: 50 })).data || [];
+  const ours = hooks.find(h => h.url === WEBHOOK_URL);
+  if (!ours) {
+    const created = await stripe(env, "POST", "webhook_endpoints", {
+      url: WEBHOOK_URL, enabled_events: WEBHOOK_EVENTS, description: "WellNest on Cloudflare (wellnest.services)",
+    });
+    await env.DB.prepare("INSERT INTO config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(SAVED_SECRET, created.secret).run();
+    return "Created the webhook for " + WEBHOOK_URL + " and saved its signing secret.";
+  }
+  const events = ours.enabled_events || [];
+  const missing = events.includes("*") ? [] : WEBHOOK_EVENTS.filter(e => !events.includes(e));
+  const changes = {};
+  if (missing.length) changes.enabled_events = [...events, ...missing];
+  if (ours.status !== "enabled") changes.disabled = "false";
+  if (Object.keys(changes).length) { await stripe(env, "POST", "webhook_endpoints/" + ours.id, changes); return "Updated the existing webhook for " + WEBHOOK_URL + "."; }
+  return "The webhook for " + WEBHOOK_URL + " was already set up.";
+}
+
 // ---------- admin check ----------
 export async function handleBillingStatus(request, env, user) {
   if (!(await isAnalyticsAdmin(env, user))) return fail(403, "Only site admins can see this.");
   const out = {
     secretKey: env.STRIPE_SECRET_KEY ? (env.STRIPE_SECRET_KEY.startsWith("sk_live_") ? "set (live mode)" : env.STRIPE_SECRET_KEY.startsWith("sk_test_") ? "set (test mode)" : "set (unrecognised format)") : "MISSING",
-    webhookSecret: env.STRIPE_WEBHOOK_SECRET ? (env.STRIPE_WEBHOOK_SECRET.startsWith("whsec_") ? "set" : "set (unrecognised format)") : "MISSING",
+    webhookSecret: env.STRIPE_WEBHOOK_SECRET ? (env.STRIPE_WEBHOOK_SECRET.startsWith("whsec_") ? "set" : "set (unrecognised format)") : "not set in Cloudflare",
     webhookUrlExpected: WEBHOOK_URL, prices: {}, webhooks: [], problems: [],
   };
   if (!env.STRIPE_SECRET_KEY) { out.problems.push("Add STRIPE_SECRET_KEY as a Secret in Cloudflare."); return json(out); }
   try {
+    if (new URL(request.url).searchParams.get("fix") === "webhook") out.fixed = await fixWebhook(env);
     const account = await stripe(env, "GET", "account");
     out.account = { id: account.id, name: account.settings?.dashboard?.display_name || account.business_profile?.name, chargesEnabled: account.charges_enabled };
     if (!account.charges_enabled) out.problems.push("Stripe says this account can't take payments yet (finish activation in Stripe).");
@@ -311,18 +349,20 @@ export async function handleBillingStatus(request, env, user) {
     const hooks = await stripe(env, "GET", "webhook_endpoints", { limit: 50 });
     out.webhooks = (hooks.data || []).map(h => ({ url: h.url, status: h.status, events: h.enabled_events }));
     const ours = out.webhooks.find(h => h.url === WEBHOOK_URL);
-    if (!ours) out.problems.push(`No Stripe webhook points at ${WEBHOOK_URL}. Add one (Developers → Webhooks) with the events: ${WEBHOOK_EVENTS.join(", ")}; then put its signing secret in STRIPE_WEBHOOK_SECRET.`);
+    if (!ours) out.problems.push(`No Stripe webhook points at ${WEBHOOK_URL}. To set it up automatically, open ${SITE}/api/billing/status?fix=webhook while signed in.`);
     else {
       if (ours.status !== "enabled") out.problems.push("The webhook for this site is disabled in Stripe.");
       const missing = ours.events.includes("*") ? [] : WEBHOOK_EVENTS.filter(e => !ours.events.includes(e));
       if (missing.length) out.problems.push("The webhook is missing these events: " + missing.join(", "));
     }
     const old = out.webhooks.filter(h => h.url !== WEBHOOK_URL && h.status === "enabled");
-    if (old.length) out.problems.push("Other enabled webhooks (probably the old site's) will fail and can be disabled: " + old.map(h => h.url).join(", "));
+    if (old.length) out.notes = ["Stripe also sends events to: " + [...new Set(old.map(h => h.url))].join(", ") + ". Those belong to the old site; once it's no longer used, they can be disabled in Stripe (Developers → Webhooks)."];
   } catch (e) {
     out.problems.push(e.message);
   }
-  if (!env.STRIPE_WEBHOOK_SECRET) out.problems.push("Add STRIPE_WEBHOOK_SECRET (the webhook's signing secret) as a Secret in Cloudflare.");
+  const saved = (await webhookSecrets(env)).length > (env.STRIPE_WEBHOOK_SECRET ? 1 : 0);
+  if (saved) out.webhookSecretSavedBySetup = true;
+  if (!env.STRIPE_WEBHOOK_SECRET && !saved) out.problems.push(`No webhook signing secret yet. Open ${SITE}/api/billing/status?fix=webhook while signed in.`);
   out.ok = !out.problems.length;
   return json(out);
 }

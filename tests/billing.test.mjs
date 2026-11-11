@@ -46,7 +46,14 @@ function fakeStripe() {
     if (path.startsWith('subscriptions/')) return ok(S.subs.find(s => s.id === path.slice(14)));
     if (path === 'checkout/sessions') { const s = { id: 'cs_1', url: 'https://checkout.stripe.com/c/pay/cs_1', params: Object.fromEntries(p) }; S.sessions.push(s); return ok(s); }
     if (path === 'billing_portal/sessions') return ok({ url: 'https://billing.stripe.com/p/session/1' });
-    if (path === 'webhook_endpoints') return ok({ data: S.hooks });
+    if (path === 'webhook_endpoints' && method === 'GET') return ok({ data: S.hooks });
+    if (path === 'webhook_endpoints' && method === 'POST') {
+      const h = { id: 'we_' + (S.hooks.length + 1), url: p.get('url'), status: 'enabled', enabled_events: [...p.entries()].filter(([k]) => k.startsWith('enabled_events')).map(([, v]) => v), secret: 'whsec_created_by_setup' };
+      S.hooks.push(h); return ok(h);
+    }
+    if (path.startsWith('webhook_endpoints/') && method === 'POST') {
+      const h = S.hooks.find(x => x.id === path.slice(18)); h.enabled_events = [...p.entries()].filter(([k]) => k.startsWith('enabled_events')).map(([, v]) => v); return ok(h);
+    }
     return Response.json({ error: { message: 'no route ' + path } }, { status: 404 });
   };
 }
@@ -204,4 +211,29 @@ test("Stripe's 'Send test event' (made-up customer) is acknowledged, not an erro
   assert.deepEqual(await res.json(), { received: true, matched: false });
   const cs = await handleStripeWebhook(signed({ type: 'checkout.session.completed', data: { object: { mode: 'subscription', subscription: 'sub_missing', customer: 'cus_0' } } }), env);
   assert.equal(cs.status, 200);
+});
+
+test('?fix=webhook creates the endpoint for this site and its secret is then accepted', async () => {
+  try { await env.DB.prepare("DELETE FROM config WHERE key = 'stripe_webhook_secret'").run(); } catch {}
+  S.hooks = [{ id: 'we_old', url: 'https://wellnest.base44.app/api/functions/stripeWebhook', status: 'enabled', enabled_events: ['checkout.session.completed'] }];
+  const admin = { email: 'a@b.c', role: 'admin' };
+  const e = { ...env, STRIPE_WEBHOOK_SECRET: 'whsec_of_the_old_endpoint' };
+  let st = await (await handleBillingStatus(new Request('https://wellnest.services/api/billing/status'), e, admin)).json();
+  assert.equal(st.ok, false);
+  assert.match(st.problems[0], /status\?fix=webhook/);
+  st = await (await handleBillingStatus(new Request('https://wellnest.services/api/billing/status?fix=webhook'), e, admin)).json();
+  assert.match(st.fixed, /Created the webhook/);
+  assert.equal(st.ok, true, JSON.stringify(st.problems));
+  assert.match(st.notes[0], /wellnest\.base44\.app/);                 // old one mentioned, not a problem
+  const ours = S.hooks.find(h => h.url === 'https://wellnest.services/api/stripe/webhook');
+  assert.deepEqual(ours.enabled_events, ['checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted']);
+  assert.ok(!JSON.stringify(st).includes('whsec_created_by_setup'));    // never shown
+  // Events signed with the new endpoint's secret are accepted (and the Cloudflare one still is).
+  assert.equal((await handleStripeWebhook(signed({ type: 'ping', data: { object: {} } }, 'whsec_created_by_setup'), e)).status, 200);
+  assert.equal((await handleStripeWebhook(signed({ type: 'ping', data: { object: {} } }, 'whsec_of_the_old_endpoint'), e)).status, 200);
+  assert.equal((await handleStripeWebhook(signed({ type: 'ping', data: { object: {} } }, 'whsec_nope'), e)).status, 400);
+  // Running it again changes nothing.
+  st = await (await handleBillingStatus(new Request('https://wellnest.services/api/billing/status?fix=webhook'), e, admin)).json();
+  assert.match(st.fixed, /already set up/);
+  assert.equal(S.hooks.filter(h => h.url === 'https://wellnest.services/api/stripe/webhook').length, 1);
 });
