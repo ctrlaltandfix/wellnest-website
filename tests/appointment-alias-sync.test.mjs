@@ -31,3 +31,21 @@ test('projection preserves dose state and does not mutate stored data',()=>{
  const local={appts:[base],appointments:[],medlog:{day:['dose']}};const r=projectAppointmentFields(local);
  assert.deepEqual(r.medlog,local.medlog);assert.deepEqual(local.appointments,[]);
 });
+test('native protocol-2 snapshot without edit operations moves existing appointment date',()=>{
+ const previous={...base,date:'2026-11-13',time:'11:00 AM'},changed={...previous,date:'2026-11-27'};
+ const current={appts:[previous]};
+ const p=prepareAppointmentSync(current,{appts:[previous],appointments:[changed]},[],2,true,true);
+ assert.equal(p.operations.length,1);assert.equal(p.operations[0].entry.date,'2026-11-27');
+ const saved=projectAppointmentFields(mergeAccountRecords(current,p.incoming,p.operations,2,true));
+ for(const alias of ['appts','appointments','appointment','wn-appts'])assert.equal(saved[alias][0].date,'2026-11-27');
+});
+test('native snapshot fallback rejects stale edits; ordinary web snapshots stay passive',()=>{
+ const changed={...base,title:'Changed'};
+ assert.throws(()=>prepareAppointmentSync(current,{appts:[changed]},[],2,false,true),e=>e.status===409);
+ assert.equal(prepareAppointmentSync(current,{appts:[changed]},[],2,true,false).operations.length,0);
+});
+test('explicit native operations retain their original edit baseline',()=>{
+ const changed={...base,title:'Changed'},op={key:'appts',entry:changed,base,deleted:false};
+ const p=prepareAppointmentSync(current,{appts:[changed]},[op],2,true,true);
+ assert.deepEqual(p.operations,[op]);
+});
