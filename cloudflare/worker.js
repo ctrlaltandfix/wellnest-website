@@ -2560,6 +2560,7 @@ function serialize(row2, user) {
     data = JSON.parse(row2.data);
   } catch {
   }
+  if(row2.entity === 'CloudDataBackup' && data.backup_key === 'wellnest-local-data' && data.data?.local_data)data={...data,data:{...data.data,local_data:projectRoutineDoseFields(data.data.local_data)}};
   return { ...data, id: row2.id, created_by_id: row2.owner_id, created_by: user.email, created_date: row2.created_date, updated_date: row2.updated_date };
 }
 __name(serialize, "serialize");
@@ -4429,8 +4430,8 @@ async function handleMedicationBackup(request, env, user, id) {
     let merged;
     try { merged = mergeAccountRecords(existing.data?.local_data || {}, input.data.local_data, trackerOps, protocol, Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision); }
     catch(error) { if(error.status === 409 || error.status === 400) return fail(error.status,error.message); throw error; }
-    let state;try { state = mergeDoseState(existing.data?.local_data || {}, merged, operations); } catch(error) { if(error.status)return fail(error.status,error.message);throw error; }
-    const patch = { ...input, data: { ...input.data, sync_revision: (existing.data?.sync_revision || 0) + 1, local_data: { ...merged, medlog: state.medlog, trackerDeleted: { ...merged.trackerDeleted, medlog: state.deleted } } } };
+    let state;try { state = mergeRoutineDoseState(existing.data?.local_data || {}, input.data.local_data, operations, protocol, Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision); } catch(error) { if(error.status)return fail(error.status,error.message);throw error; }
+    const patch = { ...input, data: { ...input.data, sync_revision: (existing.data?.sync_revision || 0) + 1, local_data: projectRoutineDoseFields({ ...merged, medlog: state.medlog, trackerDeleted: { ...merged.trackerDeleted, medlog: state.deleted } }) } };
     const time = now();
     let saved;
     if (row2) {
@@ -4596,3 +4597,42 @@ async function readAccountBackupBody(request) {
   return data;
 }
 export {readAccountBackupBody};
+
+// Reconcile the native storage-key alias through the same dose state as web.
+function routineDoseLog(local){return local?.medlog??local?.['wn-medlog']??{};}
+function routineDoseEqual(a,b){return syncSame(a,b);}
+function routineDoseTokens(log){return Object.fromEntries(Object.entries(log||{}).filter(([date,tokens])=>/^\d{4}-\d{2}-\d{2}$/.test(date)&&Array.isArray(tokens)).map(([date,tokens])=>[date,[...new Set(tokens.filter(t=>typeof t==='string'))].sort()]));}
+function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatches){
+ const remote=routineDoseTokens(routineDoseLog(current));
+ let next=routineDoseTokens(routineDoseLog(incoming));
+ const alias=incoming?.['wn-medlog'];
+ if(alias&&incoming.medlog){
+  const alternate=routineDoseTokens(alias);
+  if(!routineDoseEqual(next,alternate)){
+   if(routineDoseEqual(next,remote))next=alternate;
+   else if(!routineDoseEqual(alternate,remote)&&protocol!==2&&protocol!==3)throw Object.assign(Error('Conflicting medication dose fields. Refresh account data before syncing.'),{status:409});
+  }
+ }
+ let ops=operations;
+ if(protocol!==2&&protocol!==3&&!operations.length){
+  const removed=new Set(current?.trackerDeleted?.medlog||[]),changes=[];
+  for(const [date,tokens] of Object.entries(next)){
+   const before=new Set(remote[date]||[]),after=new Set(tokens);
+   for(const token of new Set([...before,...after]))if(before.has(token)!==after.has(token)){
+    if(!revisionMatches){
+     if(before.has(token)||removed.has(JSON.stringify([date,token])))throw Object.assign(Error('Medication changes require the current account revision. Refresh before saving.'),{status:409});
+     continue;
+    }
+    changes.push({date,token,taken:after.has(token),baseTaken:before.has(token)});
+   }
+  }
+  ops=changes;
+ }
+ return mergeDoseState({...current,medlog:remote},{...incoming,medlog:next},ops);
+}
+function projectRoutineDoseFields(local){
+ if(!local||typeof local!=='object')return local;
+ const medlog=routineDoseLog(local),deleted=local.trackerDeleted||{};
+ return {...local,medlog,'wn-medlog':medlog,trackerDeleted:deleted,...(Object.hasOwn(local,'tracker_deleted')?{tracker_deleted:deleted}:{})};
+}
+export {mergeRoutineDoseState,projectRoutineDoseFields};

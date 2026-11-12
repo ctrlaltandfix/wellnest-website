@@ -28,8 +28,8 @@ function mock({conflict=false,missing=false,never=false}={}){
  const request=()=>new Request('https://wellnest.services/api/entities/CloudDataBackup/backup',{method:'PATCH',body:JSON.stringify({backup_key:'wellnest-local-data',data:{local_data:local([])}}),headers:{'Content-Type':'application/json'}});
  return{env,request,getRow:()=>JSON.parse(row.data),getUpdates:()=>updates,getReads:()=>reads};
 }
-test('concurrent phone update forces reread before desktop backup is committed',async()=>{
- const m=mock({conflict:true});const r=await handleMedicationBackup(m.request(),m.env,{id:'owner'},'backup');assert.equal(r.status,200);assert.equal(m.getUpdates(),2);assert.deepEqual(m.getRow().data.local_data.medlog[day],[token]);
+test('concurrent phone update rejects a stale legacy uncheck without overwriting phone state',async()=>{
+ const m=mock({conflict:true});const r=await handleMedicationBackup(m.request(),m.env,{id:'owner'},'backup');assert.equal(r.status,409);assert.equal(m.getUpdates(),1);assert.deepEqual(m.getRow().data.local_data.medlog[day],[token]);
 });
 test('inaccessible backup is not written and repeated conflicts are retryable',async()=>{
  const a=mock({missing:true});assert.equal((await handleMedicationBackup(a.request(),a.env,{id:'owner'},'backup')).status,404);assert.equal(a.getUpdates(),0);
