@@ -12,6 +12,8 @@ var __defProp2222 = Object.defineProperty;
 var __name2222 = /* @__PURE__ */ __name222((target, value) => __defProp2222(target, "name", { value, configurable: true }), "__name");
 var __defProp22222 = Object.defineProperty;
 var __name22222 = /* @__PURE__ */ __name2222((target, value) => __defProp22222(target, "name", { value, configurable: true }), "__name");
+var __defProp222222 = Object.defineProperty;
+var __name222222 = /* @__PURE__ */ __name22222((target, value) => __defProp222222(target, "name", { value, configurable: true }), "__name");
 var SITE = "https://wellnest.services";
 var ALLOWED_ORIGINS = /* @__PURE__ */ new Set([
   "https://wellnest.services",
@@ -32,7 +34,8 @@ __name22(json, "json");
 __name222(json, "json");
 __name2222(json, "json");
 __name22222(json, "json");
-var fail = /* @__PURE__ */ __name22222((status, error, extra = {}) => json({ error, msg: error, error_description: error, ...extra }, status), "fail");
+__name222222(json, "json");
+var fail = /* @__PURE__ */ __name222222((status, error, extra = {}) => json({ error, msg: error, error_description: error, ...extra }, status), "fail");
 function corsHeaders(request) {
   const origin = request.headers.get("Origin");
   if (!origin || !ALLOWED_ORIGINS.has(origin)) return {};
@@ -51,6 +54,7 @@ __name22(corsHeaders, "corsHeaders");
 __name222(corsHeaders, "corsHeaders");
 __name2222(corsHeaders, "corsHeaders");
 __name22222(corsHeaders, "corsHeaders");
+__name222222(corsHeaders, "corsHeaders");
 var enc = new TextEncoder();
 function b64url(bytes) {
   let s = "";
@@ -63,6 +67,7 @@ __name22(b64url, "b64url");
 __name222(b64url, "b64url");
 __name2222(b64url, "b64url");
 __name22222(b64url, "b64url");
+__name222222(b64url, "b64url");
 function b64urlDecode(str) {
   const s = atob(str.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((str.length + 3) % 4));
   return Uint8Array.from(s, (c) => c.charCodeAt(0));
@@ -73,9 +78,10 @@ __name22(b64urlDecode, "b64urlDecode");
 __name222(b64urlDecode, "b64urlDecode");
 __name2222(b64urlDecode, "b64urlDecode");
 __name22222(b64urlDecode, "b64urlDecode");
-var randomToken = /* @__PURE__ */ __name22222((n = 32) => b64url(crypto.getRandomValues(new Uint8Array(n))), "randomToken");
-var uuid = /* @__PURE__ */ __name22222(() => crypto.randomUUID(), "uuid");
-var now = /* @__PURE__ */ __name22222(() => (/* @__PURE__ */ new Date()).toISOString(), "now");
+__name222222(b64urlDecode, "b64urlDecode");
+var randomToken = /* @__PURE__ */ __name222222((n = 32) => b64url(crypto.getRandomValues(new Uint8Array(n))), "randomToken");
+var uuid = /* @__PURE__ */ __name222222(() => crypto.randomUUID(), "uuid");
+var now = /* @__PURE__ */ __name222222(() => (/* @__PURE__ */ new Date()).toISOString(), "now");
 async function sha256(text) {
   const d = await crypto.subtle.digest("SHA-256", enc.encode(text));
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -86,6 +92,7 @@ __name22(sha256, "sha256");
 __name222(sha256, "sha256");
 __name2222(sha256, "sha256");
 __name22222(sha256, "sha256");
+__name222222(sha256, "sha256");
 function timingSafeEqual(a, b) {
   if (a.length !== b.length) return false;
   let r = 0;
@@ -98,6 +105,7 @@ __name22(timingSafeEqual, "timingSafeEqual");
 __name222(timingSafeEqual, "timingSafeEqual");
 __name2222(timingSafeEqual, "timingSafeEqual");
 __name22222(timingSafeEqual, "timingSafeEqual");
+__name222222(timingSafeEqual, "timingSafeEqual");
 var PBKDF2_ITER = 1e5;
 async function pbkdf2(password, salt, iterations) {
   const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
@@ -110,6 +118,7 @@ __name22(pbkdf2, "pbkdf2");
 __name222(pbkdf2, "pbkdf2");
 __name2222(pbkdf2, "pbkdf2");
 __name22222(pbkdf2, "pbkdf2");
+__name222222(pbkdf2, "pbkdf2");
 async function hashPassword(password) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   return `pbkdf2$${PBKDF2_ITER}$${b64url(salt)}$${await pbkdf2(password, salt, PBKDF2_ITER)}`;
@@ -120,6 +129,7 @@ __name22(hashPassword, "hashPassword");
 __name222(hashPassword, "hashPassword");
 __name2222(hashPassword, "hashPassword");
 __name22222(hashPassword, "hashPassword");
+__name222222(hashPassword, "hashPassword");
 async function verifyPassword(password, stored) {
   if (!stored) return false;
   const [kind, iter, salt, hash] = stored.split("$");
@@ -132,6 +142,7 @@ __name22(verifyPassword, "verifyPassword");
 __name222(verifyPassword, "verifyPassword");
 __name2222(verifyPassword, "verifyPassword");
 __name22222(verifyPassword, "verifyPassword");
+__name222222(verifyPassword, "verifyPassword");
 var secretCache = null;
 async function serverSecret(env) {
   if (secretCache) return secretCache;
@@ -149,6 +160,7 @@ __name22(serverSecret, "serverSecret");
 __name222(serverSecret, "serverSecret");
 __name2222(serverSecret, "serverSecret");
 __name22222(serverSecret, "serverSecret");
+__name222222(serverSecret, "serverSecret");
 async function hmacKey(env, purpose) {
   return crypto.subtle.importKey(
     "raw",
@@ -164,6 +176,7 @@ __name22(hmacKey, "hmacKey");
 __name222(hmacKey, "hmacKey");
 __name2222(hmacKey, "hmacKey");
 __name22222(hmacKey, "hmacKey");
+__name222222(hmacKey, "hmacKey");
 async function hmac(env, purpose, text) {
   return b64url(await crypto.subtle.sign("HMAC", await hmacKey(env, purpose), enc.encode(text)));
 }
@@ -173,6 +186,7 @@ __name22(hmac, "hmac");
 __name222(hmac, "hmac");
 __name2222(hmac, "hmac");
 __name22222(hmac, "hmac");
+__name222222(hmac, "hmac");
 async function hmacVerify(env, purpose, text, sig) {
   try {
     return await crypto.subtle.verify("HMAC", await hmacKey(env, purpose), b64urlDecode(sig), enc.encode(text));
@@ -186,6 +200,7 @@ __name22(hmacVerify, "hmacVerify");
 __name222(hmacVerify, "hmacVerify");
 __name2222(hmacVerify, "hmacVerify");
 __name22222(hmacVerify, "hmacVerify");
+__name222222(hmacVerify, "hmacVerify");
 async function signJwt(env, claims, ttl = ACCESS_TTL) {
   const iat = Math.floor(Date.now() / 1e3);
   const head = b64url(enc.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
@@ -198,6 +213,7 @@ __name22(signJwt, "signJwt");
 __name222(signJwt, "signJwt");
 __name2222(signJwt, "signJwt");
 __name22222(signJwt, "signJwt");
+__name222222(signJwt, "signJwt");
 async function verifyJwt(env, token) {
   const parts = (token || "").split(".");
   if (parts.length !== 3) return null;
@@ -215,6 +231,7 @@ __name22(verifyJwt, "verifyJwt");
 __name222(verifyJwt, "verifyJwt");
 __name2222(verifyJwt, "verifyJwt");
 __name22222(verifyJwt, "verifyJwt");
+__name222222(verifyJwt, "verifyJwt");
 var ACCESS_TOKEN_TTL = ACCESS_TTL;
 function bearer(request) {
   const h = request.headers.get("Authorization") || "";
@@ -229,6 +246,7 @@ __name22(bearer, "bearer");
 __name222(bearer, "bearer");
 __name2222(bearer, "bearer");
 __name22222(bearer, "bearer");
+__name222222(bearer, "bearer");
 async function currentUser(env, request) {
   const claims = await verifyJwt(env, bearer(request));
   if (!claims?.sub) return null;
@@ -240,6 +258,7 @@ __name22(currentUser, "currentUser");
 __name222(currentUser, "currentUser");
 __name2222(currentUser, "currentUser");
 __name22222(currentUser, "currentUser");
+__name222222(currentUser, "currentUser");
 var SCHEMA = [
   `CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS users (
@@ -296,6 +315,7 @@ __name22(ensureSchema, "ensureSchema");
 __name222(ensureSchema, "ensureSchema");
 __name2222(ensureSchema, "ensureSchema");
 __name22222(ensureSchema, "ensureSchema");
+__name222222(ensureSchema, "ensureSchema");
 async function rateLimited(env, request, bucket, limit, windowSeconds = 600, extraKey = "") {
   const ip = request.headers.get("CF-Connecting-IP") || "local";
   const key = await sha256(ip + "|" + extraKey.toLowerCase());
@@ -315,6 +335,7 @@ __name22(rateLimited, "rateLimited");
 __name222(rateLimited, "rateLimited");
 __name2222(rateLimited, "rateLimited");
 __name22222(rateLimited, "rateLimited");
+__name222222(rateLimited, "rateLimited");
 async function sendEmail(env, { to, subject, html, text }) {
   if (!env.RESEND_API_KEY) {
     console.log(`[email not sent: RESEND_API_KEY missing] to=${to} subject=${subject}
@@ -335,8 +356,9 @@ __name22(sendEmail, "sendEmail");
 __name222(sendEmail, "sendEmail");
 __name2222(sendEmail, "sendEmail");
 __name22222(sendEmail, "sendEmail");
+__name222222(sendEmail, "sendEmail");
 function emailLayout(title, body2, button, link) {
-  const esc = /* @__PURE__ */ __name22222((s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
+  const esc = /* @__PURE__ */ __name222222((s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]), "esc");
   return `<!doctype html><html><body style="margin:0;background:#f3f6f1;font-family:Arial,Helvetica,sans-serif;color:#17332b">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px">
@@ -354,6 +376,7 @@ __name22(emailLayout, "emailLayout");
 __name222(emailLayout, "emailLayout");
 __name2222(emailLayout, "emailLayout");
 __name22222(emailLayout, "emailLayout");
+__name222222(emailLayout, "emailLayout");
 var REFRESH_TTL = 60 * 60 * 24 * 60;
 var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 var GOOGLE_CALLBACK = `${SITE}/api/auth/google/callback`;
@@ -382,6 +405,7 @@ __name22(gotrueUser, "gotrueUser");
 __name222(gotrueUser, "gotrueUser");
 __name2222(gotrueUser, "gotrueUser");
 __name22222(gotrueUser, "gotrueUser");
+__name222222(gotrueUser, "gotrueUser");
 async function storeToken(env, userId, kind, ttlSeconds) {
   const token = randomToken(32);
   await env.DB.prepare("INSERT INTO tokens (token_hash, user_id, kind, expires_at) VALUES (?, ?, ?, ?)").bind(await sha256(token), userId, kind, Date.now() + ttlSeconds * 1e3).run();
@@ -393,6 +417,7 @@ __name22(storeToken, "storeToken");
 __name222(storeToken, "storeToken");
 __name2222(storeToken, "storeToken");
 __name22222(storeToken, "storeToken");
+__name222222(storeToken, "storeToken");
 async function consumeToken(env, token, kind) {
   if (!token) return null;
   const row2 = await env.DB.prepare("DELETE FROM tokens WHERE token_hash = ? AND kind = ? RETURNING user_id, expires_at").bind(await sha256(token), kind).first();
@@ -405,6 +430,7 @@ __name22(consumeToken, "consumeToken");
 __name222(consumeToken, "consumeToken");
 __name2222(consumeToken, "consumeToken");
 __name22222(consumeToken, "consumeToken");
+__name222222(consumeToken, "consumeToken");
 async function renewRefreshToken(env, token) {
   if (!token) return null;
   const row2 = await env.DB.prepare("UPDATE tokens SET expires_at = ? WHERE token_hash = ? AND kind = 'refresh' AND expires_at > ? RETURNING user_id").bind(Date.now() + REFRESH_TTL * 1e3, await sha256(String(token)), Date.now()).first();
@@ -416,6 +442,7 @@ __name22(renewRefreshToken, "renewRefreshToken");
 __name222(renewRefreshToken, "renewRefreshToken");
 __name2222(renewRefreshToken, "renewRefreshToken");
 __name22222(renewRefreshToken, "renewRefreshToken");
+__name222222(renewRefreshToken, "renewRefreshToken");
 async function issueSession(env, user) {
   const g = gotrueUser(user);
   const access = await signJwt(env, { sub: user.id, email: user.email, aud: "", app_metadata: g.app_metadata, user_metadata: g.user_metadata });
@@ -428,6 +455,7 @@ __name22(issueSession, "issueSession");
 __name222(issueSession, "issueSession");
 __name2222(issueSession, "issueSession");
 __name22222(issueSession, "issueSession");
+__name222222(issueSession, "issueSession");
 async function readBody(request) {
   const type = request.headers.get("Content-Type") || "";
   if (type.includes("application/x-www-form-urlencoded")) return Object.fromEntries(new URLSearchParams(await request.text()));
@@ -443,6 +471,7 @@ __name22(readBody, "readBody");
 __name222(readBody, "readBody");
 __name2222(readBody, "readBody");
 __name22222(readBody, "readBody");
+__name222222(readBody, "readBody");
 function linkFor(kind, token) {
   return `${SITE}/login#${kind}=${encodeURIComponent(token)}`;
 }
@@ -452,6 +481,7 @@ __name22(linkFor, "linkFor");
 __name222(linkFor, "linkFor");
 __name2222(linkFor, "linkFor");
 __name22222(linkFor, "linkFor");
+__name222222(linkFor, "linkFor");
 async function sendConfirmation(env, user) {
   const token = await storeToken(env, user.id, "confirm", 60 * 60 * 24);
   await env.DB.prepare("UPDATE users SET confirmation_sent_at = ? WHERE id = ?").bind(now(), user.id).run();
@@ -469,6 +499,7 @@ __name22(sendConfirmation, "sendConfirmation");
 __name222(sendConfirmation, "sendConfirmation");
 __name2222(sendConfirmation, "sendConfirmation");
 __name22222(sendConfirmation, "sendConfirmation");
+__name222222(sendConfirmation, "sendConfirmation");
 function safeRedirect(target) {
   try {
     if (typeof target === "string" && (target.startsWith("wellnest://") || target.startsWith("wellnest:"))) {
@@ -486,6 +517,7 @@ __name22(safeRedirect, "safeRedirect");
 __name222(safeRedirect, "safeRedirect");
 __name2222(safeRedirect, "safeRedirect");
 __name22222(safeRedirect, "safeRedirect");
+__name222222(safeRedirect, "safeRedirect");
 async function handleIdentity(request, env, path) {
   const method = request.method;
   if (path === "/settings" && method === "GET") {
@@ -629,10 +661,11 @@ __name22(handleIdentity, "handleIdentity");
 __name222(handleIdentity, "handleIdentity");
 __name2222(handleIdentity, "handleIdentity");
 __name22222(handleIdentity, "handleIdentity");
+__name222222(handleIdentity, "handleIdentity");
 async function handleGoogleCallback(request, env) {
   const url = new URL(request.url);
   const state = await verifyJwt(env, url.searchParams.get("state"));
-  const back = /* @__PURE__ */ __name22222((target2, hash) => {
+  const back = /* @__PURE__ */ __name222222((target2, hash) => {
     const dest = `${target2}#${hash}`;
     return new Response(null, { status: 302, headers: { "Location": dest } });
   }, "back");
@@ -679,10 +712,11 @@ __name22(handleGoogleCallback, "handleGoogleCallback");
 __name222(handleGoogleCallback, "handleGoogleCallback");
 __name2222(handleGoogleCallback, "handleGoogleCallback");
 __name22222(handleGoogleCallback, "handleGoogleCallback");
+__name222222(handleGoogleCallback, "handleGoogleCallback");
 var BOTS = /bot|crawl|spider|slurp|headless|lighthouse|pingdom|preview|monitor|curl|wget|python|axios|node-fetch/i;
 var DAY = 864e5;
 var MAX_SECONDS = 1800;
-var clip = /* @__PURE__ */ __name22222((v, n) => typeof v === "string" ? v.slice(0, n) : "", "clip");
+var clip = /* @__PURE__ */ __name222222((v, n) => typeof v === "string" ? v.slice(0, n) : "", "clip");
 function cleanPath(p) {
   let path = clip(p, 300).split(/[?#]/)[0] || "/";
   if (!path.startsWith("/")) return null;
@@ -696,6 +730,7 @@ __name22(cleanPath, "cleanPath");
 __name222(cleanPath, "cleanPath");
 __name2222(cleanPath, "cleanPath");
 __name22222(cleanPath, "cleanPath");
+__name222222(cleanPath, "cleanPath");
 function deviceOf(ua) {
   if (/iPad|Tablet|Android(?!.*Mobile)/i.test(ua)) return "Tablet";
   if (/Mobi|iPhone|Android/i.test(ua)) return "Mobile";
@@ -707,6 +742,7 @@ __name22(deviceOf, "deviceOf");
 __name222(deviceOf, "deviceOf");
 __name2222(deviceOf, "deviceOf");
 __name22222(deviceOf, "deviceOf");
+__name222222(deviceOf, "deviceOf");
 function browserOf(ua) {
   if (/Edg\//.test(ua)) return "Edge";
   if (/SamsungBrowser/.test(ua)) return "Samsung Internet";
@@ -722,6 +758,7 @@ __name22(browserOf, "browserOf");
 __name222(browserOf, "browserOf");
 __name2222(browserOf, "browserOf");
 __name22222(browserOf, "browserOf");
+__name222222(browserOf, "browserOf");
 function sourceOf(referrer, utmSource, ownHost) {
   const utm = clip(utmSource, 60).trim().toLowerCase();
   if (utm) return utm;
@@ -748,6 +785,7 @@ __name22(sourceOf, "sourceOf");
 __name222(sourceOf, "sourceOf");
 __name2222(sourceOf, "sourceOf");
 __name22222(sourceOf, "sourceOf");
+__name222222(sourceOf, "sourceOf");
 async function handleCollect(request, env) {
   if (request.method !== "POST") return fail(405, "Method not allowed");
   const ua = request.headers.get("User-Agent") || "";
@@ -804,6 +842,7 @@ __name22(handleCollect, "handleCollect");
 __name222(handleCollect, "handleCollect");
 __name2222(handleCollect, "handleCollect");
 __name22222(handleCollect, "handleCollect");
+__name222222(handleCollect, "handleCollect");
 async function isAnalyticsAdmin(env, user) {
   if (!user) return false;
   if (user.role === "admin") return true;
@@ -818,6 +857,7 @@ __name22(isAnalyticsAdmin, "isAnalyticsAdmin");
 __name222(isAnalyticsAdmin, "isAnalyticsAdmin");
 __name2222(isAnalyticsAdmin, "isAnalyticsAdmin");
 __name22222(isAnalyticsAdmin, "isAnalyticsAdmin");
+__name222222(isAnalyticsAdmin, "isAnalyticsAdmin");
 async function handleStats(request, env, user) {
   if (!await isAnalyticsAdmin(env, user)) {
     return fail(403, "This account can't see site statistics. Add its email to ADMIN_EMAILS in Cloudflare.", {
@@ -839,7 +879,7 @@ async function handleStats(request, env, user) {
       (SELECT ROUND(AVG(t), 1) FROM (SELECT SUM(seconds) AS t FROM page_views WHERE ts >= ?1 AND ts < ?2 GROUP BY session)) AS avg_session_seconds,
       (SELECT ROUND(100.0 * SUM(n = 1) / COUNT(*), 1) FROM (SELECT COUNT(*) AS n FROM page_views WHERE ts >= ?1 AND ts < ?2 GROUP BY session)) AS bounce_rate
     FROM page_views WHERE ts >= ?1 AND ts < ?2`;
-  const top = /* @__PURE__ */ __name22222((col, limit = 10) => db.prepare(
+  const top = /* @__PURE__ */ __name222222((col, limit = 10) => db.prepare(
     `SELECT ${col} AS name, COUNT(DISTINCT visitor) AS visitors, COUNT(*) AS views
      FROM page_views WHERE ts >= ? AND ${col} IS NOT NULL GROUP BY ${col} ORDER BY visitors DESC, views DESC LIMIT ${limit}`
   ).bind(since), "top");
@@ -889,6 +929,7 @@ __name22(handleStats, "handleStats");
 __name222(handleStats, "handleStats");
 __name2222(handleStats, "handleStats");
 __name22222(handleStats, "handleStats");
+__name222222(handleStats, "handleStats");
 var GH_BASE = "/wellnest-website";
 function stripBase(text) {
   return text.split("\\/wellnest-website").join("").split(GH_BASE + "/").join("/").split(GH_BASE).join("");
@@ -899,6 +940,7 @@ __name22(stripBase, "stripBase");
 __name222(stripBase, "stripBase");
 __name2222(stripBase, "stripBase");
 __name22222(stripBase, "stripBase");
+__name222222(stripBase, "stripBase");
 var INDEXNOW_KEY = "d1fda5e2b1c74046813bc420e8dbe005";
 var ENDPOINT = "https://api.indexnow.org/indexnow";
 var HOST = new URL(SITE).host;
@@ -913,6 +955,7 @@ __name22(pageUrl, "pageUrl");
 __name222(pageUrl, "pageUrl");
 __name2222(pageUrl, "pageUrl");
 __name22222(pageUrl, "pageUrl");
+__name222222(pageUrl, "pageUrl");
 async function submitIndexNow(urls) {
   const list = [...new Set(urls.filter((u) => typeof u === "string" && u.startsWith(SITE + "/")))].slice(0, 1e4);
   if (!list.length) return { submitted: 0, status: null };
@@ -930,6 +973,7 @@ __name22(submitIndexNow, "submitIndexNow");
 __name222(submitIndexNow, "submitIndexNow");
 __name2222(submitIndexNow, "submitIndexNow");
 __name22222(submitIndexNow, "submitIndexNow");
+__name222222(submitIndexNow, "submitIndexNow");
 async function sitemapUrls(env, origin) {
   const res = await env.ASSETS.fetch(new Request(origin + "/sitemap.xml"));
   const xml = await res.text();
@@ -941,6 +985,7 @@ __name22(sitemapUrls, "sitemapUrls");
 __name222(sitemapUrls, "sitemapUrls");
 __name2222(sitemapUrls, "sitemapUrls");
 __name22222(sitemapUrls, "sitemapUrls");
+__name222222(sitemapUrls, "sitemapUrls");
 async function handleIndexNow(request, env, user) {
   if (!await isAnalyticsAdmin(env, user)) return fail(403, "Only site admins can do this.");
   if (request.method !== "POST") return fail(405, "Use POST.");
@@ -958,6 +1003,7 @@ __name22(handleIndexNow, "handleIndexNow");
 __name222(handleIndexNow, "handleIndexNow");
 __name2222(handleIndexNow, "handleIndexNow");
 __name22222(handleIndexNow, "handleIndexNow");
+__name222222(handleIndexNow, "handleIndexNow");
 function sitemapEntries(xml) {
   return [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)].map((m) => ({
     url: (m[1].match(/<loc>([^<]+)<\/loc>/) || [])[1]?.trim(),
@@ -970,6 +1016,7 @@ __name22(sitemapEntries, "sitemapEntries");
 __name222(sitemapEntries, "sitemapEntries");
 __name2222(sitemapEntries, "sitemapEntries");
 __name22222(sitemapEntries, "sitemapEntries");
+__name222222(sitemapEntries, "sitemapEntries");
 async function scheduledIndexNow(env) {
   const res = await env.ASSETS.fetch(new Request(SITE + "/sitemap.xml"));
   if (!res.ok) return { submitted: 0, status: null };
@@ -996,6 +1043,7 @@ __name22(scheduledIndexNow, "scheduledIndexNow");
 __name222(scheduledIndexNow, "scheduledIndexNow");
 __name2222(scheduledIndexNow, "scheduledIndexNow");
 __name22222(scheduledIndexNow, "scheduledIndexNow");
+__name222222(scheduledIndexNow, "scheduledIndexNow");
 var REPO = "ctrlaltandfix/wellnest-website";
 var BRANCH = "main";
 var MAX_FILE = 4e5;
@@ -1015,6 +1063,7 @@ __name22(editable, "editable");
 __name222(editable, "editable");
 __name2222(editable, "editable");
 __name22222(editable, "editable");
+__name222222(editable, "editable");
 var APP_FILE = /^assets\/index[A-Za-z0-9._-]*\.js$/;
 var MAX_APP_FILE = 19e5;
 function mirrorOf(path, tree) {
@@ -1030,6 +1079,7 @@ __name22(mirrorOf, "mirrorOf");
 __name222(mirrorOf, "mirrorOf");
 __name2222(mirrorOf, "mirrorOf");
 __name22222(mirrorOf, "mirrorOf");
+__name222222(mirrorOf, "mirrorOf");
 async function gh(env, path, init = {}) {
   const res = await fetch(`https://api.github.com/repos/${REPO}${path}`, {
     ...init,
@@ -1062,6 +1112,7 @@ __name22(gh, "gh");
 __name222(gh, "gh");
 __name2222(gh, "gh");
 __name22222(gh, "gh");
+__name222222(gh, "gh");
 function b64decode(b64) {
   const bin = atob(b64.replace(/\n/g, ""));
   return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
@@ -1072,6 +1123,7 @@ __name22(b64decode, "b64decode");
 __name222(b64decode, "b64decode");
 __name2222(b64decode, "b64decode");
 __name22222(b64decode, "b64decode");
+__name222222(b64decode, "b64decode");
 async function listTree(env) {
   const t = await gh(env, `/git/trees/${BRANCH}?recursive=1`);
   return t.tree.filter((e) => e.type === "blob").map((e) => ({ path: e.path, sha: e.sha, size: e.size }));
@@ -1082,6 +1134,7 @@ __name22(listTree, "listTree");
 __name222(listTree, "listTree");
 __name2222(listTree, "listTree");
 __name22222(listTree, "listTree");
+__name222222(listTree, "listTree");
 async function readFile(env, path) {
   const f = await gh(env, `/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${BRANCH}`);
   if (Array.isArray(f) || f.type !== "file") throw Object.assign(new Error("Not a file"), { status: 404 });
@@ -1094,13 +1147,14 @@ __name22(readFile, "readFile");
 __name222(readFile, "readFile");
 __name2222(readFile, "readFile");
 __name22222(readFile, "readFile");
+__name222222(readFile, "readFile");
 var PROVIDERS = {
   anthropic: { name: "Claude", key: "ANTHROPIC_API_KEY" },
   openai: { name: "ChatGPT", key: "OPENAI_API_KEY" },
   gemini: { name: "Gemini", key: "GEMINI_API_KEY" },
   cloudflare: { name: "Cloudflare AI", binding: "AI", free: true }
 };
-var connectedTo = /* @__PURE__ */ __name22222((env, p) => Boolean(PROVIDERS[p].binding ? env[PROVIDERS[p].binding] : env[PROVIDERS[p].key]), "connectedTo");
+var connectedTo = /* @__PURE__ */ __name222222((env, p) => Boolean(PROVIDERS[p].binding ? env[PROVIDERS[p].binding] : env[PROVIDERS[p].key]), "connectedTo");
 var CF_MODELS = [
   { id: "@cf/nvidia/nemotron-3-120b-a12b", name: "Nemotron 3 120B (free)" },
   { id: "@cf/google/gemma-4-26b-a4b-it", name: "Gemma 4 26B (free)" },
@@ -1110,8 +1164,8 @@ var BUSY = /* @__PURE__ */ new Set([408, 500, 502, 503, 504, 520, 522, 524, 529]
 var RETRY_WAITS = [3e3, 8e3];
 var CALL_TIMEOUT = { ms: 12e4 };
 var MAX_RATE_WAIT = 2e4;
-var sleep = /* @__PURE__ */ __name22222((ms) => new Promise((r) => setTimeout(r, ms)), "sleep");
-var busyError = /* @__PURE__ */ __name22222((who, other, tries) => Object.assign(new Error(`${who} is overloaded right now \u2014 its servers turned the request away ${tries} times. This usually clears within minutes. Try again shortly, or switch to ${other}or Cloudflare AI.`), { status: 502, retryable: true }), "busyError");
+var sleep = /* @__PURE__ */ __name222222((ms) => new Promise((r) => setTimeout(r, ms)), "sleep");
+var busyError = /* @__PURE__ */ __name222222((who, other, tries) => Object.assign(new Error(`${who} is overloaded right now \u2014 its servers turned the request away ${tries} times. This usually clears within minutes. Try again shortly, or switch to ${other}or Cloudflare AI.`), { status: 502, retryable: true }), "busyError");
 function rateWait(res, data) {
   const h = Number(res.headers.get("retry-after"));
   if (Number.isFinite(h) && h > 0) return h * 1e3;
@@ -1124,6 +1178,7 @@ __name22(rateWait, "rateWait");
 __name222(rateWait, "rateWait");
 __name2222(rateWait, "rateWait");
 __name22222(rateWait, "rateWait");
+__name222222(rateWait, "rateWait");
 async function provFetch(url, init, who) {
   let res, body2, data, attempt = 0;
   const other = who === "Gemini" ? "another Gemini model (e.g. Gemini 2.5 Flash), " : "another model, ";
@@ -1178,6 +1233,7 @@ __name22(provFetch, "provFetch");
 __name222(provFetch, "provFetch");
 __name2222(provFetch, "provFetch");
 __name22222(provFetch, "provFetch");
+__name222222(provFetch, "provFetch");
 async function listModels(env, provider) {
   if (provider === "cloudflare") return CF_MODELS;
   if (provider === "anthropic") {
@@ -1206,6 +1262,7 @@ __name22(listModels, "listModels");
 __name222(listModels, "listModels");
 __name2222(listModels, "listModels");
 __name22222(listModels, "listModels");
+__name222222(listModels, "listModels");
 var IMAGE_TYPES = /* @__PURE__ */ new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
 var MAX_IMAGE_B64 = 6e6;
 var MAX_IMAGES = 6;
@@ -1225,6 +1282,7 @@ __name22(cleanImages, "cleanImages");
 __name222(cleanImages, "cleanImages");
 __name2222(cleanImages, "cleanImages");
 __name22222(cleanImages, "cleanImages");
+__name222222(cleanImages, "cleanImages");
 function toAnthropic(m) {
   if (!m.images?.length) return { role: m.role, content: m.content };
   return { role: m.role, content: [...m.images.map((i) => ({ type: "image", source: { type: "base64", media_type: i.type, data: i.data } })), { type: "text", text: m.content }] };
@@ -1235,6 +1293,7 @@ __name22(toAnthropic, "toAnthropic");
 __name222(toAnthropic, "toAnthropic");
 __name2222(toAnthropic, "toAnthropic");
 __name22222(toAnthropic, "toAnthropic");
+__name222222(toAnthropic, "toAnthropic");
 function toOpenAI(m) {
   if (!m.images?.length) return { role: m.role, content: m.content };
   return { role: m.role, content: [...m.images.map((i) => ({ type: "image_url", image_url: { url: `data:${i.type};base64,${i.data}` } })), { type: "text", text: m.content }] };
@@ -1245,6 +1304,7 @@ __name22(toOpenAI, "toOpenAI");
 __name222(toOpenAI, "toOpenAI");
 __name2222(toOpenAI, "toOpenAI");
 __name22222(toOpenAI, "toOpenAI");
+__name222222(toOpenAI, "toOpenAI");
 function toGemini(m) {
   return { role: m.role === "assistant" ? "model" : "user", parts: [...(m.images || []).map((i) => ({ inlineData: { mimeType: i.type, data: i.data } })), { text: m.content }] };
 }
@@ -1254,6 +1314,7 @@ __name22(toGemini, "toGemini");
 __name222(toGemini, "toGemini");
 __name2222(toGemini, "toGemini");
 __name22222(toGemini, "toGemini");
+__name222222(toGemini, "toGemini");
 async function runCloudflare(env, model, input) {
   let timer;
   const stall = new Promise((_, reject) => {
@@ -1271,6 +1332,7 @@ __name22(runCloudflare, "runCloudflare");
 __name222(runCloudflare, "runCloudflare");
 __name2222(runCloudflare, "runCloudflare");
 __name22222(runCloudflare, "runCloudflare");
+__name222222(runCloudflare, "runCloudflare");
 async function callModel(env, provider, model, system, messages, info = {}) {
   if (provider === "anthropic") {
     const d = await provFetch("https://api.anthropic.com/v1/messages", {
@@ -1340,6 +1402,7 @@ __name22(callModel, "callModel");
 __name222(callModel, "callModel");
 __name2222(callModel, "callModel");
 __name22222(callModel, "callModel");
+__name222222(callModel, "callModel");
 function systemPrompt(files, focus) {
   return `You are the website editor for WellNest (wellnest.services), a chronic-health tracking service made in Australia. The site owner chats with you to change the website. Reply in plain, friendly language for a non-developer, in Australian English.
 
@@ -1381,6 +1444,7 @@ __name22(systemPrompt, "systemPrompt");
 __name222(systemPrompt, "systemPrompt");
 __name2222(systemPrompt, "systemPrompt");
 __name22222(systemPrompt, "systemPrompt");
+__name222222(systemPrompt, "systemPrompt");
 function readRequests(text) {
   return [...String(text).matchAll(/^\s*READ:\s*(\S+)\s*$/gm)].map((m) => m[1]);
 }
@@ -1390,6 +1454,7 @@ __name22(readRequests, "readRequests");
 __name222(readRequests, "readRequests");
 __name2222(readRequests, "readRequests");
 __name22222(readRequests, "readRequests");
+__name222222(readRequests, "readRequests");
 function hasEdits(text) {
   return /<<<<<<< (EDIT|CREATE) /.test(text);
 }
@@ -1399,6 +1464,7 @@ __name22(hasEdits, "hasEdits");
 __name222(hasEdits, "hasEdits");
 __name2222(hasEdits, "hasEdits");
 __name22222(hasEdits, "hasEdits");
+__name222222(hasEdits, "hasEdits");
 var HISTORY_BUDGET = { cloudflare: 6e4, other: 3e5 };
 function trimHistory(messages, budget) {
   const out = [];
@@ -1419,6 +1485,7 @@ __name22(trimHistory, "trimHistory");
 __name222(trimHistory, "trimHistory");
 __name2222(trimHistory, "trimHistory");
 __name22222(trimHistory, "trimHistory");
+__name222222(trimHistory, "trimHistory");
 var treeCache = null;
 async function cachedTree(env) {
   if (treeCache && Date.now() - treeCache.at < 6e4) return treeCache.tree;
@@ -1432,6 +1499,7 @@ __name22(cachedTree, "cachedTree");
 __name222(cachedTree, "cachedTree");
 __name2222(cachedTree, "cachedTree");
 __name22222(cachedTree, "cachedTree");
+__name222222(cachedTree, "cachedTree");
 function clearTreeCache() {
   treeCache = null;
 }
@@ -1441,6 +1509,7 @@ __name22(clearTreeCache, "clearTreeCache");
 __name222(clearTreeCache, "clearTreeCache");
 __name2222(clearTreeCache, "clearTreeCache");
 __name22222(clearTreeCache, "clearTreeCache");
+__name222222(clearTreeCache, "clearTreeCache");
 async function runChat(env, body2) {
   const provider = String(body2.provider || "");
   if (!PROVIDERS[provider]) throw Object.assign(new Error("Choose an AI provider."), { status: 400 });
@@ -1490,6 +1559,7 @@ __name22(runChat, "runChat");
 __name222(runChat, "runChat");
 __name2222(runChat, "runChat");
 __name22222(runChat, "runChat");
+__name222222(runChat, "runChat");
 var KEEPALIVE_MS = { value: 15e3 };
 async function handleChat(request, env) {
   const body2 = await request.json();
@@ -1527,6 +1597,7 @@ __name22(handleChat, "handleChat");
 __name222(handleChat, "handleChat");
 __name2222(handleChat, "handleChat");
 __name22222(handleChat, "handleChat");
+__name222222(handleChat, "handleChat");
 var PREVIEW_TTL = 24 * 3600 * 1e3;
 async function handlePreviewSave(request, env) {
   const body2 = await request.json();
@@ -1547,6 +1618,7 @@ __name22(handlePreviewSave, "handlePreviewSave");
 __name222(handlePreviewSave, "handlePreviewSave");
 __name2222(handlePreviewSave, "handlePreviewSave");
 __name22222(handlePreviewSave, "handlePreviewSave");
+__name222222(handlePreviewSave, "handlePreviewSave");
 var TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", txt: "text/plain; charset=utf-8", xml: "application/xml", svg: "image/svg+xml", md: "text/plain; charset=utf-8", json: "application/json", webmanifest: "application/manifest+json" };
 function previewCookie(request) {
   const m = (request.headers.get("Cookie") || "").match(/(?:^|;\s*)wn_preview=([A-Za-z0-9_-]{20,64})/);
@@ -1558,6 +1630,7 @@ __name22(previewCookie, "previewCookie");
 __name222(previewCookie, "previewCookie");
 __name2222(previewCookie, "previewCookie");
 __name22222(previewCookie, "previewCookie");
+__name222222(previewCookie, "previewCookie");
 async function servePreviewApp(request, env, url) {
   const id = previewCookie(request);
   const path = decodeURIComponent(url.pathname).replace(/^\/+/, "");
@@ -1572,6 +1645,7 @@ __name22(servePreviewApp, "servePreviewApp");
 __name222(servePreviewApp, "servePreviewApp");
 __name2222(servePreviewApp, "servePreviewApp");
 __name22222(servePreviewApp, "servePreviewApp");
+__name222222(servePreviewApp, "servePreviewApp");
 function withoutApp(html) {
   return html.replace(/<script\b[^>]*\bsrc=["'][^"']*\/assets\/index[^"']*\.js["'][^>]*>\s*<\/script>/gi, "").replace(/<link\b[^>]*\brel=["']modulepreload["'][^>]*>/gi, "");
 }
@@ -1581,6 +1655,7 @@ __name22(withoutApp, "withoutApp");
 __name222(withoutApp, "withoutApp");
 __name2222(withoutApp, "withoutApp");
 __name22222(withoutApp, "withoutApp");
+__name222222(withoutApp, "withoutApp");
 async function servePreview(request, env, url) {
   const id = url.searchParams.get("wn_preview") || "";
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(id) || request.method !== "GET") return null;
@@ -1607,6 +1682,7 @@ __name22(servePreview, "servePreview");
 __name222(servePreview, "servePreview");
 __name2222(servePreview, "servePreview");
 __name22222(servePreview, "servePreview");
+__name222222(servePreview, "servePreview");
 async function handleAppFile(request, env, url) {
   const path = url.searchParams.get("path") || "";
   if (!APP_FILE.test(path)) return fail(400, "Not an app file.");
@@ -1625,6 +1701,7 @@ __name22(handleAppFile, "handleAppFile");
 __name222(handleAppFile, "handleAppFile");
 __name2222(handleAppFile, "handleAppFile");
 __name22222(handleAppFile, "handleAppFile");
+__name222222(handleAppFile, "handleAppFile");
 async function handleBlob(request, env) {
   const b64 = await request.text();
   if (!b64 || b64.length > MAX_APP_FILE * 1.4 || !/^[A-Za-z0-9+/]+=*$/.test(b64)) return fail(400, "Invalid file.");
@@ -1637,6 +1714,7 @@ __name22(handleBlob, "handleBlob");
 __name222(handleBlob, "handleBlob");
 __name2222(handleBlob, "handleBlob");
 __name22222(handleBlob, "handleBlob");
+__name222222(handleBlob, "handleBlob");
 async function handlePreviewApp(request, env, url) {
   const id = url.searchParams.get("id") || "", path = url.searchParams.get("path") || "";
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(id) || !APP_FILE.test(path)) return fail(400, "Invalid request.");
@@ -1651,6 +1729,7 @@ __name22(handlePreviewApp, "handlePreviewApp");
 __name222(handlePreviewApp, "handlePreviewApp");
 __name2222(handlePreviewApp, "handlePreviewApp");
 __name22222(handlePreviewApp, "handlePreviewApp");
+__name222222(handlePreviewApp, "handlePreviewApp");
 async function handlePublish(request, env, user) {
   const body2 = await request.json();
   const changes = body2.files && typeof body2.files === "object" ? body2.files : {};
@@ -1715,6 +1794,7 @@ __name22(handlePublish, "handlePublish");
 __name222(handlePublish, "handlePublish");
 __name2222(handlePublish, "handlePublish");
 __name22222(handlePublish, "handlePublish");
+__name222222(handlePublish, "handlePublish");
 function explainGitHub(e, sub) {
   if (e?.github === 401) return Object.assign(new Error("GitHub rejected the GITHUB_TOKEN. It may have expired; make a new one and update it in Cloudflare."), { status: 502 });
   if (e?.github === 403 || e?.github === 404 && sub === "publish") {
@@ -1728,6 +1808,7 @@ __name22(explainGitHub, "explainGitHub");
 __name222(explainGitHub, "explainGitHub");
 __name2222(explainGitHub, "explainGitHub");
 __name22222(explainGitHub, "explainGitHub");
+__name222222(explainGitHub, "explainGitHub");
 async function handleEditor(request, env, user, sub) {
   if (!await isAnalyticsAdmin(env, user)) return fail(403, "Only site admins can use the editor.", { signed_in_as: user?.email || null });
   const url = new URL(request.url);
@@ -1776,6 +1857,7 @@ __name22(handleEditor, "handleEditor");
 __name222(handleEditor, "handleEditor");
 __name2222(handleEditor, "handleEditor");
 __name22222(handleEditor, "handleEditor");
+__name222222(handleEditor, "handleEditor");
 var TRIAL_DAYS = 30;
 var DAY2 = 864e5;
 var PLANS = {
@@ -1801,6 +1883,7 @@ __name22(ensureBilling, "ensureBilling");
 __name222(ensureBilling, "ensureBilling");
 __name2222(ensureBilling, "ensureBilling");
 __name22222(ensureBilling, "ensureBilling");
+__name222222(ensureBilling, "ensureBilling");
 function form(params, prefix = "", out = new URLSearchParams()) {
   for (const [k, v] of Object.entries(params)) {
     if (v === void 0 || v === null) continue;
@@ -1817,6 +1900,7 @@ __name22(form, "form");
 __name222(form, "form");
 __name2222(form, "form");
 __name22222(form, "form");
+__name222222(form, "form");
 async function stripe(env, method, path, params) {
   if (!env.STRIPE_SECRET_KEY) throw Object.assign(new Error("Payments aren't set up yet (STRIPE_SECRET_KEY is missing)."), { status: 503 });
   const qs = method === "GET" && params ? "?" + form(params) : "";
@@ -1839,6 +1923,7 @@ __name22(stripe, "stripe");
 __name222(stripe, "stripe");
 __name2222(stripe, "stripe");
 __name22222(stripe, "stripe");
+__name222222(stripe, "stripe");
 var priceCache = {};
 async function priceFor(env, key) {
   const plan = PLANS[key];
@@ -1869,6 +1954,7 @@ __name22(priceFor, "priceFor");
 __name222(priceFor, "priceFor");
 __name2222(priceFor, "priceFor");
 __name22222(priceFor, "priceFor");
+__name222222(priceFor, "priceFor");
 async function row(env, userId) {
   await ensureBilling(env);
   return env.DB.prepare("SELECT * FROM subscriptions WHERE user_id = ?").bind(userId).first();
@@ -1879,6 +1965,7 @@ __name22(row, "row");
 __name222(row, "row");
 __name2222(row, "row");
 __name22222(row, "row");
+__name222222(row, "row");
 function trialEndsAt(user) {
   const created = Date.parse(user?.created_date || "");
   return Number.isFinite(created) ? created + TRIAL_DAYS * DAY2 : 0;
@@ -1889,6 +1976,7 @@ __name22(trialEndsAt, "trialEndsAt");
 __name222(trialEndsAt, "trialEndsAt");
 __name2222(trialEndsAt, "trialEndsAt");
 __name22222(trialEndsAt, "trialEndsAt");
+__name222222(trialEndsAt, "trialEndsAt");
 function tierOf(user) {
   try {
     return JSON.parse(user.data || "{}").subscription_tier || "free";
@@ -1902,6 +1990,7 @@ __name22(tierOf, "tierOf");
 __name222(tierOf, "tierOf");
 __name2222(tierOf, "tierOf");
 __name22222(tierOf, "tierOf");
+__name222222(tierOf, "tierOf");
 async function setTier(env, userId, tier) {
   await env.DB.prepare("UPDATE users SET data = json_set(data, '$.subscription_tier', ?), updated_date = ? WHERE id = ?").bind(tier, now(), userId).run();
 }
@@ -1911,6 +2000,7 @@ __name22(setTier, "setTier");
 __name222(setTier, "setTier");
 __name2222(setTier, "setTier");
 __name22222(setTier, "setTier");
+__name222222(setTier, "setTier");
 async function customerFor(env, user, create) {
   const r = await row(env, user.id);
   if (r?.customer_id) return r.customer_id;
@@ -1928,6 +2018,7 @@ __name22(customerFor, "customerFor");
 __name222(customerFor, "customerFor");
 __name2222(customerFor, "customerFor");
 __name22222(customerFor, "customerFor");
+__name222222(customerFor, "customerFor");
 function planOfPrice(price) {
   const interval = price?.recurring?.interval;
   return interval === "year" ? "yearly" : "fullaccess";
@@ -1938,6 +2029,7 @@ __name22(planOfPrice, "planOfPrice");
 __name222(planOfPrice, "planOfPrice");
 __name2222(planOfPrice, "planOfPrice");
 __name22222(planOfPrice, "planOfPrice");
+__name222222(planOfPrice, "planOfPrice");
 async function applySubscription(env, userId, sub) {
   await ensureBilling(env);
   const price = sub.items?.data?.[0]?.price;
@@ -1967,8 +2059,9 @@ __name22(applySubscription, "applySubscription");
 __name222(applySubscription, "applySubscription");
 __name2222(applySubscription, "applySubscription");
 __name22222(applySubscription, "applySubscription");
+__name222222(applySubscription, "applySubscription");
 function best(subs) {
-  const rank = /* @__PURE__ */ __name22222((s) => (PAID.has(s.status) ? 2 : 0) + (s.status === "active" ? 1 : 0), "rank");
+  const rank = /* @__PURE__ */ __name222222((s) => (PAID.has(s.status) ? 2 : 0) + (s.status === "active" ? 1 : 0), "rank");
   return [...subs].sort((a, b) => rank(b) - rank(a) || b.created - a.created)[0] || null;
 }
 __name(best, "best");
@@ -1977,6 +2070,7 @@ __name22(best, "best");
 __name222(best, "best");
 __name2222(best, "best");
 __name22222(best, "best");
+__name222222(best, "best");
 async function syncSubscription(env, user) {
   if (!env.STRIPE_SECRET_KEY) return { synced: false };
   const customer = await customerFor(env, user, false);
@@ -1993,6 +2087,7 @@ __name22(syncSubscription, "syncSubscription");
 __name222(syncSubscription, "syncSubscription");
 __name2222(syncSubscription, "syncSubscription");
 __name22222(syncSubscription, "syncSubscription");
+__name222222(syncSubscription, "syncSubscription");
 async function growthAccess(env, user) {
   if (!user) return { premium: false, plan: "free", referralApplied: false };
   const tier = tierOf(user);
@@ -2011,6 +2106,7 @@ __name22(growthAccess, "growthAccess");
 __name222(growthAccess, "growthAccess");
 __name2222(growthAccess, "growthAccess");
 __name22222(growthAccess, "growthAccess");
+__name222222(growthAccess, "growthAccess");
 function safeUrl(u, fallback) {
   try {
     const url = new URL(u);
@@ -2025,6 +2121,7 @@ __name22(safeUrl, "safeUrl");
 __name222(safeUrl, "safeUrl");
 __name2222(safeUrl, "safeUrl");
 __name22222(safeUrl, "safeUrl");
+__name222222(safeUrl, "safeUrl");
 async function createCheckout(env, user, b) {
   if (!user) throw Object.assign(new Error("Please sign in first."), { status: 401 });
   const key = String(b.productKey || "");
@@ -2055,6 +2152,7 @@ __name22(createCheckout, "createCheckout");
 __name222(createCheckout, "createCheckout");
 __name2222(createCheckout, "createCheckout");
 __name22222(createCheckout, "createCheckout");
+__name222222(createCheckout, "createCheckout");
 async function billingPortal(env, user, b) {
   if (!user) throw Object.assign(new Error("Please sign in first."), { status: 401 });
   const customer = await customerFor(env, user, false);
@@ -2068,6 +2166,7 @@ __name22(billingPortal, "billingPortal");
 __name222(billingPortal, "billingPortal");
 __name2222(billingPortal, "billingPortal");
 __name22222(billingPortal, "billingPortal");
+__name222222(billingPortal, "billingPortal");
 var enc2 = new TextEncoder();
 async function hmacHex(secret, text) {
   const key = await crypto.subtle.importKey("raw", enc2.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -2079,6 +2178,7 @@ __name22(hmacHex, "hmacHex");
 __name222(hmacHex, "hmacHex");
 __name2222(hmacHex, "hmacHex");
 __name22222(hmacHex, "hmacHex");
+__name222222(hmacHex, "hmacHex");
 async function verifyStripeSignature(secret, payload, header, toleranceSeconds = 300, nowMs = Date.now()) {
   if (!secret || !header) return false;
   let t = null;
@@ -2098,6 +2198,7 @@ __name22(verifyStripeSignature, "verifyStripeSignature");
 __name222(verifyStripeSignature, "verifyStripeSignature");
 __name2222(verifyStripeSignature, "verifyStripeSignature");
 __name22222(verifyStripeSignature, "verifyStripeSignature");
+__name222222(verifyStripeSignature, "verifyStripeSignature");
 async function userForCustomer(env, customerId, metaUser) {
   await ensureBilling(env);
   if (metaUser) {
@@ -2122,6 +2223,7 @@ __name22(userForCustomer, "userForCustomer");
 __name222(userForCustomer, "userForCustomer");
 __name2222(userForCustomer, "userForCustomer");
 __name22222(userForCustomer, "userForCustomer");
+__name222222(userForCustomer, "userForCustomer");
 async function handleStripeWebhook(request, env) {
   if (request.method !== "POST") return fail(405, "Use POST.");
   const payload = await request.text();
@@ -2166,6 +2268,7 @@ __name22(handleStripeWebhook, "handleStripeWebhook");
 __name222(handleStripeWebhook, "handleStripeWebhook");
 __name2222(handleStripeWebhook, "handleStripeWebhook");
 __name22222(handleStripeWebhook, "handleStripeWebhook");
+__name222222(handleStripeWebhook, "handleStripeWebhook");
 var SAVED_SECRET = "stripe_webhook_secret";
 async function webhookSecrets(env) {
   const out = [];
@@ -2183,6 +2286,7 @@ __name22(webhookSecrets, "webhookSecrets");
 __name222(webhookSecrets, "webhookSecrets");
 __name2222(webhookSecrets, "webhookSecrets");
 __name22222(webhookSecrets, "webhookSecrets");
+__name222222(webhookSecrets, "webhookSecrets");
 async function fixWebhook(env) {
   const hooks = (await stripe(env, "GET", "webhook_endpoints", { limit: 50 })).data || [];
   const ours = hooks.find((h) => h.url === WEBHOOK_URL);
@@ -2212,6 +2316,7 @@ __name22(fixWebhook, "fixWebhook");
 __name222(fixWebhook, "fixWebhook");
 __name2222(fixWebhook, "fixWebhook");
 __name22222(fixWebhook, "fixWebhook");
+__name222222(fixWebhook, "fixWebhook");
 async function handleBillingStatus(request, env, user) {
   if (!await isAnalyticsAdmin(env, user)) return fail(403, "Only site admins can see this.");
   const out = {
@@ -2262,6 +2367,7 @@ __name22(handleBillingStatus, "handleBillingStatus");
 __name222(handleBillingStatus, "handleBillingStatus");
 __name2222(handleBillingStatus, "handleBillingStatus");
 __name22222(handleBillingStatus, "handleBillingStatus");
+__name222222(handleBillingStatus, "handleBillingStatus");
 async function billingFunction(env, request, name, user, b) {
   switch (name) {
     case "createCheckout":
@@ -2281,6 +2387,7 @@ __name22(billingFunction, "billingFunction");
 __name222(billingFunction, "billingFunction");
 __name2222(billingFunction, "billingFunction");
 __name22222(billingFunction, "billingFunction");
+__name222222(billingFunction, "billingFunction");
 var ENTITY_RE = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
 var FIELD_RE = /^[A-Za-z_][A-Za-z0-9_.]{0,63}$/;
 var META = ["id", "created_by_id", "created_by", "owner_id", "created_date", "updated_date"];
@@ -2301,6 +2408,7 @@ __name22(body, "body");
 __name222(body, "body");
 __name2222(body, "body");
 __name22222(body, "body");
+__name222222(body, "body");
 function account(u) {
   let data = {};
   try {
@@ -2315,6 +2423,7 @@ __name22(account, "account");
 __name222(account, "account");
 __name2222(account, "account");
 __name22222(account, "account");
+__name222222(account, "account");
 var PROTECTED_ACCOUNT = /* @__PURE__ */ new Set([...META, "email", "role", "subscription_tier", "complimentary_full_access", "password", "password_hash"]);
 async function handleMe(request, env, user) {
   if (request.method === "GET") return json(account(user));
@@ -2334,6 +2443,7 @@ __name22(handleMe, "handleMe");
 __name222(handleMe, "handleMe");
 __name2222(handleMe, "handleMe");
 __name22222(handleMe, "handleMe");
+__name222222(handleMe, "handleMe");
 function serialize(row2, user) {
   let data = {};
   try {
@@ -2348,6 +2458,7 @@ __name22(serialize, "serialize");
 __name222(serialize, "serialize");
 __name2222(serialize, "serialize");
 __name22222(serialize, "serialize");
+__name222222(serialize, "serialize");
 function fieldExpr(field) {
   if (field === "id") return "id";
   if (field === "created_date" || field === "updated_date") return field;
@@ -2361,7 +2472,8 @@ __name22(fieldExpr, "fieldExpr");
 __name222(fieldExpr, "fieldExpr");
 __name2222(fieldExpr, "fieldExpr");
 __name22222(fieldExpr, "fieldExpr");
-var sqlValue = /* @__PURE__ */ __name22222((v) => typeof v === "boolean" ? v ? 1 : 0 : v, "sqlValue");
+__name222222(fieldExpr, "fieldExpr");
+var sqlValue = /* @__PURE__ */ __name222222((v) => typeof v === "boolean" ? v ? 1 : 0 : v, "sqlValue");
 function buildFilter(filter, where, params) {
   for (const [field, cond] of Object.entries(filter || {})) {
     const expr = fieldExpr(field);
@@ -2398,10 +2510,15 @@ __name22(buildFilter, "buildFilter");
 __name222(buildFilter, "buildFilter");
 __name2222(buildFilter, "buildFilter");
 __name22222(buildFilter, "buildFilter");
+__name222222(buildFilter, "buildFilter");
 async function handleEntities(request, env, user, entity, id) {
   if (!ENTITY_RE.test(entity)) return fail(400, "Invalid record type");
   const url = new URL(request.url);
   const m = request.method;
+  if (entity === "CloudDataBackup" && ((m === "POST" && !id) || ((m === "PUT" || m === "PATCH") && id))) {
+    const guarded = await handleMedicationBackup(request.clone(), env, user, id);
+    if (guarded) return guarded;
+  }
   if (m === "GET" && !id) {
     let filter = {};
     try {
@@ -2459,6 +2576,7 @@ __name22(handleEntities, "handleEntities");
 __name222(handleEntities, "handleEntities");
 __name2222(handleEntities, "handleEntities");
 __name22222(handleEntities, "handleEntities");
+__name222222(handleEntities, "handleEntities");
 async function handleUploads(request, env, user, parts) {
   if (request.method === "POST" && parts.length === 0) {
     const b = await body(request);
@@ -2500,6 +2618,7 @@ __name22(handleUploads, "handleUploads");
 __name222(handleUploads, "handleUploads");
 __name2222(handleUploads, "handleUploads");
 __name22222(handleUploads, "handleUploads");
+__name222222(handleUploads, "handleUploads");
 async function handleFileSign(request, env, user) {
   const b = await body(request);
   const m = String(b.file_uri || "").match(/^wellnest-file:\/\/([0-9a-f-]{36})$/);
@@ -2517,6 +2636,7 @@ __name22(handleFileSign, "handleFileSign");
 __name222(handleFileSign, "handleFileSign");
 __name2222(handleFileSign, "handleFileSign");
 __name22222(handleFileSign, "handleFileSign");
+__name222222(handleFileSign, "handleFileSign");
 async function handleFileRaw(request, env, fileId) {
   const url = new URL(request.url);
   const exp = Number(url.searchParams.get("exp"));
@@ -2552,6 +2672,7 @@ __name22(handleFileRaw, "handleFileRaw");
 __name222(handleFileRaw, "handleFileRaw");
 __name2222(handleFileRaw, "handleFileRaw");
 __name22222(handleFileRaw, "handleFileRaw");
+__name222222(handleFileRaw, "handleFileRaw");
 var UNAVAILABLE = "This feature is temporarily unavailable.";
 var EMAIL_RE2 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 async function handleFunction(request, env, name) {
@@ -2608,6 +2729,7 @@ __name22(handleFunction, "handleFunction");
 __name222(handleFunction, "handleFunction");
 __name2222(handleFunction, "handleFunction");
 __name22222(handleFunction, "handleFunction");
+__name222222(handleFunction, "handleFunction");
 var OLD_BASE = "/wellnest-website";
 var IMAGE_CACHE = "public, max-age=604800, stale-while-revalidate=86400";
 var APP_ROUTES = /* @__PURE__ */ new Set([
@@ -2670,6 +2792,7 @@ __name22(cleanAddress, "cleanAddress");
 __name222(cleanAddress, "cleanAddress");
 __name2222(cleanAddress, "cleanAddress");
 __name22222(cleanAddress, "cleanAddress");
+__name222222(cleanAddress, "cleanAddress");
 async function api(request, env, path) {
   await ensureSchema(env);
   const parts = path.split("/").filter(Boolean).slice(1);
@@ -2703,6 +2826,7 @@ __name22(api, "api");
 __name222(api, "api");
 __name2222(api, "api");
 __name22222(api, "api");
+__name222222(api, "api");
 var worker_default = {
   // Daily: tell search engines about new and changed pages (cloudflare/seo.js).
   async scheduled(event, env, ctx) {
@@ -2840,6 +2964,7 @@ var worker_default = {
     res = await streamlinedSettingsResponse(request, res, url.pathname);
     res = await routineSyncResponse(request, res, url.pathname);
     res = await accountSyncResponse(request, res, url.pathname);
+    res = await doseSyncResponse(request, res, url.pathname);
     const dest = request.headers.get("Sec-Fetch-Dest");
     if (previewCookie(request) && (dest === "document" || dest === "iframe") && !url.pathname.startsWith("/assets/")) {
       const out = new Response(res.body, res);
@@ -2857,6 +2982,7 @@ __name2(appointmentFields, "appointmentFields");
 __name22(appointmentFields, "appointmentFields");
 __name222(appointmentFields, "appointmentFields");
 __name2222(appointmentFields, "appointmentFields");
+__name22222(appointmentFields, "appointmentFields");
 function sameAppointment(a, b) {
   return JSON.stringify(appointmentFields(a)) === JSON.stringify(appointmentFields(b));
 }
@@ -2865,6 +2991,7 @@ __name2(sameAppointment, "sameAppointment");
 __name22(sameAppointment, "sameAppointment");
 __name222(sameAppointment, "sameAppointment");
 __name2222(sameAppointment, "sameAppointment");
+__name22222(sameAppointment, "sameAppointment");
 async function eventId(owner, calendar, id) {
   return sha256(JSON.stringify([owner, calendar, id]));
 }
@@ -2873,6 +3000,7 @@ __name2(eventId, "eventId");
 __name22(eventId, "eventId");
 __name222(eventId, "eventId");
 __name2222(eventId, "eventId");
+__name22222(eventId, "eventId");
 function toGoogle(a, timeZone) {
   let start, end;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(a.date || "")) throw Error("An appointment has an invalid date. Update it before syncing.");
@@ -2893,6 +3021,7 @@ __name2(toGoogle, "toGoogle");
 __name22(toGoogle, "toGoogle");
 __name222(toGoogle, "toGoogle");
 __name2222(toGoogle, "toGoogle");
+__name22222(toGoogle, "toGoogle");
 function fromGoogle(event, existing = {}, timeZone = "UTC") {
   const start = event.start || {};
   let date = start.date, time = "";
@@ -2909,6 +3038,7 @@ __name2(fromGoogle, "fromGoogle");
 __name22(fromGoogle, "fromGoogle");
 __name222(fromGoogle, "fromGoogle");
 __name2222(fromGoogle, "fromGoogle");
+__name22222(fromGoogle, "fromGoogle");
 async function reconcile({ owner, calendar, timeZone, appointments, deletedIds, links, events, api: api2 }) {
   const records = new Map(appointments.map((a) => [String(a.id), a]));
   const deleted = new Set(deletedIds.map(String));
@@ -2917,12 +3047,12 @@ async function reconcile({ owner, calendar, timeZone, appointments, deletedIds, 
   const seen = /* @__PURE__ */ new Set();
   let operations = 0, partial = false;
   const deadline = Date.now() + 35e3;
-  const available = /* @__PURE__ */ __name2222(() => {
+  const available = /* @__PURE__ */ __name22222(() => {
     const ready = operations < 100 && Date.now() < deadline;
     if (!ready) partial = true;
     return ready;
   }, "available");
-  const call = /* @__PURE__ */ __name2222(async (...args) => {
+  const call = /* @__PURE__ */ __name22222(async (...args) => {
     operations++;
     return api2(...args);
   }, "call");
@@ -2992,9 +3122,10 @@ __name2(reconcile, "reconcile");
 __name22(reconcile, "reconcile");
 __name222(reconcile, "reconcile");
 __name2222(reconcile, "reconcile");
+__name22222(reconcile, "reconcile");
 async function handleCalendar(request, env) {
   const headers = { "Cache-Control": "private, no-store" };
-  const json2 = /* @__PURE__ */ __name2222((body2, status = 200) => Response.json(body2, { status, headers }), "json");
+  const json2 = /* @__PURE__ */ __name22222((body2, status = 200) => Response.json(body2, { status, headers }), "json");
   const url = new URL(request.url);
   const action = url.pathname.split("/").pop();
   const clientId = env.GOOGLE_CALENDAR_CLIENT_ID || env.GOOGLE_CLIENT_ID;
@@ -3002,23 +3133,23 @@ async function handleCalendar(request, env) {
   const callback = `${SITE}/api/auth/google/callback`;
   const cookieName = "__Host-wn-calendar";
   const clearCookie = `${cookieName}=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0`;
-  const redirect = /* @__PURE__ */ __name2222((status) => new Response(null, { status: 303, headers: { ...headers, Location: `/settings?calendar=${status}`, "Set-Cookie": clearCookie } }), "redirect");
+  const redirect = /* @__PURE__ */ __name22222((status) => new Response(null, { status: 303, headers: { ...headers, Location: `/settings?calendar=${status}`, "Set-Cookie": clearCookie } }), "redirect");
   const methods = { status: "GET", calendars: "GET", connect: "POST", callback: "GET", select: "POST", sync: "POST", disconnect: "DELETE" };
   if (!action || methods[action] !== request.method) return json2({ error: "Method not allowed" }, 405);
   if (!["GET"].includes(request.method) && request.headers.get("Origin") !== url.origin) return json2({ error: "Invalid request origin" }, 403);
   if (!clientId || !secret) return action === "callback" ? redirect("setup-required") : json2({ error: "Google Calendar connection is awaiting setup.", configured: false }, 503);
   const rawKey = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("wellnest-calendar-v1:" + secret));
   const key = await crypto.subtle.importKey("raw", rawKey, "AES-GCM", false, ["encrypt", "decrypt"]);
-  const seal = /* @__PURE__ */ __name2222(async (value) => {
+  const seal = /* @__PURE__ */ __name22222(async (value) => {
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(value))));
     return b64url(new Uint8Array([...iv, ...encrypted]));
   }, "seal");
-  const open = /* @__PURE__ */ __name2222(async (value) => {
+  const open = /* @__PURE__ */ __name22222(async (value) => {
     const bytes = b64urlDecode(value);
     return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: bytes.slice(0, 12) }, key, bytes.slice(12))));
   }, "open");
-  const google = /* @__PURE__ */ __name2222(async (target, options = {}) => {
+  const google = /* @__PURE__ */ __name22222(async (target, options = {}) => {
     const response = await fetch(target, { ...options, signal: AbortSignal.timeout(12e3) });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw Object.assign(Error("Google Calendar could not complete the request. Try again or reconnect your Google account."), { status: response.status });
@@ -3106,7 +3237,7 @@ async function handleCalendar(request, env) {
     }
     const credentials = await open(connection.credentials);
     const token = await google("https://oauth2.googleapis.com/token", { method: "POST", body: new URLSearchParams({ client_id: clientId, client_secret: secret, refresh_token: credentials.refresh_token, grant_type: "refresh_token" }) });
-    const api2 = /* @__PURE__ */ __name2222(async (path, method = "GET", body2, etag) => {
+    const api2 = /* @__PURE__ */ __name22222(async (path, method = "GET", body2, etag) => {
       const response = await fetch("https://www.googleapis.com/calendar/v3/" + path, {
         method,
         headers: { Authorization: `Bearer ${token.access_token}`, ...body2 ? { "Content-Type": "application/json" } : {}, ...etag ? { "If-Match": etag } : {} },
@@ -3119,7 +3250,7 @@ async function handleCalendar(request, env) {
       if (!response.ok) throw calendarRequestError(await response.json().catch(() => ({})), response.status);
       return response.status === 204 ? {} : response.json();
     }, "api");
-    const calendars = /* @__PURE__ */ __name2222(async () => {
+    const calendars = /* @__PURE__ */ __name22222(async () => {
       const items = [];
       let page2 = "";
       do {
@@ -3175,7 +3306,7 @@ async function handleCalendar(request, env) {
       deletedIds: local.trackerDeleted?.appts || [],
       links: connection.sync_state[calendar]?.links || {},
       events,
-      api: /* @__PURE__ */ __name2222((method, id, body2, etag) => api2(base + (id ? "/" + encodeURIComponent(id) : ""), method, body2, etag), "api")
+      api: /* @__PURE__ */ __name22222((method, id, body2, etag) => api2(base + (id ? "/" + encodeURIComponent(id) : ""), method, body2, etag), "api")
     });
     const savedAt = (/* @__PURE__ */ new Date()).toISOString();
     const nextBackup = { ...backup.data, last_synced_at: savedAt, data: { ...backup.data.data, saved_at: savedAt, local_data: { ...local, appts: result.appointments, trackerDeleted: { ...local.trackerDeleted, appts: result.deletedIds } } } };
@@ -3201,6 +3332,7 @@ __name2(handleCalendar, "handleCalendar");
 __name22(handleCalendar, "handleCalendar");
 __name222(handleCalendar, "handleCalendar");
 __name2222(handleCalendar, "handleCalendar");
+__name22222(handleCalendar, "handleCalendar");
 function calendarRequestError(data, status) {
   const details = data?.error?.details || [];
   const disabled = details.some((e) => e.reason === "SERVICE_DISABLED") || (data?.error?.errors || []).some((e) => e.reason === "accessNotConfigured");
@@ -3219,6 +3351,7 @@ __name2(calendarRequestError, "calendarRequestError");
 __name22(calendarRequestError, "calendarRequestError");
 __name222(calendarRequestError, "calendarRequestError");
 __name2222(calendarRequestError, "calendarRequestError");
+__name22222(calendarRequestError, "calendarRequestError");
 async function subscriptionSchema(env) {
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS calendar_subscriptions (
     id TEXT PRIMARY KEY, owner_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -3230,6 +3363,7 @@ __name2(subscriptionSchema, "subscriptionSchema");
 __name22(subscriptionSchema, "subscriptionSchema");
 __name222(subscriptionSchema, "subscriptionSchema");
 __name2222(subscriptionSchema, "subscriptionSchema");
+__name22222(subscriptionSchema, "subscriptionSchema");
 function subscriptionTimeZone(value) {
   if (typeof value !== "string" || value.length > 100) throw new Error("Choose a valid time zone.");
   new Intl.DateTimeFormat("en", { timeZone: value }).format();
@@ -3240,6 +3374,7 @@ __name2(subscriptionTimeZone, "subscriptionTimeZone");
 __name22(subscriptionTimeZone, "subscriptionTimeZone");
 __name222(subscriptionTimeZone, "subscriptionTimeZone");
 __name2222(subscriptionTimeZone, "subscriptionTimeZone");
+__name22222(subscriptionTimeZone, "subscriptionTimeZone");
 async function subscriptionUrl(env, row2) {
   return SITE + "/api/calendar/feed/" + row2.id + "/" + await hmac(env, "calendar-subscription", row2.id + ":" + row2.nonce) + ".ics";
 }
@@ -3248,6 +3383,7 @@ __name2(subscriptionUrl, "subscriptionUrl");
 __name22(subscriptionUrl, "subscriptionUrl");
 __name222(subscriptionUrl, "subscriptionUrl");
 __name2222(subscriptionUrl, "subscriptionUrl");
+__name22222(subscriptionUrl, "subscriptionUrl");
 async function handleCalendarSubscription(request, env) {
   if (!["GET", "POST", "DELETE"].includes(request.method)) return fail(405, "Method not allowed");
   const url = new URL(request.url);
@@ -3278,6 +3414,7 @@ __name2(handleCalendarSubscription, "handleCalendarSubscription");
 __name22(handleCalendarSubscription, "handleCalendarSubscription");
 __name222(handleCalendarSubscription, "handleCalendarSubscription");
 __name2222(handleCalendarSubscription, "handleCalendarSubscription");
+__name22222(handleCalendarSubscription, "handleCalendarSubscription");
 function icsEscape(value) {
   return String(value || "").replace(/\\/g, "\\\\").replace(/\r\n|\r|\n/g, "\\n").replace(/;/g, "\\;").replace(/,/g, "\\,");
 }
@@ -3286,6 +3423,7 @@ __name2(icsEscape, "icsEscape");
 __name22(icsEscape, "icsEscape");
 __name222(icsEscape, "icsEscape");
 __name2222(icsEscape, "icsEscape");
+__name22222(icsEscape, "icsEscape");
 function icsFold(line) {
   const encoder = new TextEncoder();
   let result = "", width = 0;
@@ -3305,6 +3443,7 @@ __name2(icsFold, "icsFold");
 __name22(icsFold, "icsFold");
 __name222(icsFold, "icsFold");
 __name2222(icsFold, "icsFold");
+__name22222(icsFold, "icsFold");
 function icsStamp(value) {
   return new Date(value).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
@@ -3313,12 +3452,13 @@ __name2(icsStamp, "icsStamp");
 __name22(icsStamp, "icsStamp");
 __name222(icsStamp, "icsStamp");
 __name2222(icsStamp, "icsStamp");
+__name22222(icsStamp, "icsStamp");
 function calendarWallTime(date, time, zone) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw Error("Invalid appointment date or time");
   const wall = Date.parse(date + "T" + time + ":00Z");
   if (!Number.isFinite(wall) || new Date(wall).toISOString().slice(0, 10) !== date) throw Error("Invalid appointment date");
   const format = new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
-  const local = /* @__PURE__ */ __name2222((value) => {
+  const local = /* @__PURE__ */ __name22222((value) => {
     const p = Object.fromEntries(format.formatToParts(value).map((p2) => [p2.type, p2.value]));
     return Date.parse(p.year + "-" + p.month + "-" + p.day + "T" + p.hour + ":" + p.minute + ":" + p.second + "Z");
   }, "local");
@@ -3335,6 +3475,7 @@ __name2(calendarWallTime, "calendarWallTime");
 __name22(calendarWallTime, "calendarWallTime");
 __name222(calendarWallTime, "calendarWallTime");
 __name2222(calendarWallTime, "calendarWallTime");
+__name22222(calendarWallTime, "calendarWallTime");
 async function appointmentsCalendar(owner, backup, zone) {
   const local = backup.data?.local_data || {};
   const deleted = new Set((local.trackerDeleted?.appts || []).map(String));
@@ -3367,6 +3508,7 @@ __name2(appointmentsCalendar, "appointmentsCalendar");
 __name22(appointmentsCalendar, "appointmentsCalendar");
 __name222(appointmentsCalendar, "appointmentsCalendar");
 __name2222(appointmentsCalendar, "appointmentsCalendar");
+__name22222(appointmentsCalendar, "appointmentsCalendar");
 async function handleCalendarFeed(request, env) {
   if (!["GET", "HEAD"].includes(request.method)) return fail(405, "Method not allowed");
   const path = new URL(request.url).pathname;
@@ -3385,6 +3527,7 @@ __name2(handleCalendarFeed, "handleCalendarFeed");
 __name22(handleCalendarFeed, "handleCalendarFeed");
 __name222(handleCalendarFeed, "handleCalendarFeed");
 __name2222(handleCalendarFeed, "handleCalendarFeed");
+__name22222(handleCalendarFeed, "handleCalendarFeed");
 async function simpleCalendarDownload(request, env) {
   if (request.method !== "GET") return fail(405, "Method not allowed");
   await ensureSchema(env);
@@ -3408,6 +3551,7 @@ __name2(simpleCalendarDownload, "simpleCalendarDownload");
 __name22(simpleCalendarDownload, "simpleCalendarDownload");
 __name222(simpleCalendarDownload, "simpleCalendarDownload");
 __name2222(simpleCalendarDownload, "simpleCalendarDownload");
+__name22222(simpleCalendarDownload, "simpleCalendarDownload");
 function simpleCalendarPage(request) {
   if (request.method !== "GET") return fail(405, "Method not allowed");
   return new Response(SIMPLE_CALENDAR_HTML, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex", "Referrer-Policy": "no-referrer", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'" } });
@@ -3417,6 +3561,7 @@ __name2(simpleCalendarPage, "simpleCalendarPage");
 __name22(simpleCalendarPage, "simpleCalendarPage");
 __name222(simpleCalendarPage, "simpleCalendarPage");
 __name2222(simpleCalendarPage, "simpleCalendarPage");
+__name22222(simpleCalendarPage, "simpleCalendarPage");
 var SIMPLE_CALENDAR_HTML = `<!doctype html><html lang="en-AU"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Download appointments | WellNest</title>
 <style>*{box-sizing:border-box}body{margin:0;background:#f1f5f1;color:#17372e;font:17px/1.6 system-ui,-apple-system,sans-serif}main{max-width:660px;margin:8vh auto;padding:36px;background:white;border-radius:24px;box-shadow:0 8px 40px #17372e0b}h1{font-size:34px;line-height:1.2;letter-spacing:-1px}a{color:#1f5c4a}label{display:block;font-weight:600;margin-top:22px}input{display:block;width:100%;padding:12px;border:1px solid #a6bcb0;border-radius:10px;font:inherit;margin:6px 0 20px}button,.button{display:inline-block;background:#1f5c4a;color:white;border:0;border-radius:12px;padding:14px 20px;font:600 17px system-ui;cursor:pointer;text-decoration:none}button:disabled{opacity:.6}small{display:block;color:#536a60}li{margin:10px 0}#status{white-space:pre-line}header{font-weight:750;color:#1f5c4a}@media(max-width:700px){main{margin:20px;padding:26px}}</style>
 <main><header>wellnest</header><h1>Appointments in Google Calendar</h1><p>Download a calendar file, then import it into Google. No Google Cloud setup or subscription link needed.</p>
@@ -3453,6 +3598,7 @@ __name2(calendarQuickAddData, "calendarQuickAddData");
 __name22(calendarQuickAddData, "calendarQuickAddData");
 __name222(calendarQuickAddData, "calendarQuickAddData");
 __name2222(calendarQuickAddData, "calendarQuickAddData");
+__name22222(calendarQuickAddData, "calendarQuickAddData");
 function calendarQuickAddPage(request) {
   if (request.method !== "GET") return fail(405, "Method not allowed");
   return new Response(CALENDAR_QUICK_ADD_HTML, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex", "Referrer-Policy": "no-referrer", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'" } });
@@ -3462,6 +3608,7 @@ __name2(calendarQuickAddPage, "calendarQuickAddPage");
 __name22(calendarQuickAddPage, "calendarQuickAddPage");
 __name222(calendarQuickAddPage, "calendarQuickAddPage");
 __name2222(calendarQuickAddPage, "calendarQuickAddPage");
+__name22222(calendarQuickAddPage, "calendarQuickAddPage");
 var CALENDAR_QUICK_ADD_HTML = `<!doctype html><html lang="en-AU"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Add appointments to Google | WellNest</title><style>*{box-sizing:border-box}body{margin:0;background:#eff5ef;color:#153a2e;font:16px/1.6 system-ui,sans-serif}main{max-width:850px;margin:5vh auto;padding:32px;background:white;border-radius:24px}h1{font-size:34px;line-height:1.2}h2{font-size:19px;margin:0}button,.button{background:#1f5c4a;color:white;border:0;border-radius:10px;padding:12px 16px;font:600 16px system-ui;cursor:pointer}button:disabled{opacity:.5;cursor:default}a{color:#1f5c4a}article{display:flex;justify-content:space-between;align-items:center;gap:16px;border-top:1px solid #d5e0d7;padding:22px 0}.meta,small{color:#567064}#status{white-space:pre-line}.muted{background:#edf3ed;color:#1f5c4a}header{font-weight:750;color:#1f5c4a}#tools{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}@media(max-width:600px){main{margin:12px;padding:24px}article{align-items:start;flex-direction:column}}</style>
 <main><header>wellnest</header><h1>Add appointments to Google</h1><p>Your appointments are filled in automatically. Open the next one, then click <strong>Save</strong> in Google Calendar.</p><p class="meta">This sends the title, date, time and location when you click a button. Private appointment notes stay in WellNest. Timed appointments use a one-hour duration; you can adjust it in Google.</p><div id="tools"><button id="next" disabled>Add next appointment to Google</button><button id="refresh" class="muted">Refresh appointments</button></div><p id="status" role="status" aria-live="polite">Loading your appointments\u2026</p><div id="list"></div><small>\u201COpened in Google\u201D means the event form was opened, not that it was saved. Google still requires Save. Later changes and deletions do not sync automatically. Reopening an event can create a duplicate; edit an existing Google event instead when appropriate.</small><p><a href="/appointments">Back to appointments</a> \xB7 <a href="/login">Sign in to WellNest</a></p></main>
 <script>
@@ -3516,6 +3663,7 @@ __name2(handleAccountAnalytics, "handleAccountAnalytics");
 __name22(handleAccountAnalytics, "handleAccountAnalytics");
 __name222(handleAccountAnalytics, "handleAccountAnalytics");
 __name2222(handleAccountAnalytics, "handleAccountAnalytics");
+__name22222(handleAccountAnalytics, "handleAccountAnalytics");
 var ACCOUNT_ANALYTICS_HTML = `<style>
 #wn-accounts{margin:20px 0;color:var(--ink);font-size:15px}#wn-accounts summary{font:700 24px var(--display);color:var(--ink);padding:6px 0}#wn-accounts summary:focus-visible{outline-color:var(--mark)}.wn-account-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.wn-account-number{display:block;font:800 38px var(--display);letter-spacing:-.05em}.wn-account-label{font-size:13px;color:var(--muted)}.wn-account-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:14px 0}.wn-account-toolbar button{font:600 13px inherit;border:1px solid var(--line);border-radius:999px;padding:8px 14px;background:white;color:var(--ink);cursor:pointer}.wn-account-toolbar label{display:flex;gap:8px;align-items:center}#wn-account-status{font-size:12px;color:var(--muted)}#wn-celebration{position:fixed;inset:0;z-index:10000;background:rgba(8,30,27,.78);display:grid;place-items:center;padding:24px;overflow:hidden}#wn-celebration[hidden]{display:none}.wn-celebration-card{position:relative;z-index:1;max-width:480px;text-align:center;background:#f8f8f3;color:#16372f;border:1px solid #d8fb96;border-radius:28px;padding:36px;box-shadow:0 20px 80px #0004}.wn-celebration-card h2{font:800 36px/1.1 var(--display);letter-spacing:-.04em;margin:12px 0}.wn-celebration-card button{background:#16372f;color:#d8fb96;border:0;border-radius:99px;padding:10px 22px;font:600 15px system-ui;cursor:pointer}.wn-confetti{position:absolute;top:-10%;width:10px;height:18px;background:var(--piece);left:var(--x);animation:wn-confetti-fall 2.8s var(--delay) ease-in both;pointer-events:none}@keyframes wn-confetti-fall{to{transform:translate3d(var(--drift),115vh,0) rotate(780deg)}}@media(max-width:700px){.wn-account-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(prefers-reduced-motion:reduce){.wn-confetti{display:none}}
 </style>
@@ -3612,6 +3760,7 @@ __name2(discoveryText, "discoveryText");
 __name22(discoveryText, "discoveryText");
 __name222(discoveryText, "discoveryText");
 __name2222(discoveryText, "discoveryText");
+__name22222(discoveryText, "discoveryText");
 async function discoveryResponse(request, response, path) {
   if (request.method !== "GET" || response.status !== 200 || !(["/", "/chronic-illness-tracker", "/sitemap.xml"].includes(path) || /^\/assets\/index-calendar-[^/]+\.js$/.test(path))) return response;
   const text = await response.text();
@@ -3630,6 +3779,7 @@ __name2(discoveryResponse, "discoveryResponse");
 __name22(discoveryResponse, "discoveryResponse");
 __name222(discoveryResponse, "discoveryResponse");
 __name2222(discoveryResponse, "discoveryResponse");
+__name22222(discoveryResponse, "discoveryResponse");
 var WN_SEARCH_UPDATES = [["A symptom tracker app for the whole picture of chronic illness", "A symptom tracker app for chronic pain, asthma and epilepsy"], ["When symptoms vary from day to day, it is hard to remember what happened between appointments. WellNest brings dated symptom notes, condition-specific logs, medications, appointments and doctor-ready PDF reports into one place \u2014 without asking you to reconstruct weeks of changes from memory.", "WellNest is a symptom tracker app for people living with chronic pain, CRPS, asthma or epilepsy. Keep a dated symptom diary alongside your medications and appointments, then export PDF records for your care team. Use the web app on a computer or explore WellNest on iPhone. Try a single-entry report preview without signing up."], ["Designed for real-life tracking", "Is WellNest the right symptom tracker for you?"], ["Choose a manageable routine: a quick entry after a significant event or a short check-in at the end of the day. Consistent, honest notes are more useful than filling in details you cannot remember. Track only information you are comfortable storing and review the privacy policy before using a health app.", "Choose WellNest if you want dedicated pain, asthma or seizure records together with medication details, appointments and PDF summaries. The free preview lets you test one entry and its report before creating an account. WellNest records information you enter; it does not detect symptoms or diagnose their cause. Review the screenshots, privacy policy and current plans before choosing."], ["Free Pain, Asthma & Seizure Report Preview | WellNest", "Free Pain Diary & PDF Report Preview | WellNest"], ["Free Pain, Asthma &amp; Seizure Report Preview | WellNest", "Free Pain Diary &amp; PDF Report Preview | WellNest"], ["See how WellNest turns the details you choose to record into a helpful appointment summary. Try one entry, then download your own PDF \u2014 free, with no account needed.", "Try a free pain diary entry and turn it into a PDF appointment summary. Record the details you want to discuss with your care team, then download your report without an account. You can also preview an asthma or seizure record. This preview holds one entry; use the WellNest app for an ongoing health diary."], ["Try a free WellNest report preview for pain, asthma or seizures. Start with blank fields, create one entry dated today and download your own PDF without signup.", "Try a free pain diary entry and download a PDF appointment summary. Preview pain, asthma or seizure records in WellNest without signup or payment."]];
 function searchContentText(text, path) {
   const app = /^\/assets\/index-calendar-[^/]+\.js$/.test(path);
@@ -3647,6 +3797,7 @@ __name2(searchContentText, "searchContentText");
 __name22(searchContentText, "searchContentText");
 __name222(searchContentText, "searchContentText");
 __name2222(searchContentText, "searchContentText");
+__name22222(searchContentText, "searchContentText");
 async function searchContentResponse(request, response, path) {
   if (request.method !== "GET" || response.status !== 200 || !(["/symptom-tracker-app", "/chronic-pain-diary", "/sitemap.xml"].includes(path) || /^\/assets\/index-calendar-[^/]+\.js$/.test(path))) return response;
   const before = await response.text(), after = searchContentText(before, path), out = new Response(after, response);
@@ -3663,6 +3814,7 @@ __name2(searchContentResponse, "searchContentResponse");
 __name22(searchContentResponse, "searchContentResponse");
 __name222(searchContentResponse, "searchContentResponse");
 __name2222(searchContentResponse, "searchContentResponse");
+__name22222(searchContentResponse, "searchContentResponse");
 var SETTINGS_EDITS = [['import {createCalendarIntegration} from "./google-calendar-20261107-wn2.js";', ""], ["var {CalendarSettings:WnCalendarSettings,CalendarSync:WnCalendarSync}=createCalendarIntegration(K);", ""], ["(0,$.jsx)(WnCalendarSettings,{userId:e?.id}),", ""], ["(0,$.jsx)(WnCalendarSync,{userId:s?.id,ready:u,getTracker:()=>wnTrackerSync.current,refresh:w}),", ""], ["Manage your profile, sync preferences, and customize home screen cards.", "Manage your backups, appearance and dashboard shortcuts."], ["Export JSON Backup", "Download backup"], ["01 / ON THIS DEVICE", "DEVICE STORAGE"], ["02 / YOUR CLOUD ACCOUNT", "CLOUD BACKUP"], ["Keep it close. ", "On this device. "], ["Store locally.", ""], ["Take it with you. ", "Your WellNest account. "], ["Access remotely.", ""], ["By default, your health logs are saved directly on this browser and device. You can export a full JSON backup whenever you choose.", "Your health records are stored in this browser. Download a backup to keep a separate copy."], ["Visible Dashboard Spaces", "Dashboard cards"], ["Toggle which condition and care spaces appear on your Dashboard Beta overview.", "Choose the cards shown on your dashboard."], ["Choose which shortcuts appear in the top bar. Settings stays available so you can restore hidden items. These choices are saved on this device and are separate from your overview cards.", "Choose your top-bar shortcuts. Settings is always available. These choices are saved on this device."]];
 function streamlinedSettingsSource(source) {
   for (const [before, after] of SETTINGS_EDITS) source = source.split(before).join(after);
@@ -3672,6 +3824,7 @@ __name(streamlinedSettingsSource, "streamlinedSettingsSource");
 __name2(streamlinedSettingsSource, "streamlinedSettingsSource");
 __name22(streamlinedSettingsSource, "streamlinedSettingsSource");
 __name222(streamlinedSettingsSource, "streamlinedSettingsSource");
+__name2222(streamlinedSettingsSource, "streamlinedSettingsSource");
 async function streamlinedSettingsResponse(request, response, path) {
   if (request.method !== "GET" || response.status !== 200) return response;
   if (/^\/assets\/dashboardbeta-calendar-20261107-wn2\.js$/.test(path)) {
@@ -3695,6 +3848,7 @@ __name(streamlinedSettingsResponse, "streamlinedSettingsResponse");
 __name2(streamlinedSettingsResponse, "streamlinedSettingsResponse");
 __name22(streamlinedSettingsResponse, "streamlinedSettingsResponse");
 __name222(streamlinedSettingsResponse, "streamlinedSettingsResponse");
+__name2222(streamlinedSettingsResponse, "streamlinedSettingsResponse");
 var WELLNEST_PRODUCT_FACTS_HTML = `<!doctype html>
 <html lang="en-AU">
   <head>
@@ -4028,6 +4182,7 @@ function wellnestProductFacts(request, url) {
 __name(wellnestProductFacts, "wellnestProductFacts");
 __name2(wellnestProductFacts, "wellnestProductFacts");
 __name22(wellnestProductFacts, "wellnestProductFacts");
+__name222(wellnestProductFacts, "wellnestProductFacts");
 function routineSyncSource(source) {
   if (source.includes("function WnRoutineSyncButton(")) return source;
   for (const [before, after] of [["function We({data:e,onSelectSection:t,onOpenModal:n,onToggleMedSlot:r})", "function We({data:e,onSelectSection:t,onOpenModal:n,onToggleMedSlot:r,onSyncRoutine:wnSyncRoutine})"], ["` DAILY CARE ROUTINE`]})}),(0,$.jsxs)(`div`,{className:`db-routine-panel`", "` DAILY CARE ROUTINE`]})}),(0,$.jsx)(WnRoutineSyncButton,{onSync:wnSyncRoutine}),(0,$.jsxs)(`div`,{className:`db-routine-panel`"], ["jsx)(We,{data:a,onSelectSection:i,onOpenModal:e=>p({kind:e,initialData:null}),onToggleMedSlot:re})", "jsx)(We,{data:a,onSelectSection:i,onOpenModal:e=>p({kind:e,initialData:null}),onToggleMedSlot:re,onSyncRoutine:async()=>{const tracker=wnTrackerSync.current;if(!tracker)throw Error(`Sign in and wait for your account to load, then try again.`);await tracker.sync();w();}})"]]) source = source.split(before).join(after);
@@ -4035,6 +4190,7 @@ function routineSyncSource(source) {
 }
 __name(routineSyncSource, "routineSyncSource");
 __name2(routineSyncSource, "routineSyncSource");
+__name22(routineSyncSource, "routineSyncSource");
 async function routineSyncResponse(request, response, path) {
   if (request.method !== "GET" || response.status !== 200) return response;
   const dashboard = path === "/assets/dashboardbeta-calendar-20261107-wn2.js", entry = path === "/assets/index-calendar-20261107-wn2.js";
@@ -4048,23 +4204,94 @@ async function routineSyncResponse(request, response, path) {
 }
 __name(routineSyncResponse, "routineSyncResponse");
 __name2(routineSyncResponse, "routineSyncResponse");
+__name22(routineSyncResponse, "routineSyncResponse");
+function accountSyncSource(source) {
+  if (source.includes("function WnAccountSyncButton(")) return source;
+  for (const [before, after] of [["sync:()=>(i=i.catch(()=>{}).then(s),i)}}", "sync:()=>(i=i.catch(()=>{}).then(s),i),syncAll:task=>(i=i.catch(()=>{}).then(s).then(task),i)}}"], ["onExportBackup:p,onBack:m}){return", "onExportBackup:p,onBack:m,onSyncAll:wnSyncAll}){return"], ["children:l?`Disable cloud backup`:`Enable cloud backup`})]})]})]})", "children:l?`Disable cloud backup`:`Enable cloud backup`})]}),(0,$.jsx)(WnAccountSyncButton,{onSync:wnSyncAll,enabled:l&&!!e?.id,email:e?.email})]})]})"], ["onToggleCloudBackup:B,onExportBackup:V,onBack:()=>i(`dashboard`)})", "onToggleCloudBackup:B,onExportBackup:V,onBack:()=>i(`dashboard`),onSyncAll:async()=>{const stamp=await wnSyncAllAccountData({client:D,storage:localStorage,tracker:wnTrackerSync.current,user:s,keys:q,merge:Ne});w();return stamp;}})"]]) source = source.split(before).join(after);
+  return source + "\nasync function wnSyncAllAccountData({client,storage,tracker,user,keys,merge}) {\n if(!user?.id)throw Error('Sign in to your WellNest account first.');\n if(!tracker?.syncAll)throw Error('Your account is still loading. Please try again shortly.');\n if(storage.getItem('wn-cloud-sync-enabled')!=='1')throw Error('Enable cloud backup before syncing.');\n return tracker.syncAll(async()=>{\n  const rows=await client.entities.CloudDataBackup.filter({backup_key:'wellnest-local-data',created_by_id:user.id},'-updated_date',100);\n  if(!Array.isArray(rows))throw Error('Your account backup could not be read.');\n  const row=rows.find(r=>r.created_by_id===user.id);\n  if(!row?.id)throw Error('Your account backup is not ready. Please retry.');\n  const data={...row.data,local_data:{...row.data?.local_data}},initial={},writes={};\n  for(const name of ['settings','emergency','asthmaPlan','emergCheck','hospBag','refReminders','refTips','achievements']){\n   if(!keys[name])continue;const raw=storage.getItem(keys[name]);initial[name]=raw;\n   let local=null;if(raw!==null){try{local=JSON.parse(raw);}catch{throw Error('A local record could not be read. Download a backup and contact support.');}}\n   const remote=data.local_data[name];const combined=local===null?remote:remote===undefined?local:merge(remote,local);\n   if(combined!==undefined){data.local_data[name]=combined;writes[name]=JSON.stringify(combined);}\n  }\n  const stamp=new Date().toISOString();data.saved_at=stamp;\n  await client.entities.CloudDataBackup.update(row.id,{backup_key:'wellnest-local-data',enabled:true,last_synced_at:stamp,data});\n  const verified=await client.entities.CloudDataBackup.filter({backup_key:'wellnest-local-data',created_by_id:user.id},'-updated_date',100);\n  if(!Array.isArray(verified)||!verified.some(r=>r.id===row.id&&r.created_by_id===user.id&&r.data?.saved_at===stamp))throw Error('Backup sent, but confirmation is pending. Please retry.');\n  for(const [name,value] of Object.entries(writes))if(storage.getItem(keys[name])===initial[name])storage.setItem(keys[name],value);\n  storage.setItem('wn-cloud-last-synced-at',stamp);return stamp;\n });\n}\nfunction WnAccountSyncButton({onSync,enabled,email}) {\n const [busy,setBusy]=K.useState(false),[message,setMessage]=K.useState(''),[failed,setFailed]=K.useState(false),lock=K.useRef(false);\n async function run(){if(lock.current||!enabled)return;lock.current=true;setBusy(true);setFailed(false);setMessage('');\n try{const stamp=await onSync();setMessage('Account backup synced at '+new Date(stamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'.');}\n catch(error){setFailed(true);setMessage(error?.message||'Could not sync. Please retry.');}\n finally{lock.current=false;setBusy(false);}\n }\n return (0,$.jsxs)('div',{style:{display:'grid',gap:10,marginTop:16},children:[\n (0,$.jsx)('p',{style:{fontSize:13,margin:0,lineHeight:1.5},children:'Sync health records and backup settings'+(email?' for '+email:'')+'. This uses your WellNest account, including Google sign-in. Files and billing use their existing account storage.'}),\n (0,$.jsx)('button',{type:'button',className:'db-btn-lime',onClick:run,disabled:busy||!enabled,'aria-busy':busy,style:{justifySelf:'start',minHeight:36,padding:'7px 14px',fontSize:13},children:busy?'Syncing account\u2026':'\u21BB Sync account data'}),\n !enabled&&(0,$.jsx)('span',{style:{fontSize:12},children:'Sign in and enable cloud backup to sync.'}),\n message&&(0,$.jsx)('span',{role:failed?'alert':'status',style:{fontSize:12,lineHeight:1.5},children:message})\n ]});\n}\n";
+}
+__name(accountSyncSource, "accountSyncSource");
+async function accountSyncResponse(request, response, path) {
+  if (request.method !== "GET" || response.status !== 200) return response;
+  const dashboard = path === "/assets/dashboardbeta-calendar-20261107-wn2.js", entry = path === "/assets/index-calendar-20261107-wn2.js";
+  if (!dashboard && !entry) return response;
+  const text = await response.text(), next = dashboard ? accountSyncSource(text) : text.split("&routine=20261112-header").join("&routine=20261112-header&accountsync=20261112");
+  const out = new Response(next, response);
+  out.headers.delete("ETag");
+  out.headers.delete("Content-Length");
+  out.headers.set("Cache-Control", "no-cache");
+  return out;
+}
+__name(accountSyncResponse, "accountSyncResponse");
 export {
   cleanAddress,
   worker_default as default
 };
 //# sourceMappingURL=worker.js.map
 
-
-function accountSyncSource(source){
- if(source.includes('function WnAccountSyncButton('))return source;
- for(const [before,after] of [["sync:()=>(i=i.catch(()=>{}).then(s),i)}}","sync:()=>(i=i.catch(()=>{}).then(s),i),syncAll:task=>(i=i.catch(()=>{}).then(s).then(task),i)}}"],["onExportBackup:p,onBack:m}){return","onExportBackup:p,onBack:m,onSyncAll:wnSyncAll}){return"],["children:l?`Disable cloud backup`:`Enable cloud backup`})]})]})]})","children:l?`Disable cloud backup`:`Enable cloud backup`})]}),(0,$.jsx)(WnAccountSyncButton,{onSync:wnSyncAll,enabled:l&&!!e?.id,email:e?.email})]})]})"],["onToggleCloudBackup:B,onExportBackup:V,onBack:()=>i(`dashboard`)})","onToggleCloudBackup:B,onExportBackup:V,onBack:()=>i(`dashboard`),onSyncAll:async()=>{const stamp=await wnSyncAllAccountData({client:D,storage:localStorage,tracker:wnTrackerSync.current,user:s,keys:q,merge:Ne});w();return stamp;}})"]])source=source.split(before).join(after);
- return source+'\n'+"async function wnSyncAllAccountData({client,storage,tracker,user,keys,merge}) {\n if(!user?.id)throw Error('Sign in to your WellNest account first.');\n if(!tracker?.syncAll)throw Error('Your account is still loading. Please try again shortly.');\n if(storage.getItem('wn-cloud-sync-enabled')!=='1')throw Error('Enable cloud backup before syncing.');\n return tracker.syncAll(async()=>{\n  const rows=await client.entities.CloudDataBackup.filter({backup_key:'wellnest-local-data',created_by_id:user.id},'-updated_date',100);\n  if(!Array.isArray(rows))throw Error('Your account backup could not be read.');\n  const row=rows.find(r=>r.created_by_id===user.id);\n  if(!row?.id)throw Error('Your account backup is not ready. Please retry.');\n  const data={...row.data,local_data:{...row.data?.local_data}},initial={},writes={};\n  for(const name of ['settings','emergency','asthmaPlan','emergCheck','hospBag','refReminders','refTips','achievements']){\n   if(!keys[name])continue;const raw=storage.getItem(keys[name]);initial[name]=raw;\n   let local=null;if(raw!==null){try{local=JSON.parse(raw);}catch{throw Error('A local record could not be read. Download a backup and contact support.');}}\n   const remote=data.local_data[name];const combined=local===null?remote:remote===undefined?local:merge(remote,local);\n   if(combined!==undefined){data.local_data[name]=combined;writes[name]=JSON.stringify(combined);}\n  }\n  const stamp=new Date().toISOString();data.saved_at=stamp;\n  await client.entities.CloudDataBackup.update(row.id,{backup_key:'wellnest-local-data',enabled:true,last_synced_at:stamp,data});\n  const verified=await client.entities.CloudDataBackup.filter({backup_key:'wellnest-local-data',created_by_id:user.id},'-updated_date',100);\n  if(!Array.isArray(verified)||!verified.some(r=>r.id===row.id&&r.created_by_id===user.id&&r.data?.saved_at===stamp))throw Error('Backup sent, but confirmation is pending. Please retry.');\n  for(const [name,value] of Object.entries(writes))if(storage.getItem(keys[name])===initial[name])storage.setItem(keys[name],value);\n  storage.setItem('wn-cloud-last-synced-at',stamp);return stamp;\n });\n}\nfunction WnAccountSyncButton({onSync,enabled,email}) {\n const [busy,setBusy]=K.useState(false),[message,setMessage]=K.useState(''),[failed,setFailed]=K.useState(false),lock=K.useRef(false);\n async function run(){if(lock.current||!enabled)return;lock.current=true;setBusy(true);setFailed(false);setMessage('');\n try{const stamp=await onSync();setMessage('Account backup synced at '+new Date(stamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'.');}\n catch(error){setFailed(true);setMessage(error?.message||'Could not sync. Please retry.');}\n finally{lock.current=false;setBusy(false);}\n }\n return (0,$.jsxs)('div',{style:{display:'grid',gap:10,marginTop:16},children:[\n (0,$.jsx)('p',{style:{fontSize:13,margin:0,lineHeight:1.5},children:'Sync health records and backup settings'+(email?' for '+email:'')+'. This uses your WellNest account, including Google sign-in. Files and billing use their existing account storage.'}),\n (0,$.jsx)('button',{type:'button',className:'db-btn-lime',onClick:run,disabled:busy||!enabled,'aria-busy':busy,style:{justifySelf:'start',minHeight:36,padding:'7px 14px',fontSize:13},children:busy?'Syncing account…':'↻ Sync account data'}),\n !enabled&&(0,$.jsx)('span',{style:{fontSize:12},children:'Sign in and enable cloud backup to sync.'}),\n message&&(0,$.jsx)('span',{role:failed?'alert':'status',style:{fontSize:12,lineHeight:1.5},children:message})\n ]});\n}\n";
+function mergeDoseState(current, incoming, operations = []) {
+  const deleted = new Set(Array.isArray(current?.trackerDeleted?.medlog) ? current.trackerDeleted.medlog : []);
+  const days = Object.create(null);
+  for (const log of [current?.medlog, incoming?.medlog]) {
+    if (!log || typeof log !== 'object' || Array.isArray(log)) continue;
+    for (const [date, tokens] of Object.entries(log)) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Array.isArray(tokens)) continue;
+      const set = days[date] ||= new Set();
+      for (const token of tokens) if (typeof token === 'string' && token.length <= 500 && !deleted.has(JSON.stringify([date, token]))) set.add(token);
+    }
+  }
+  for (const op of operations) {
+    if (!op || !/^\d{4}-\d{2}-\d{2}$/.test(op.date) || typeof op.token !== 'string' || op.token.length > 500 || typeof op.taken !== 'boolean') throw Object.assign(Error('Invalid dose change'), {status:400});
+    const id = JSON.stringify([op.date, op.token]), set = days[op.date] ||= new Set();
+    if (op.taken) { deleted.delete(id); set.add(op.token); }
+    else { deleted.add(id); set.delete(op.token); }
+  }
+  return {medlog:Object.fromEntries(Object.entries(days).sort().map(([date,set])=>[date,[...set].sort()])),deleted:[...deleted].sort()};
 }
-async function accountSyncResponse(request,response,path){
+async function handleMedicationBackup(request, env, user, id) {
+  const input = await body(request);
+  for (const key of META) delete input[key];
+  if (input.backup_key && input.backup_key !== 'wellnest-local-data') return null;
+  const operations = input._dose_ops || [];
+  delete input._dose_ops;
+  if (!Array.isArray(operations) || operations.length > 2000) return fail(400, 'Invalid dose changes');
+  if (!input.data || typeof input.data !== 'object' || Array.isArray(input.data) || !input.data.local_data || typeof input.data.local_data !== 'object' || Array.isArray(input.data.local_data)) return null;
+  for (let attempt=0;attempt<6;attempt++) {
+    const row = id
+      ? await env.DB.prepare("SELECT * FROM records WHERE entity = 'CloudDataBackup' AND id = ? AND owner_id = ?").bind(id,user.id).first()
+      : await env.DB.prepare("SELECT * FROM records WHERE entity = 'CloudDataBackup' AND owner_id = ? AND json_extract(data, '$.backup_key') = 'wellnest-local-data' ORDER BY updated_date DESC, id LIMIT 1").bind(user.id).first();
+    if (id && !row) return fail(404,'Record not found');
+    const existing = row ? JSON.parse(row.data) : {};
+    if (row && existing.backup_key !== 'wellnest-local-data') return null;
+    const state = mergeDoseState(existing.data?.local_data || {},input.data.local_data,operations);
+    const patch = {...input,data:{...input.data,local_data:{...input.data.local_data,medlog:state.medlog,trackerDeleted:{...existing.data?.local_data?.trackerDeleted,...input.data.local_data.trackerDeleted,medlog:state.deleted}}}};
+    const time = now();
+    let saved;
+    if (row) {
+      saved = await env.DB.prepare("UPDATE records SET data = json_patch(data, ?), updated_date = ? WHERE entity = 'CloudDataBackup' AND id = ? AND owner_id = ? AND data = ? RETURNING *")
+        .bind(JSON.stringify(patch),time,row.id,user.id,row.data).first();
+    } else {
+      saved = await env.DB.prepare("INSERT INTO records (entity,id,owner_id,created_date,updated_date,data) SELECT 'CloudDataBackup',?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM records WHERE entity = 'CloudDataBackup' AND owner_id = ? AND json_extract(data, '$.backup_key') = 'wellnest-local-data') RETURNING *")
+        .bind(uuid(),user.id,time,time,JSON.stringify(patch),user.id).first();
+    }
+    if (saved) return json(serialize(saved,user),row?200:201);
+  }
+  return fail(409,'Your account changed during sync. Please retry.');
+}
+
+
+function doseSyncSource(source){
+ if(source.includes("n._dose_ops=i.filter"))return source;
+ for(const [before,after] of [["s?.id?await e.entities.CloudDataBackup.update(s.id,n):await e.entities.CloudDataBackup.create(n)","n._dose_ops=i.filter(op=>op.key===`medlog`).map(op=>({date:op.entry.date,token:op.entry.token,taken:!op.deleted}));const saved=s?.id?await e.entities.CloudDataBackup.update(s.id,n):await e.entities.CloudDataBackup.create(n);if(saved?.data?.local_data?.medlog){d.medlog=saved.data.local_data.medlog;d.trackerDeleted={...d.trackerDeleted,medlog:saved.data.local_data.trackerDeleted?.medlog||[]}}"],["return window.addEventListener(`wn-tracker-change`,i),window.addEventListener(`online`,r),window.addEventListener(`focus`,r),r(),()=>{n=!1,wnTrackerSync.current===e","const dosePoll=window.setInterval(()=>{if(document.visibilityState===`visible`)r()},30000);return window.addEventListener(`wn-tracker-change`,i),window.addEventListener(`online`,r),window.addEventListener(`focus`,r),r(),()=>{window.clearInterval(dosePoll);n=!1,wnTrackerSync.current===e"]])source=source.split(before).join(after);
+ return source;
+}
+async function doseSyncResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
  const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';
  if(!dashboard&&!entry)return response;
- const text=await response.text(),next=dashboard?accountSyncSource(text):text.split('&routine=20261112-header').join('&routine=20261112-header&accountsync=20261112');
+ const text=await response.text(),next=dashboard?doseSyncSource(text):text.split('&accountsync=20261112').join('&accountsync=20261112&dosemerge=20261112');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }
+
+export {mergeDoseState,handleMedicationBackup};
 
