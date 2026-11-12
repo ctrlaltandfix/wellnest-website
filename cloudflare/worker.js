@@ -4428,7 +4428,9 @@ async function handleMedicationBackup(request, env, user, id) {
     const existing = row2 ? JSON.parse(row2.data) : {};
     if (row2 && existing.backup_key !== "wellnest-local-data") return null;
     let merged;
-    try { merged = mergeAccountRecords(existing.data?.local_data || {}, input.data.local_data, trackerOps, protocol, Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision); }
+    try { const revisionMatches=Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision;
+      const appointments=prepareAppointmentSync(existing.data?.local_data||{},input.data.local_data,trackerOps,protocol,revisionMatches);
+      merged = mergeAccountRecords(existing.data?.local_data || {}, appointments.incoming, appointments.operations, protocol, revisionMatches); }
     catch(error) { if(error.status === 409 || error.status === 400) return fail(error.status,error.message); throw error; }
     let state;try { state = mergeRoutineDoseState(existing.data?.local_data || {}, input.data.local_data, operations, protocol, Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision); } catch(error) { if(error.status)return fail(error.status,error.message);throw error; }
     const patch = { ...input, data: { ...input.data, sync_revision: (existing.data?.sync_revision || 0) + 1, local_data: projectRoutineDoseFields({ ...merged, medlog: state.medlog, trackerDeleted: { ...merged.trackerDeleted, medlog: state.deleted } }) } };
@@ -4633,6 +4635,54 @@ function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatc
 function projectRoutineDoseFields(local){
  if(!local||typeof local!=='object')return local;
  const medlog=routineDoseLog(local),deleted=local.trackerDeleted||{};
- return {...local,medlog,'wn-medlog':medlog,trackerDeleted:deleted,...(Object.hasOwn(local,'tracker_deleted')?{tracker_deleted:deleted}:{})};
+ return projectAppointmentFields({...local,medlog,'wn-medlog':medlog,trackerDeleted:deleted,...(Object.hasOwn(local,'tracker_deleted')?{tracker_deleted:deleted}:{})});
 }
 export {mergeRoutineDoseState,projectRoutineDoseFields};
+
+const APPOINTMENT_ALIASES=['appts','wn-appts','appointments','appointment'];
+function appointmentList(local){for(const key of APPOINTMENT_ALIASES)if(Array.isArray(local?.[key]))return local[key];return [];}
+function appointmentSame(a,b){const sorted=x=>[...x].sort((l,r)=>String(l.id).localeCompare(String(r.id)));return syncSame(sorted(a),sorted(b));}
+function wnAppointmentFields(record,base){
+ const result={...record};
+ for(const [short,long] of [['loc','location'],['spec','specialist']]){
+  const a=record[short],b=record[long];let value=a??b??'';
+  if(a!==undefined&&b!==undefined&&!syncSame(a,b)){
+   const before=base?.[short]??base?.[long]??'';
+   if(syncSame(a,before))value=b;
+   else if(!syncSame(b,before))throw Object.assign(Error('Conflicting appointment field aliases. Refresh before saving.'),{status:409});
+  }
+  result[short]=value;result[long]=value;
+ }
+ return result;
+}
+function prepareAppointmentSync(current,incoming,operations,protocol,revisionMatches){
+ if(!Array.isArray(operations)||operations.length>2000)throw Object.assign(Error('Invalid appointment operations'),{status:400});
+ const before=appointmentList(current),byId=new Map(before.map(r=>[String(r.id),r]));
+ const normalize=list=>list.map(r=>wnAppointmentFields(r,byId.get(String(r.id))));
+ const baseline=normalize(before);let selected=Array.isArray(incoming.appts)?normalize(incoming.appts):baseline;
+ if(protocol!==2&&protocol!==3){
+  const changed=[];
+  for(const key of APPOINTMENT_ALIASES)if(Array.isArray(incoming[key])){
+   const list=normalize(incoming[key]);if(!appointmentSame(list,baseline)&&!changed.some(x=>appointmentSame(x,list)))changed.push(list);
+  }
+  if(changed.length>1)throw Object.assign(Error('Conflicting appointment lists. Refresh account data before syncing.'),{status:409});
+  if(changed.length)selected=changed[0];
+ }
+ const ops=operations.map(op=>op.key==='appts'?{...op,entry:wnAppointmentFields(op.entry,op.base),base:op.base?wnAppointmentFields(op.base,op.base):op.base}:op);
+ if(protocol!==2&&protocol!==3&&!ops.some(op=>op.key==='appts')){
+  const next=new Map(selected.map(r=>[String(r.id),r]));
+  for(const previous of baseline){const entry=next.get(String(previous.id));if(!entry||!syncSame(entry,previous)){
+   if(!revisionMatches)throw Object.assign(Error('Appointment changes require the current account revision. Refresh before saving.'),{status:409});
+   ops.push({key:'appts',entry:entry||previous,base:byId.get(String(previous.id)),deleted:!entry});
+  }}
+ }
+ return {incoming:{...incoming,appts:selected},operations:ops};
+}
+function projectAppointmentFields(local){
+ if(!local||!APPOINTMENT_ALIASES.some(k=>Array.isArray(local[k])))return local;
+ const records=appointmentList(local).map(r=>wnAppointmentFields(r,r));
+ const deleted=local.trackerDeleted||{},ids=deleted.appts||[];
+ const tombstones={...deleted,...Object.fromEntries(APPOINTMENT_ALIASES.map(k=>[k,ids]))};
+ return {...local,...Object.fromEntries(APPOINTMENT_ALIASES.map(k=>[k,records])),trackerDeleted:tombstones,...(Object.hasOwn(local,'tracker_deleted')?{tracker_deleted:tombstones}:{})};
+}
+export {prepareAppointmentSync,projectAppointmentFields};
