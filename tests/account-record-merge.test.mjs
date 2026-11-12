@@ -35,8 +35,8 @@ for(const key of ['emergency','settings','asthmaPlan','emergCheck','hospBag'])te
  const result=mergeAccountRecords({[key]:{one:'old',two:'phone'}},{[key]:entry.value},[{key,entry,base,deleted:false}],2);
  assert.deepEqual({...result[key]},{one:'desktop',two:'phone'});
 });
-test('legacy snapshots only replace existing fields when timestamp is newer',()=>{
+test('legacy snapshots require matching server revision; device timestamps are not authority',()=>{
  const current={appts:[{id:'a',time:'10:00'}]},old={appts:[{id:'a',time:'09:00'}]};
- assert.equal(mergeAccountRecords(current,old,[],0,false).appts[0].time,'10:00');
+ assert.throws(()=>mergeAccountRecords(current,old,[],0,false),e=>e.status===409);
  assert.equal(mergeAccountRecords(current,old,[],0,true).appts[0].time,'09:00');
 });
