@@ -4406,7 +4406,7 @@ function mergeDoseState(current, incoming, operations = []) {
 }
 __name(mergeDoseState, "mergeDoseState");
 async function handleMedicationBackup(request, env, user, id) {
-  const input = await body(request);
+  const input = await readAccountBackupBody(request);
   for (const key of META) delete input[key];
   if (input.backup_key && input.backup_key !== "wellnest-local-data") {
     if(id){const row=await env.DB.prepare("SELECT * FROM records WHERE entity = 'CloudDataBackup' AND id = ? AND owner_id = ?").bind(id,user.id).first();if(row && JSON.parse(row.data).backup_key === 'wellnest-local-data')return fail(400,'Account backup key cannot be changed.');}
@@ -4576,3 +4576,23 @@ worker_default.fetch=async function(request,env,ctx){
   return wellnestIconHtml(await wellnestFetchBeforeIcons.call(this,request,env,ctx));
 };
 export {wellnestIconResponse,WELLNEST_ICON_LINKS};
+
+// Native account backups can include inline eScript images. Keep the upload
+// bounded below D1's 2 MB value limit; other entity limits stay unchanged.
+async function readAccountBackupBody(request) {
+  const limit = 1800000;
+  const tooLarge = () => Object.assign(new Error('Account backup exceeds 1.8 MB. Reduce embedded images before syncing.'), {status:413});
+  const declared = Number(request.headers.get('Content-Length'));
+  if(Number.isFinite(declared) && declared > limit)throw tooLarge();
+  if(!request.body)return {};
+  const reader=request.body.getReader(),chunks=[];let total=0;
+  try {
+    while(true){const {value,done}=await reader.read();if(done)break;total+=value.byteLength;if(total>limit){await reader.cancel();throw tooLarge();}chunks.push(value);}
+  } finally {reader.releaseLock();}
+  const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  if(!total)return {};
+  let data;try{data=JSON.parse(new TextDecoder().decode(bytes));}catch{throw Object.assign(new Error('Invalid account backup JSON'),{status:400});}
+  if(!data||typeof data!=='object'||Array.isArray(data))throw Object.assign(new Error('Invalid account backup object'),{status:400});
+  return data;
+}
+export {readAccountBackupBody};
