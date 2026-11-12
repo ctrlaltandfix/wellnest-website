@@ -21,11 +21,25 @@ Tombstones prevent resurrection. The existing compare-and-swap save loop re-read
 the current account snapshot when a concurrent write wins.
 
 Legacy clients without operation metadata can contribute new record IDs.
-For existing records, snapshot edits are accepted only when their saved_at (or
-last_synced_at) timestamp is newer than the account snapshot. This compatibility
-fallback depends on client clocks and cannot provide the same conflict guarantees
-as protocol 2. Native clients should adopt explicit operations and baselines;
-the iPhone implementation has not been inspected or changed here.
+For existing records, snapshot edits require the exact server-issued
+`data.sync_revision` returned with the snapshot the client edited. Client clocks
+and saved_at no longer authorize replacement. Each committed backup increments
+this revision under the existing database compare-and-swap. Missing or stale
+revisions on differing legacy records return 409 without writing. Legacy clients
+that do not retain revision metadata need an update; do not retry by blindly
+attaching a fresh revision to an old snapshot.
+
+Desktop storage-change events include the value immediately before the user's
+edit. Only the delta from that value is queued, so a phone-only record absent
+from a stale desktop view is not misinterpreted as a deletion. Dose operations
+include `baseTaken`; older uncheck operations without this baseline are rejected.
+Malformed/partial account backups and backup-key changes cannot fall through to
+the generic replacement handler. Other backup types retain their existing routes.
+
+The native iPhone implementation has not been inspected or changed. Test native
+record edits, deletes and dose toggles against this protocol before claiming
+end-to-end compatibility. Conflicts retain local changes; resolution UI remains
+future work.
 
 The visible web dashboard polls through the shared tracker every 30 seconds;
 manual routine/account sync uses that same queue and applies server-returned

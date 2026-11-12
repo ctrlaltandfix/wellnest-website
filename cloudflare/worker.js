@@ -4392,6 +4392,8 @@ function mergeDoseState(current, incoming, operations = []) {
   for (const op of operations) {
     if (!op || !/^\d{4}-\d{2}-\d{2}$/.test(op.date) || typeof op.token !== "string" || op.token.length > 500 || typeof op.taken !== "boolean") throw Object.assign(Error("Invalid dose change"), { status: 400 });
     const id = JSON.stringify([op.date, op.token]), set = days[op.date] ||= /* @__PURE__ */ new Set();
+    const wasTaken = Array.isArray(current?.medlog?.[op.date]) && current.medlog[op.date].includes(op.token);
+    if (typeof op.baseTaken === 'boolean' ? wasTaken !== op.baseTaken && wasTaken !== op.taken : !op.taken) throw Object.assign(Error('Dose changed on another device. Refresh before changing this dose.'), {status:409});
     if (op.taken) {
       deleted.delete(id);
       set.add(op.token);
@@ -4406,23 +4408,29 @@ __name(mergeDoseState, "mergeDoseState");
 async function handleMedicationBackup(request, env, user, id) {
   const input = await body(request);
   for (const key of META) delete input[key];
-  if (input.backup_key && input.backup_key !== "wellnest-local-data") return null;
+  if (input.backup_key && input.backup_key !== "wellnest-local-data") {
+    if(id){const row=await env.DB.prepare("SELECT * FROM records WHERE entity = 'CloudDataBackup' AND id = ? AND owner_id = ?").bind(id,user.id).first();if(row && JSON.parse(row.data).backup_key === 'wellnest-local-data')return fail(400,'Account backup key cannot be changed.');}
+    return null;
+  }
   const trackerOps = input._tracker_ops || [], protocol = input._sync_protocol;
   delete input._tracker_ops; delete input._sync_protocol;
   const operations = input._dose_ops || [];
   delete input._dose_ops;
   if (!Array.isArray(operations) || operations.length > 2e3) return fail(400, "Invalid dose changes");
-  if (!input.data || typeof input.data !== "object" || Array.isArray(input.data) || !input.data.local_data || typeof input.data.local_data !== "object" || Array.isArray(input.data.local_data)) return null;
+  if (!input.data || typeof input.data !== "object" || Array.isArray(input.data) || !input.data.local_data || typeof input.data.local_data !== "object" || Array.isArray(input.data.local_data)) {
+    if (id) { const row = await env.DB.prepare("SELECT * FROM records WHERE entity = 'CloudDataBackup' AND id = ? AND owner_id = ?").bind(id,user.id).first(); if(row && JSON.parse(row.data).backup_key !== 'wellnest-local-data')return null; }
+    return fail(400, 'Account sync requires a complete local_data object.');
+  }
   for (let attempt = 0; attempt < 6; attempt++) {
     const row2 = id ? await env.DB.prepare("SELECT * FROM records WHERE entity = 'CloudDataBackup' AND id = ? AND owner_id = ?").bind(id, user.id).first() : await env.DB.prepare("SELECT * FROM records WHERE entity = 'CloudDataBackup' AND owner_id = ? AND json_extract(data, '$.backup_key') = 'wellnest-local-data' ORDER BY updated_date DESC, id LIMIT 1").bind(user.id).first();
     if (id && !row2) return fail(404, "Record not found");
     const existing = row2 ? JSON.parse(row2.data) : {};
     if (row2 && existing.backup_key !== "wellnest-local-data") return null;
     let merged;
-    try { merged = mergeAccountRecords(existing.data?.local_data || {}, input.data.local_data, trackerOps, protocol, Date.parse(input.data.saved_at || input.last_synced_at || '') > Date.parse(existing.data?.saved_at || existing.last_synced_at || '')); }
+    try { merged = mergeAccountRecords(existing.data?.local_data || {}, input.data.local_data, trackerOps, protocol, Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision); }
     catch(error) { if(error.status === 409 || error.status === 400) return fail(error.status,error.message); throw error; }
-    const state = mergeDoseState(existing.data?.local_data || {}, merged, operations);
-    const patch = { ...input, data: { ...input.data, local_data: { ...merged, medlog: state.medlog, trackerDeleted: { ...merged.trackerDeleted, medlog: state.deleted } } } };
+    let state;try { state = mergeDoseState(existing.data?.local_data || {}, merged, operations); } catch(error) { if(error.status)return fail(error.status,error.message);throw error; }
+    const patch = { ...input, data: { ...input.data, sync_revision: (existing.data?.sync_revision || 0) + 1, local_data: { ...merged, medlog: state.medlog, trackerDeleted: { ...merged.trackerDeleted, medlog: state.deleted } } } };
     const time = now();
     let saved;
     if (row2) {
@@ -4481,8 +4489,8 @@ function syncMergeFields(base,remote,local){
  }
  throw Object.assign(Error('A record changed on another device. Review the latest record before retrying.'),{status:409});
 }
-function mergeAccountRecords(current,incoming,operations=[],protocol=0,legacyFresh=false){
- const data={...incoming},deleted={...current.trackerDeleted,...incoming.trackerDeleted};
+function mergeAccountRecords(current,incoming,operations=[],protocol=0,revisionMatches=false){
+ const data={...current,...incoming},deleted={...current.trackerDeleted,...incoming.trackerDeleted};
  const recordId=r=>r&&typeof r==='object'?(r.id??r.legacy_id??r.uuid):null;
  if(!Array.isArray(operations)||operations.length>2000)throw Object.assign(Error('Invalid record changes'),{status:400});
  for(const op of operations)if(!op||![...SYNC_COLLECTIONS,...SYNC_SINGLETONS].includes(op.key)||!op.entry||recordId(op.entry)==null||typeof op.deleted!=='boolean')throw Object.assign(Error('Invalid record change'),{status:400});
@@ -4499,7 +4507,7 @@ function mergeAccountRecords(current,incoming,operations=[],protocol=0,legacyFre
    const id=recordId(record);if(id==null){if(!unkeyed.some(x=>syncSame(x,record)))unkeyed.push(record);continue;}
    const uid=String(id);if(tombstones.has(uid))continue;
    if(!records.has(uid))records.set(uid,record);
-   else if(protocol!==2&&legacyFresh)records.set(uid,record);
+   else if(protocol!==2&&protocol!==3&&!syncSame(records.get(uid),record)){if(!revisionMatches)throw Object.assign(Error('This device has an outdated account backup. Refresh before saving changes.'),{status:409});records.set(uid,record);}
   }
   for(const op of operations.filter(op=>op.key===key)){
    const uid=String(recordId(op.entry)),remote=records.get(uid),base=op.base??null;
@@ -4527,9 +4535,11 @@ function accountRecordSource(source){
 async function accountRecordResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
  const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';if(!dashboard&&!entry)return response;
- const text=await response.text(),next=dashboard?accountRecordSource(text):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112');
+ const text=await response.text(),next=dashboard?safeSyncSource(accountRecordSource(text)):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }
 
 export {mergeAccountRecords,syncMergeFields};
 
+
+function safeSyncSource(source){if(source.includes("baseTaken:!!op.base"))return source;for(const [before,after] of [["function Z(e,t){localStorage.setItem(e,JSON.stringify(t)),window.dispatchEvent(new CustomEvent(`wn-tracker-change`,{detail:{key:e}}))}", "function Z(e,t){const previous=localStorage.getItem(e);localStorage.setItem(e,JSON.stringify(t)),window.dispatchEvent(new CustomEvent(`wn-tracker-change`,{detail:{key:e,previous}}))}"], ["function Q(e,t){localStorage.setItem(e,JSON.stringify(t)),window.dispatchEvent(new CustomEvent(`wn-tracker-change`,{detail:{key:e}}))}", "function Q(e,t){const previous=localStorage.getItem(e);localStorage.setItem(e,JSON.stringify(t)),window.dispatchEvent(new CustomEvent(`wn-tracker-change`,{detail:{key:e,previous}}))}"], ["o=e.baseline()[i]||[]", "o=Object.hasOwn(n.detail||{},`previous`)?_e(i,ye(n.detail.previous,i===`medlog`?{}:[])):t[i]||[]"], ["token:op.entry.token,taken:!op.deleted", "token:op.entry.token,taken:!op.deleted,baseTaken:!!op.base"]])source=source.split(before).join(after);return source;}

@@ -11,9 +11,9 @@ test('independent check-offs merge and repeat snapshots do not duplicate',()=>{
  assert.equal(first.medlog[day].length,2);assert.deepEqual(mergeDoseState(first,local([token])).medlog,first.medlog);
 });
 test('explicit uncheck is retained through stale snapshots; explicit recheck works',()=>{
- const removed=mergeDoseState(local([token]),local([token]),[{date:day,token,taken:false}]);
+ const removed=mergeDoseState(local([token]),local([token]),[{date:day,token,taken:false,baseTaken:true}]);
  const stale=mergeDoseState({medlog:removed.medlog,trackerDeleted:{medlog:removed.deleted}},local([token]));assert.deepEqual(stale.medlog[day],[]);
- assert.deepEqual(mergeDoseState({medlog:stale.medlog,trackerDeleted:{medlog:stale.deleted}},local([]),[{date:day,token,taken:true}]).medlog[day],[token]);
+ assert.deepEqual(mergeDoseState({medlog:stale.medlog,trackerDeleted:{medlog:stale.deleted}},local([]),[{date:day,token,taken:true,baseTaken:false}]).medlog[day],[token]);
 });
 function mock({conflict=false,missing=false,never=false}={}){
  let row={entity:'CloudDataBackup',id:'backup',owner_id:'owner',created_date:'old',updated_date:'old',data:JSON.stringify({backup_key:'wellnest-local-data',data:{local_data:local([])}})},updates=0,reads=0;
@@ -51,5 +51,5 @@ test('desktop applies server-confirmed phone check-offs after uploading its chan
   }
  }}};
  const tracker=makeTracker({client,storage,userId:'owner'});tracker.change('medlog',{id:JSON.stringify([day,desktop]),date:day,token:desktop});await tracker.sync();
- assert.deepEqual(JSON.parse(storage.getItem('wn-medlog'))[day],[phone,desktop]);assert.deepEqual(payload._dose_ops,[{date:day,token:desktop,taken:true}]);
+ assert.deepEqual(JSON.parse(storage.getItem('wn-medlog'))[day],[phone,desktop]);assert.deepEqual(payload._dose_ops,[{date:day,token:desktop,taken:true,baseTaken:false}]);
 });
