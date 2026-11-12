@@ -4563,10 +4563,12 @@ function wellnestIconResponse(request) {
 }
 async function wellnestIconHtml(response) {
   if(!response.headers.get('Content-Type')?.includes('text/html')||!response.body)return response;
-  const headers=new Headers(response.headers);headers.delete('ETag');headers.delete('Content-Length');headers.set('Cache-Control','no-cache');
+  const headers=new Headers(response.headers);headers.delete('ETag');headers.delete('Content-Length');if(!/private|no-store/i.test(headers.get('Cache-Control')||''))headers.set('Cache-Control','no-cache');
+  const csp=headers.get('Content-Security-Policy');if(csp){let policy=csp;for(const directive of ['img-src','manifest-src']){const pattern=new RegExp('(?:^|;)\\s*'+directive+'\\s+([^;]+)');const match=policy.match(pattern);if(match){if(!match[1].includes("'self'"))policy=policy.replace(match[0],match[0].replace(match[1],match[1].replace(/'none'/g,'')+" 'self'"));}else policy+='; '+directive+" 'self'";}headers.set('Content-Security-Policy',policy);}
   const html=await response.text();
   const cleaned=html.replace(/<link\b[^>]*>/gi,tag=>{const rel=/\brel\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(tag);return rel&&(rel[1]||rel[2]||rel[3]||'').toLowerCase().split(/\s+/).some(x=>['icon','apple-touch-icon','apple-touch-icon-precomposed','mask-icon','manifest'].includes(x))?'':tag;});
-  return new Response(cleaned.replace(/<\/head\s*>/i,WELLNEST_ICON_LINKS+'</head>'),{status:response.status,statusText:response.statusText,headers});
+  const branded=/<\/head\s*>/i.test(cleaned)?cleaned.replace(/<\/head\s*>/i,WELLNEST_ICON_LINKS+'</head>'):/<html\b[^>]*>/i.test(cleaned)?cleaned.replace(/<html\b[^>]*>/i,tag=>tag+'<head>'+WELLNEST_ICON_LINKS+'</head>'):'<head>'+WELLNEST_ICON_LINKS+'</head>'+cleaned;
+  return new Response(branded,{status:response.status,statusText:response.statusText,headers});
 }
 const wellnestFetchBeforeIcons=worker_default.fetch;
 worker_default.fetch=async function(request,env,ctx){
