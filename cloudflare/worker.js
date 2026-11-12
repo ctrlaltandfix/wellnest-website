@@ -4429,7 +4429,7 @@ async function handleMedicationBackup(request, env, user, id) {
     if (row2 && existing.backup_key !== "wellnest-local-data") return null;
     let merged;
     try { const revisionMatches=Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision;
-      const appointments=prepareAppointmentSync(existing.data?.local_data||{},input.data.local_data,trackerOps,protocol,revisionMatches);
+      const appointments=prepareAppointmentSync(existing.data?.local_data||{},input.data.local_data,trackerOps,protocol,revisionMatches,/^WellNest\//.test(request.headers.get('User-Agent')||''));
       merged = mergeAccountRecords(existing.data?.local_data || {}, appointments.incoming, appointments.operations, protocol, revisionMatches); }
     catch(error) { if(error.status === 409 || error.status === 400) return fail(error.status,error.message); throw error; }
     let state;try { state = mergeRoutineDoseState(existing.data?.local_data || {}, input.data.local_data, operations, protocol, Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision); } catch(error) { if(error.status)return fail(error.status,error.message);throw error; }
@@ -4655,12 +4655,13 @@ function wnAppointmentFields(record,base){
  }
  return result;
 }
-function prepareAppointmentSync(current,incoming,operations,protocol,revisionMatches){
+function prepareAppointmentSync(current,incoming,operations,protocol,revisionMatches,nativeSnapshot=false){
  if(!Array.isArray(operations)||operations.length>2000)throw Object.assign(Error('Invalid appointment operations'),{status:400});
+ const snapshotMode=(protocol!==2&&protocol!==3)||(nativeSnapshot&&!operations.some(op=>op?.key==='appts'));
  const before=appointmentList(current),byId=new Map(before.map(r=>[String(r.id),r]));
  const normalize=list=>list.map(r=>wnAppointmentFields(r,byId.get(String(r.id))));
  const baseline=normalize(before);let selected=Array.isArray(incoming.appts)?normalize(incoming.appts):baseline;
- if(protocol!==2&&protocol!==3){
+ if(snapshotMode){
   const changed=[];
   for(const key of APPOINTMENT_ALIASES)if(Array.isArray(incoming[key])){
    const list=normalize(incoming[key]);if(!appointmentSame(list,baseline)&&!changed.some(x=>appointmentSame(x,list)))changed.push(list);
@@ -4669,7 +4670,7 @@ function prepareAppointmentSync(current,incoming,operations,protocol,revisionMat
   if(changed.length)selected=changed[0];
  }
  const ops=operations.map(op=>op.key==='appts'?{...op,entry:wnAppointmentFields(op.entry,op.base),base:op.base?wnAppointmentFields(op.base,op.base):op.base}:op);
- if(protocol!==2&&protocol!==3&&!ops.some(op=>op.key==='appts')){
+ if(snapshotMode&&!ops.some(op=>op.key==='appts')){
   const next=new Map(selected.map(r=>[String(r.id),r]));
   for(const previous of baseline){const entry=next.get(String(previous.id));if(!entry||!syncSame(entry,previous)){
    if(!revisionMatches)throw Object.assign(Error('Appointment changes require the current account revision. Refresh before saving.'),{status:409});
