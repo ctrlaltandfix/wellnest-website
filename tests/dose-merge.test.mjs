@@ -53,3 +53,11 @@ test('desktop applies server-confirmed phone check-offs after uploading its chan
  const tracker=makeTracker({client,storage,userId:'owner'});tracker.change('medlog',{id:JSON.stringify([day,desktop]),date:day,token:desktop});await tracker.sync();
  assert.deepEqual(JSON.parse(storage.getItem('wn-medlog'))[day],[phone,desktop]);assert.deepEqual(payload._dose_ops,[{date:day,token:desktop,taken:true,baseTaken:false}]);
 });
+test('repeated uncheck without baseline is safe when the dose is already untaken',()=>{
+ const result=mergeDoseState(local([]),local([]),[{date:day,token,taken:false}]);
+ assert.deepEqual(result.medlog[day],[]);
+ assert.deepEqual(result.deleted,[JSON.stringify([day,token])]);
+});
+test('uncheck without baseline cannot overwrite an existing taken status',()=>{
+ assert.throws(()=>mergeDoseState(local([token]),local([token]),[{date:day,token,taken:false}]),error=>error.status===409);
+});
