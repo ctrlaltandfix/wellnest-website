@@ -4538,7 +4538,7 @@ function accountRecordSource(source){
 async function accountRecordResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
  const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';if(!dashboard&&!entry)return response;
- const text=await response.text(),next=dashboard?compactSettingsSource(epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text))))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1&compactsettings=1');
+ const text=await response.text(),next=dashboard?settingsBackupControlsSource(compactSettingsSource(epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text)))))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1&compactsettings=1&backupcontrols=1');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }
 
@@ -4847,5 +4847,20 @@ function compactSettingsSource(source) {
  source=source.slice(0,start)+cards+section.slice(cardsEnd)+source.slice(end);
  const syncStart=source.indexOf('function WnAccountSyncButton(');
  if(syncStart>=0){const sync=source.slice(syncStart).replace("gap:10,marginTop:16","gap:8,marginTop:0").replace("fontSize:13,margin:0,lineHeight:1.5","fontSize:12,margin:0,lineHeight:1.5,overflowWrap:'anywhere'");source=source.slice(0,syncStart)+sync;}
+ return source;
+}
+
+function settingsBackupControlsSource(source) {
+ const start=source.indexOf("function Gt("),end=source.indexOf("var Kt=",start);
+ if(start<0||end<=start||source.includes("db-backup-controls"))return source;
+ let section=source.slice(start,end);
+ const header=",(0,$.jsxs)(`button`,{type:`button`,className:`db-btn-dark`,onClick:p,children:[`Download backup`,(0,$.jsx)(`span`,{className:`db-btn-dark-circle`,children:(0,$.jsx)(u,{size:14})})]})",before="(0,$.jsxs)(`div`,{style:{display:`flex`,alignItems:`center`,justifyContent:`space-between`,gap:12,flexWrap:`wrap`},children:[(0,$.jsxs)(`span`,{style:{display:`inline-flex`,alignItems:`center`,gap:8,fontSize:12.5,fontWeight:750,color:`#c3ecb5`},children:[(0,$.jsx)(b,{size:16}),` `,l?`Cloud backup enabled`:`Cloud backup currently off`]}),(0,$.jsx)(`button`,{type:`button`,className:`db-btn-lime`,onClick:d,style:{minHeight:36,padding:`7px 14px`,fontSize:13},children:l?`Disable cloud backup`:`Enable cloud backup`})]}),(0,$.jsx)(WnAccountSyncButton,{onSync:wnSyncAll,enabled:l&&!!e?.id,email:e?.email})";
+ if(!section.includes(header)||!section.includes(before))return source;
+ section=section.replace(header,"").replace(before,"(0,$.jsx)(WnAccountSyncButton,{onSync:wnSyncAll,enabled:l&&!!e?.id,email:e?.email,cloudEnabled:l,onToggleCloudBackup:d,onExportBackup:p})");
+ source=source.slice(0,start)+section+source.slice(end);
+ source=source.replace("function WnAccountSyncButton({onSync,enabled,email})", "function WnAccountSyncButton({onSync,enabled,email,cloudEnabled,onToggleCloudBackup,onExportBackup})");
+ source=source.replace(" return (0,$.jsxs)('div',{style:{display:'grid',gap:8,marginTop:0},children:["," return (0,$.jsxs)('div',{style:{display:'grid',gap:8,marginTop:0},children:[\n(0,$.jsxs)('div',{className:'db-backup-controls',style:{display:'flex',alignItems:'center',flexWrap:'wrap',gap:10},children:[\n (0,$.jsxs)('span',{style:{display:'inline-flex',alignItems:'center',gap:8,fontSize:12.5,fontWeight:750,color:'#c3ecb5'},children:[(0,$.jsx)(b,{size:16}),cloudEnabled?'Cloud backup enabled':'Cloud backup currently off']}),\n (0,$.jsx)('button',{type:'button',className:'db-btn-lime',onClick:onExportBackup,style:{minHeight:36,padding:'7px 14px',fontSize:13},children:'Download backup'}),\n (0,$.jsx)('button',{type:'button',className:'db-btn-lime',onClick:run,disabled:busy||!enabled,'aria-busy':busy,style:{justifySelf:'start',minHeight:36,padding:'7px 14px',fontSize:13},children:busy?'Syncing account\u2026':'\u21bb Sync account data'}),\n (0,$.jsx)('button',{type:'button',className:'db-btn-lime',onClick:onToggleCloudBackup,style:{minHeight:36,padding:'7px 14px',fontSize:13},children:cloudEnabled?'Disable cloud backup':'Enable cloud backup'})\n ]}),");
+ const description=source.indexOf("Sync health records and backup settings",source.indexOf("function WnAccountSyncButton("));
+ if(description>=0)source=source.slice(0,description)+source.slice(description).replace("(0,$.jsx)('button',{type:'button',className:'db-btn-lime',onClick:run,disabled:busy||!enabled,'aria-busy':busy,style:{justifySelf:'start',minHeight:36,padding:'7px 14px',fontSize:13},children:busy?'Syncing account\u2026':'\u21bb Sync account data'}),", "");
  return source;
 }
