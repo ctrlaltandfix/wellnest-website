@@ -4538,7 +4538,7 @@ function accountRecordSource(source){
 async function accountRecordResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
  const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';if(!dashboard&&!entry)return response;
- const text=await response.text(),next=dashboard?appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1');
+ const text=await response.text(),next=dashboard?appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text)))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }
 
@@ -4740,4 +4740,12 @@ function appointmentWidgetSyncSource(source) {
   if (replacements.some(([before]) => source.split(before).length !== 2)) return source;
   for (const [before, after] of replacements) source = source.replace(before, after);
   return source;
+}
+
+function appointmentContactSource(source) {
+ if(source.includes("function WnAppointmentContactPicker(")) return source;
+ const replacements=[["function Yt({modalState:e,onClose:t,onSaveRecord:n})", "function Yt({modalState:e,onClose:t,onSaveRecord:n,contacts=[]})"], ["Xt,{kind:r,initialData:i||{},onClose:t,onSaveRecord:n}", "Xt,{kind:r,initialData:i||{},onClose:t,onSaveRecord:n,contacts}"], ["function Xt({kind:e,initialData:t,onClose:n,onSaveRecord:r})", "function Xt({kind:e,initialData:t,onClose:n,onSaveRecord:r,contacts=[]})"], ["Yt,{modalState:f,onClose:()=>p(null),onSaveRecord:j}", "Yt,{modalState:f,onClose:()=>p(null),onSaveRecord:j,contacts:a.contacts}"], ["e===`appt`&&(0,$.jsxs)($.Fragment,{children:[", "e===`appt`&&(0,$.jsxs)($.Fragment,{children:[(0,$.jsx)(WnAppointmentContactPicker,{contacts,onSelect:contact=>u(current=>({...current,specialist:contact.name||``,loc:[contact.businessName,contact.address].filter(Boolean).join(` \u2014 `)}))}),"]];
+ if(replacements.some(([before])=>source.split(before).length!==2)) return source;
+ for(const [before,after] of replacements) source=source.replace(before,after);
+ return source+"\nfunction WnAppointmentContactPicker({contacts=[],onSelect}) {\n const [selected,setSelected]=K.useState('');\n const available=contacts.filter(contact=>contact&&contact.id!=null&&typeof contact.name==='string'&&contact.name.trim()&&!contact.deleted&&!contact._deleted).slice().sort((a,b)=>a.name.localeCompare(b.name));\n return (0,$.jsxs)('div',{className:'db-field db-field-full',children:[\n  (0,$.jsx)('label',{htmlFor:'wn-appointment-contact',children:'Appointment contact'}),\n  (0,$.jsxs)('select',{id:'wn-appointment-contact',value:selected,'aria-describedby':'wn-appointment-contact-help',onChange:event=>{\n   const id=event.target.value;setSelected(id);\n   const contact=available.find(item=>String(item.id)===id);if(contact)onSelect(contact);\n  },children:[(0,$.jsx)('option',{value:'',children:'Enter details manually'}),...available.map(contact=>(0,$.jsx)('option',{value:String(contact.id),children:contact.name+[contact.businessName,contact.role].filter(Boolean).map(value=>' \u2014 '+value).join('')},String(contact.id)))]}),\n  (0,$.jsx)('small',{id:'wn-appointment-contact-help',children:available.length?'Choose a saved Care Circle contact to fill the clinician and location, or enter details below. You can edit the filled details.':'No saved contacts yet. Enter the clinician and location below, or add a contact in Care Circle.'})\n ]});\n}\n";
 }
