@@ -4394,7 +4394,7 @@ function mergeDoseState(current, incoming, operations = []) {
     if (!op || !/^\d{4}-\d{2}-\d{2}$/.test(op.date) || typeof op.token !== "string" || op.token.length > 500 || typeof op.taken !== "boolean") throw Object.assign(Error("Invalid dose change"), { status: 400 });
     const id = JSON.stringify([op.date, op.token]), set = days[op.date] ||= /* @__PURE__ */ new Set();
     const wasTaken = Array.isArray(current?.medlog?.[op.date]) && current.medlog[op.date].includes(op.token);
-    if (typeof op.baseTaken === 'boolean' ? wasTaken !== op.baseTaken && wasTaken !== op.taken : !op.taken) throw Object.assign(Error('Dose changed on another device. Refresh before changing this dose.'), {status:409});
+    if (typeof op.baseTaken === 'boolean' ? wasTaken !== op.baseTaken && wasTaken !== op.taken : !op.taken && wasTaken) throw Object.assign(Error('Dose changed on another device. Refresh before changing this dose.'), {status:409});
     if (op.taken) {
       deleted.delete(id);
       set.add(op.token);
@@ -4615,7 +4615,13 @@ function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatc
    else if(!routineDoseEqual(alternate,remote)&&protocol!==2&&protocol!==3)throw Object.assign(Error('Conflicting medication dose fields. Refresh account data before syncing.'),{status:409});
   }
  }
- let ops=operations;
+ const coalesced=new Map();
+ for(const operation of operations){
+  const key=JSON.stringify([operation?.date,operation?.token]);
+  const first=coalesced.get(key);
+  coalesced.set(key,first?{...operation,baseTaken:first.baseTaken}:operation);
+ }
+ let ops=[...coalesced.values()];
  if(protocol!==2&&protocol!==3&&!operations.length){
   const removed=new Set(current?.trackerDeleted?.medlog||[]),changes=[];
   for(const [date,tokens] of Object.entries(next)){

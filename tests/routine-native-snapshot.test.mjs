@@ -29,3 +29,14 @@ test('stale unchecked snapshots cannot clear doses and ambiguous fields return c
  assert.throws(()=>mergeRoutineDoseState({medlog:{[date]:[token]}},{medlog:{[date]:[]}},[],0,false),e=>e.status===409);
  assert.throws(()=>mergeRoutineDoseState(empty,{medlog:{[date]:['one']},'wn-medlog':{[date]:['two']}},[],0,true),e=>e.status===409);
 });
+test('superseded repeated dose operations do not block other account changes',()=>{
+ const current={medlog:{[date]:[]}};
+ const ops=[{date,token,taken:true,baseTaken:true},{date,token,taken:false,baseTaken:true}];
+ const result=mergeRoutineDoseState(current,{medlog:{[date]:[]}},ops,2,false);
+ assert.deepEqual(result.medlog[date],[]);
+});
+test('coalesced changes still reject a genuine concurrent conflict',()=>{
+ const current={medlog:{[date]:[token]}};
+ const ops=[{date,token,taken:false,baseTaken:false},{date,token,taken:false,baseTaken:false}];
+ assert.throws(()=>mergeRoutineDoseState(current,{medlog:{[date]:[]}},ops,2,false),e=>e.status===409);
+});
