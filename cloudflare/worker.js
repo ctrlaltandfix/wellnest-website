@@ -4538,7 +4538,7 @@ function accountRecordSource(source){
 async function accountRecordResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
  const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';if(!dashboard&&!entry)return response;
- const text=await response.text(),next=dashboard?appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text)))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1');
+ const text=await response.text(),next=dashboard?appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }
 
@@ -4775,6 +4775,16 @@ function appointmentWidgetSyncSource(source) {
   if (replacements.some(([before]) => source.split(before).length !== 2)) return source;
   for (const [before, after] of replacements) source = source.replace(before, after);
   return source;
+}
+
+
+function appointmentViewSource(source){
+ if(source.includes("function WnAppointmentView("))return source;
+ const end=source.indexOf("function bt("),start=source.lastIndexOf("function ",source.indexOf("db-appointment-record"));
+ if(start<0||end<=start)return source;
+ const section=source.slice(start,end),before="className:`db-record-actions`,children:[";
+ if(section.split(before).length!==2)return source;
+ return source.slice(0,start)+section.replace(before,before+"(0,$.jsx)(WnAppointmentView,{appointment:e,practice:i}),")+source.slice(end)+"\nfunction WnAppointmentView({appointment,practice}) {\n const dialog=K.useRef(null);\n const heading=K.useId();\n const row=(label,value)=>(0,$.jsxs)('div',{style:{marginBottom:14},children:[(0,$.jsx)('dt',{style:{fontWeight:700},children:label}),(0,$.jsx)('dd',{style:{margin:0,whiteSpace:'pre-wrap',overflowWrap:'anywhere'},children:value||'Not provided'})]});\n return (0,$.jsxs)($.Fragment,{children:[\n (0,$.jsx)('button',{type:'button',className:'db-btn-outline','aria-label':'View '+(appointment.title||'appointment'),onClick:()=>dialog.current?.showModal(),children:'View'}),\n (0,$.jsxs)('dialog',{ref:dialog,'aria-labelledby':heading,className:'db-appointment-view',style:{width:'min(560px, calc(100vw - 32px))',maxHeight:'85vh',overflowY:'auto',padding:24,borderRadius:24,border:'1px solid var(--db-border-strong)',background:'var(--db-paper, #fff)',color:'var(--db-ink, #16392e)'},onClick:event=>{if(event.target===event.currentTarget){const rect=event.currentTarget.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)event.currentTarget.close();}},children:[\n (0,$.jsx)('h2',{id:heading,style:{marginTop:0,overflowWrap:'anywhere'},children:appointment.title||'Appointment'}),\n (0,$.jsxs)('dl',{children:[row('Date',appointment.date?Y(appointment.date):''),row('Time',appointment.time?Ue(appointment.time):''),row('Specialist / Clinician',appointment.specialist||appointment.spec),row('Practice',practice),row('Clinic / Location',appointment.loc||appointment.location),row('Questions & Preparation Notes',appointment.notes)]}),\n (0,$.jsx)('button',{type:'button',autoFocus:true,className:'db-btn-outline',onClick:()=>dialog.current?.close(),children:'Close'})\n ]})]});\n}\n";
 }
 
 function appointmentContactSource(source) {
