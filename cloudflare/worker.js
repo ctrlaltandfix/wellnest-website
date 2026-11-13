@@ -4661,6 +4661,39 @@ function wnAppointmentFields(record,base){
  }
  return result;
 }
+// Merge compatible appointment notes without changing the shared record/dose merger.
+function mergeAppointmentNotes(base,remote,local){
+ if([base,remote,local].some(v=>typeof v!=='string'))return null;
+ if(local===base)return remote;if(remote===base||remote===local)return local;
+ const edit=value=>{let start=0;while(start<base.length&&start<value.length&&base[start]===value[start])start++;
+ let end=base.length,tail=value.length;while(end>start&&tail>start&&base[end-1]===value[tail-1]){end--;tail--;}
+ return {start,end,text:value.slice(start,tail)};};
+ const a=edit(remote),b=edit(local);
+ // Independent append-only edits retain both additions, or the longer shared addition.
+ if(a.start===base.length&&b.start===base.length){
+  if(a.text.startsWith(b.text)||a.text.endsWith(b.text))return remote;if(b.text.startsWith(a.text)||b.text.endsWith(a.text))return local;
+  return base+a.text+(a.text.endsWith('\n')||b.text.startsWith('\n')?'':'\n')+b.text;
+ }
+ // Same-position insertions and overlapping replacements require conflict review.
+ if(a.start===b.start||a.end>b.start&&b.end>a.start)return null;
+ const [first,second]=a.start<b.start?[a,b]:[b,a];
+ return base.slice(0,first.start)+first.text+base.slice(first.end,second.start)+second.text+base.slice(second.end);
+}
+function reconcileAppointmentNoteOperations(current,operations){
+ // Match the core merger's first baseline / final intent for queued edits.
+ const collapsed=new Map();
+ for(const op of operations){const key=JSON.stringify([op.key,String(op.entry?.id??op.entry?.legacy_id??op.entry?.uuid)]);const first=collapsed.get(key);collapsed.set(key,first?{...op,base:first.base}:op);}
+ return [...collapsed.values()].map(op=>{
+  if(op.key!=='appts'||op.deleted||!op.base)return op;
+  const remote=appointmentList(current).find(r=>String(r.id)===String(op.entry?.id));
+  if(!remote)return op;
+  const notes=mergeAppointmentNotes(op.base.notes,remote.notes,op.entry.notes);
+  if(notes===null)return op;
+  return {...op,base:{...op.base,notes:remote.notes},entry:{...op.entry,notes}};
+ });
+}
+
+export {mergeAppointmentNotes};
 function prepareAppointmentSync(current,incoming,operations,protocol,revisionMatches,nativeSnapshot=false){
  if(!Array.isArray(operations)||operations.length>2000)throw Object.assign(Error('Invalid appointment operations'),{status:400});
  const snapshotMode=(protocol!==2&&protocol!==3)||(nativeSnapshot&&!operations.some(op=>op?.key==='appts'));
@@ -4683,7 +4716,7 @@ function prepareAppointmentSync(current,incoming,operations,protocol,revisionMat
    ops.push({key:'appts',entry:entry||previous,base:byId.get(String(previous.id)),deleted:!entry});
   }}
  }
- return {incoming:{...incoming,appts:selected},operations:ops};
+ return {incoming:{...incoming,appts:selected},operations:reconcileAppointmentNoteOperations(current,ops)};
 }
 function projectAppointmentFields(local){
  if(!local||!APPOINTMENT_ALIASES.some(k=>Array.isArray(local[k])))return local;
