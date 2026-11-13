@@ -4538,7 +4538,7 @@ function accountRecordSource(source){
 async function accountRecordResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
  const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';if(!dashboard&&!entry)return response;
- const text=await response.text(),next=dashboard?epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text)))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1');
+ const text=await response.text(),next=dashboard?compactSettingsSource(epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text))))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1&compactsettings=1');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }
 
@@ -4820,4 +4820,32 @@ function appointmentContactSource(source) {
  if(replacements.some(([before])=>source.split(before).length!==2)) return source;
  for(const [before,after] of replacements) source=source.replace(before,after);
  return source+"\nfunction WnAppointmentContactPicker({contacts=[],onSelect}) {\n const [selected,setSelected]=K.useState('');\n const available=contacts.filter(contact=>contact&&contact.id!=null&&typeof contact.name==='string'&&contact.name.trim()&&!contact.deleted&&!contact._deleted).slice().sort((a,b)=>a.name.localeCompare(b.name));\n return (0,$.jsxs)('div',{className:'db-field db-field-full',children:[\n  (0,$.jsx)('label',{htmlFor:'wn-appointment-contact',children:'Appointment contact'}),\n  (0,$.jsxs)('select',{id:'wn-appointment-contact',value:selected,'aria-describedby':'wn-appointment-contact-help',onChange:event=>{\n   const id=event.target.value;setSelected(id);\n   const contact=available.find(item=>String(item.id)===id);if(contact)onSelect(contact);\n  },children:[(0,$.jsx)('option',{value:'',children:'Enter details manually'}),...available.map(contact=>(0,$.jsx)('option',{value:String(contact.id),children:contact.name+[contact.businessName,contact.role].filter(Boolean).map(value=>' \u2014 '+value).join('')},String(contact.id)))]}),\n  (0,$.jsx)('small',{id:'wn-appointment-contact-help',children:available.length?'Choose a saved Care Circle contact to fill the clinician and location, or enter details below. You can edit the filled details.':'No saved contacts yet. Enter the clinician and location below, or add a contact in Care Circle.'})\n ]});\n}\n";
+}
+
+function compactSettingsSource(source) {
+ const start=source.indexOf('function Gt('),end=source.indexOf('var Kt=',start);
+ if(start<0||end<=start)return source;
+ let section=source.slice(start,end);
+ if(section.includes('db-settings-storage-card'))return source;
+ const cardsEnd=section.indexOf('(0,$.jsxs)(`section`,');
+ if(cardsEnd<0)return source;
+ let cards=section.slice(0,cardsEnd);
+ const replacements=[
+  ['gap:20,marginBottom:28','gap:16,marginBottom:20'],
+  ['className:`db-bento-card db-surface-white`,children:', 'className:`db-bento-card db-surface-white db-settings-storage-card`,style:{padding:20,borderRadius:20,gap:14,justifyContent:`flex-start`,minWidth:0},children:'],
+  ['className:`db-bento-card db-surface-night`,children:', 'className:`db-bento-card db-surface-night db-settings-storage-card`,style:{padding:20,borderRadius:20,gap:14,justifyContent:`flex-start`,minWidth:0},children:'],
+  ['alignItems:`center`,marginBottom:18','alignItems:`center`,marginBottom:10'],
+  ['width:54,height:54,borderRadius:16','width:36,height:36,borderRadius:11'],
+  ['size:25','size:20'],
+  ['className:`db-card-title`,children:', 'className:`db-card-title`,style:{fontSize:24,lineHeight:1.15,margin:`8px 0`},children:'],
+  ['className:`db-card-desc`,children:', 'className:`db-card-desc`,style:{fontSize:13,lineHeight:1.5,margin:0},children:'],
+  ['className:`db-local-storage-status`,style:{display:`flex`,alignItems:`center`,gap:8}', 'className:`db-local-storage-status`,style:{display:`flex`,alignItems:`center`,gap:8,fontSize:12,overflowWrap:`anywhere`}'],
+  ['style:{minHeight:42,padding:`8px 18px`}', 'style:{minHeight:36,padding:`7px 14px`,fontSize:13}']
+ ];
+ if(replacements.some(([before])=>!cards.includes(before)))return source;
+ for(const [before,after] of replacements)cards=cards.split(before).join(after);
+ source=source.slice(0,start)+cards+section.slice(cardsEnd)+source.slice(end);
+ const syncStart=source.indexOf('function WnAccountSyncButton(');
+ if(syncStart>=0){const sync=source.slice(syncStart).replace("gap:10,marginTop:16","gap:8,marginTop:0").replace("fontSize:13,margin:0,lineHeight:1.5","fontSize:12,margin:0,lineHeight:1.5,overflowWrap:'anywhere'");source=source.slice(0,syncStart)+sync;}
+ return source;
 }
