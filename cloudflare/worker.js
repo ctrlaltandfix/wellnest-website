@@ -4538,7 +4538,7 @@ function accountRecordSource(source){
 async function accountRecordResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
  const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';if(!dashboard&&!entry)return response;
- const text=await response.text(),next=dashboard?settingsBackupControlsSource(compactSettingsSource(epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text)))))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1&compactsettings=1&backupcontrols=1');
+ const text=await response.text(),next=dashboard?polishedCustomisationSource(settingsBackupControlsSource(compactSettingsSource(epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text))))))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1&compactsettings=1&backupcontrols=1');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }
 
@@ -4863,4 +4863,18 @@ function settingsBackupControlsSource(source) {
  const description=source.indexOf("Sync health records and backup settings",source.indexOf("function WnAccountSyncButton("));
  if(description>=0)source=source.slice(0,description)+source.slice(description).replace("(0,$.jsx)('button',{type:'button',className:'db-btn-lime',onClick:run,disabled:busy||!enabled,'aria-busy':busy,style:{justifySelf:'start',minHeight:36,padding:'7px 14px',fontSize:13},children:busy?'Syncing account\u2026':'\u21bb Sync account data'}),", "");
  return source;
+}
+
+function polishedCustomisationSource(source) {
+ const start=source.indexOf('function Gt('),end=source.indexOf('var Kt=',start);
+ if(start<0||end<=start||source.includes('function WnPreferenceIcon('))return source;
+ let section=source.slice(start,end);
+ const panel='className:`db-bento-card db-surface-white`,style:{marginBottom:24}';
+ const label='(0,$.jsx)(`span`,{children:e.label})';
+ if(section.split(panel).length!==3||section.split(label).length!==3)return source;
+ section=section.split(panel).join('className:`db-bento-card db-surface-white db-customise-panel`,style:{marginBottom:24}');
+ section=section.replace('role:`switch`,"aria-checked":t','className:`db-preference-tile`, "data-space":e.id,role:`switch`,"aria-checked":t');
+ section=section.replace('type:`button`,onClick:()=>i(e.id),style:', 'type:`button`,className:`db-preference-tile`,"data-space":e.id,role:`switch`,"aria-checked":t,"aria-label":e.label+` on dashboard`,onClick:()=>i(e.id),style:');
+ section=section.split(label).join('(0,$.jsx)(WnPreferenceIcon,{id:e.id}),(0,$.jsx)(`span`,{className:`db-preference-label`,children:e.label})');
+ return source.slice(0,start)+section+source.slice(end)+"\nfunction WnPreferenceIcon({id}) {\n const paths={overview:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',pain:'M2 12h4l3-8 6 16 3-8h4',asthma:'M10 4v8c-2-6-5-6-6-1-2 7 0 10 6 8V4 M14 4v8c2-6 5-6 6-1 2 7 0 10-6 8V4',epilepsy:'M13 2 5 14h6l-1 8 9-13h-6z',meds:'M8 4a5 5 0 0 1 7 0l5 5a5 5 0 0 1-7 7l-5-5a5 5 0 0 1 0-7z M10 6l7 7',appts:'M4 5h16v16H4z M8 2v6 M16 2v6 M4 10h16 M8 14h2 M14 14h2 M8 17h2',contacts:'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M2 21v-3a7 7 0 0 1 14 0v3 M17 4a4 4 0 0 1 0 8 M19 15a5 5 0 0 1 3 5',exercises:'M3 8v8 M6 5v14 M6 12h12 M18 5v14 M21 8v8',reflection:'M12 6c-3-3-7-3-10-2v15c3-1 7-1 10 2 3-3 7-3 10-2V4c-3-1-7-1-10 2z M12 6v15',expenses:'M5 2h14v20l-3-2-4 2-4-2-3 2z M8 7h8 M8 11h8 M8 15h4',emergency:'M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6z M12 7v10 M7 12h10'};\n return (0,$.jsx)('span',{className:'db-preference-icon','aria-hidden':true,children:(0,$.jsx)('svg',{width:22,height:22,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.7,strokeLinecap:'round',strokeLinejoin:'round',children:(0,$.jsx)('path',{d:paths[id]||paths.overview})})});\n}\n";
 }
