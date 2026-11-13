@@ -3,3 +3,15 @@
 /* Compact overview widgets and let each card fit its content. */
 .db-beta .db-bento{gap:12px;align-items:start}
 .db-beta .db-bento>.db-bento-card,.db-beta .db-bento .db-bento-routine,.db-beta .db-bento .db-bento-appt{padding:10px 12px;align-self:start}
+
+/* Equal desktop overview cards, with compact content and unchanged card padding. */
+@media (width >= 1081px) {
+  .db-beta .db-bento { grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; }
+  .db-beta .db-bento>.db-bento-card,
+  .db-beta .db-bento .db-bento-routine,
+  .db-beta .db-bento .db-bento-appt { grid-area:auto; align-self:stretch; min-width:0; }
+  .db-beta .db-bento .db-bento-card>div:first-child { min-height:44px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .db-beta .db-bento-routine .db-routine-med-row { min-height:44px; padding-block:6px; gap:10px; }
+  .db-beta .db-bento-routine .db-routine-med-details { display:flex; flex-wrap:wrap; align-items:baseline; gap:0 8px; }
+  .db-beta .db-bento-routine .db-routine-med-name { overflow-wrap:anywhere; }
+}
