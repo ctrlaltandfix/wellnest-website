@@ -4538,7 +4538,7 @@ function accountRecordSource(source){
 async function accountRecordResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
  const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';if(!dashboard&&!entry)return response;
- const text=await response.text(),next=dashboard?safeSyncSource(accountRecordSource(text)):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3');
+ const text=await response.text(),next=dashboard?appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }
 
@@ -4710,3 +4710,28 @@ worker_default.fetch=async function(request,env,ctx){
  const headers=new Headers(response.headers);headers.delete('Content-Length');headers.delete('ETag');if(next!==text&&!/private|no-store/i.test(headers.get('Cache-Control')||''))headers.set('Cache-Control','no-cache');
  return new Response(next,{status:response.status,statusText:response.statusText,headers});
 };
+
+function appointmentWidgetSyncSource(source) {
+  if (source.includes('successMessage:`Appointments synced.`')) return source;
+  const replacements = [
+  [
+    "(0,$.jsx)(`div`,{children:(0,$.jsxs)(`button`,{type:`button`,className:`db-tag db-widget-title`,onClick:()=>t(`appts`),\"aria-label\":`Next Appointments — open Schedule`,children:[(0,$.jsx)(N,{size:14}),` NEXT APPOINTMENTS`]})})",
+    "(0,$.jsxs)(`div`,{style:{display:`flex`,alignItems:`center`,justifyContent:`space-between`,gap:12,flexWrap:`wrap`,width:`100%`},children:[(0,$.jsxs)(`button`,{type:`button`,className:`db-tag db-widget-title`,onClick:()=>t(`appts`),\"aria-label\":`Next Appointments — open Schedule`,style:{margin:0},children:[(0,$.jsx)(N,{size:14}),` NEXT APPOINTMENTS`]}),(0,$.jsx)(WnRoutineSyncButton,{onSync:wnSyncRoutine,label:`Sync appointments with your WellNest account`,successMessage:`Appointments synced.`})]})"
+  ],
+  [
+    "function WnRoutineSyncButton({onSync})",
+    "function WnRoutineSyncButton({onSync,label='Sync daily care routine with your WellNest account',successMessage='Account records synced.'})"
+  ],
+  [
+    "await onSync();setMessage('Account records synced.');",
+    "await onSync();setMessage(successMessage);"
+  ],
+  [
+    "'aria-label':'Sync daily care routine with your WellNest account'",
+    "'aria-label':label"
+  ]
+];
+  if (replacements.some(([before]) => source.split(before).length !== 2)) return source;
+  for (const [before, after] of replacements) source = source.replace(before, after);
+  return source;
+}
