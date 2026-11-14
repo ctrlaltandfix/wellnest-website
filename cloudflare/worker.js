@@ -4538,11 +4538,11 @@ function accountRecordSource(source){
 async function accountRecordResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
  const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';if(!dashboard&&!entry)return response;
- const text=await response.text(),next=dashboard?polishedCustomisationSource(settingsBackupControlsSource(compactSettingsSource(epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text))))))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1&compactsettings=1&backupcontrols=1');
+ const text=dashboard?medicationScriptSource(await response.text()):await response.text(),next=dashboard?polishedCustomisationSource(settingsBackupControlsSource(compactSettingsSource(epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text))))))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1&compactsettings=1&backupcontrols=1&medscripts=20261114');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }
 
-export {mergeAccountRecords,syncMergeFields};
+export {mergeAccountRecords,syncMergeFields,medicationScriptSource,wnMedicationScripts};
 
 
 function safeSyncSource(source){if(source.includes("baseTaken:!!op.base"))return source;for(const [before,after] of [["function Z(e,t){localStorage.setItem(e,JSON.stringify(t)),window.dispatchEvent(new CustomEvent(`wn-tracker-change`,{detail:{key:e}}))}", "function Z(e,t){const previous=localStorage.getItem(e);localStorage.setItem(e,JSON.stringify(t)),window.dispatchEvent(new CustomEvent(`wn-tracker-change`,{detail:{key:e,previous}}))}"], ["function Q(e,t){localStorage.setItem(e,JSON.stringify(t)),window.dispatchEvent(new CustomEvent(`wn-tracker-change`,{detail:{key:e}}))}", "function Q(e,t){const previous=localStorage.getItem(e);localStorage.setItem(e,JSON.stringify(t)),window.dispatchEvent(new CustomEvent(`wn-tracker-change`,{detail:{key:e,previous}}))}"], ["o=e.baseline()[i]||[]", "o=Object.hasOwn(n.detail||{},`previous`)?_e(i,ye(n.detail.previous,i===`medlog`?{}:[])):t[i]||[]"], ["token:op.entry.token,taken:!op.deleted", "token:op.entry.token,taken:!op.deleted,baseTaken:!!op.base"]])source=source.split(before).join(after);return source;}
@@ -4877,4 +4877,49 @@ function polishedCustomisationSource(source) {
  section=section.replace('type:`button`,onClick:()=>i(e.id),style:', 'type:`button`,className:`db-preference-tile`,"data-space":e.id,role:`switch`,"aria-checked":t,"aria-label":e.label+` on dashboard`,onClick:()=>i(e.id),style:');
  section=section.split(label).join('(0,$.jsx)(WnPreferenceIcon,{id:e.id}),(0,$.jsx)(`span`,{className:`db-preference-label`,children:e.label})');
  return source.slice(0,start)+section+source.slice(end)+"\nfunction WnPreferenceIcon({id}) {\n const paths={overview:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',pain:'M2 12h4l3-8 6 16 3-8h4',asthma:'M10 4v8c-2-6-5-6-6-1-2 7 0 10 6 8V4 M14 4v8c2-6 5-6 6-1 2 7 0 10-6 8V4',epilepsy:'M13 2 5 14h6l-1 8 9-13h-6z',meds:'M8 4a5 5 0 0 1 7 0l5 5a5 5 0 0 1-7 7l-5-5a5 5 0 0 1 0-7z M10 6l7 7',appts:'M4 5h16v16H4z M8 2v6 M16 2v6 M4 10h16 M8 14h2 M14 14h2 M8 17h2',contacts:'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M2 21v-3a7 7 0 0 1 14 0v3 M17 4a4 4 0 0 1 0 8 M19 15a5 5 0 0 1 3 5',exercises:'M3 8v8 M6 5v14 M6 12h12 M18 5v14 M21 8v8',reflection:'M12 6c-3-3-7-3-10-2v15c3-1 7-1 10 2 3-3 7-3 10-2V4c-3-1-7-1-10 2z M12 6v15',expenses:'M5 2h14v20l-3-2-4 2-4-2-3 2z M8 7h8 M8 11h8 M8 15h4',emergency:'M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6z M12 7v10 M7 12h10'};\n return (0,$.jsx)('span',{className:'db-preference-icon','aria-hidden':true,children:(0,$.jsx)('svg',{width:22,height:22,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.7,strokeLinecap:'round',strokeLinejoin:'round',children:(0,$.jsx)('path',{d:paths[id]||paths.overview})})});\n}\n";
+}
+
+// An explicit empty eScript list is authoritative: never revive legacy aliases.
+// Clear legacy fields on save as older clients may still read those fields.
+function medicationScriptSource(source) {
+ if(source.includes('function wnMedicationScripts('))return source;
+ const replacements = [
+  [
+    "Array.isArray(e.escripts)&&e.escripts.length?",
+    "Array.isArray(e.escripts)?"
+  ],
+  [
+    "escripts:Jt(t),title:",
+    "escripts:Jt(t),needsNewScript:!!t.needsNewScript,title:"
+  ],
+  [
+    "notes:t.notes||``,escripts:(t.escripts||[])",
+    "notes:t.notes||``,needsNewScript:!!t.needsNewScript,escriptCode:``,escriptPhoto:``,escriptPhotoUri:``,escriptPhotoUrl:``,escripts:(t.escripts||[])"
+  ],
+  [
+    "let a=Array.isArray(e.escripts)?e.escripts.filter(e=>e&&(e.code||e.label||e.photo||e.photoUri||e.photoUrl)):e.escriptCode||e.escriptPhoto||e.escriptPhotoUri||e.escriptPhotoUrl?[{id:`legacy`,code:e.escriptCode,photo:e.escriptPhoto,photoUri:e.escriptPhotoUri,photoUrl:e.escriptPhotoUrl}]:[]",
+    "let a=wnMedicationScripts(e)"
+  ],
+  [
+    "[`Repeats remaining`,l?`${e.repeats}`:``]",
+    "[`Repeats remaining`,l?`${e.repeats}`:``],[`eScript`,a.length?`${a.length} attached`:`No eScript attached`],[`New script needed`,e.needsNewScript?`Yes`:`No`]"
+  ],
+  [
+    "className:`db-record-meta`,children:[e.freq&&",
+    "className:`db-record-meta`,children:[(0,$.jsx)(`span`,{className:`db-chip`,children:wnMedicationScripts(e).length?`${wnMedicationScripts(e).length} eScript${wnMedicationScripts(e).length===1?``:`s`} attached`:`No eScript attached`}),e.needsNewScript&&(0,$.jsx)(`span`,{className:`db-chip`,style:{background:`#fff0cf`,color:`#714b00`},children:`New script needed`}),e.freq&&"
+  ],
+  [
+    "e===`med`&&(0,$.jsxs)($.Fragment,{children:[",
+    "e===`med`&&(0,$.jsxs)($.Fragment,{children:[(0,$.jsxs)(`div`,{className:`db-field db-field-full`,children:[(0,$.jsxs)(`label`,{htmlFor:`wn-new-script-needed`,style:{display:`flex`,alignItems:`center`,gap:10},children:[(0,$.jsx)(`input`,{id:`wn-new-script-needed`,type:`checkbox`,checked:l.needsNewScript,onChange:e=>d(`needsNewScript`,e.target.checked),style:{width:`auto`}}),`New script needed`]}),(0,$.jsx)(`small`,{children:`Flag this medication as needing a new prescription. Untick when resolved.`})]}),"
+  ]
+];
+ for(const [before,after] of replacements) {
+  if(!source.includes(before))throw new Error('Medication script transform no longer matches the dashboard');
+  source=source.split(before).join(after);
+ }
+ return source+'\n'+wnMedicationScripts.toString();
+}
+function wnMedicationScripts(med) {
+ const scripts=Array.isArray(med.escripts)?med.escripts:[{code:med.escriptCode,photo:med.escriptPhoto,photoUri:med.escriptPhotoUri,photoUrl:med.escriptPhotoUrl}];
+ return scripts.filter(script=>script&&[script.code,script.photo,script.photoUri,script.photoUrl].some(value=>typeof value==='string'&&value.trim()));
 }
