@@ -122,6 +122,9 @@
   table.idx a:hover { text-decoration: underline; }
   .s-bad { color: var(--down) !important; font-weight: 600; } .s-warn { color: #8a5a00 !important; font-weight: 600; }
   .s-ok { color: var(--mark) !important; font-weight: 600; } .s-muted { color: var(--muted) !important; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  table.idx a.chip { display: inline-block; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--mark-soft); color: var(--ink); font-weight: 600; font-size: 12px; white-space: nowrap; }
+  table.idx a.chip:hover { border-color: var(--mark); text-decoration: none; }
   section[hidden] { display: none; }
 </style>
 </head>
@@ -141,7 +144,7 @@
     <div class="head-row">
       <div><h1 class="headline" id="headline">Your communities<em>loading…</em></h1><div class="lede" id="lede"></div></div>
       <div class="ranges" role="group" aria-label="View" id="tabs" hidden>
-        <button data-tab="communities" aria-pressed="true">Communities</button><button data-tab="organisations" aria-pressed="false">Organisations to call</button><button data-tab="demand" aria-pressed="false">Demand themes</button>
+        <button data-tab="communities" aria-pressed="true">Communities</button><button data-tab="organisations" aria-pressed="false">Organisations to call</button><button data-tab="demand" aria-pressed="false">Demand themes</button><button data-tab="requests" aria-pressed="false">Tracker requests</button>
       </div>
     </div>
     <div class="tiles" id="tiles"></div>
@@ -288,6 +291,50 @@
       }))])]);
   }
 
+  // ---------- tracker requests: live searches, opened on the community's own site ----------
+  // Nothing is copied here: no posts, usernames or health details are stored on this page.
+  var SEARCHES = {
+    "Chronic pain": ["pain tracker app", "pain diary app", "symptom tracker app", "app to track pain"],
+    "CRPS": ["pain tracker app", "symptom diary", "app to track flares"],
+    "Fibromyalgia": ["symptom tracker app", "flare tracker", "pain diary app"],
+    "Any chronic illness": ["symptom tracker app", "health tracker app", "app to track symptoms"],
+    "Epilepsy": ["seizure diary app", "seizure tracker app"],
+    "Asthma": ["peak flow app", "asthma tracker app"],
+    "Lung conditions": ["peak flow app", "symptom diary"],
+    "ME/CFS": ["symptom tracker app", "pacing app"]
+  };
+  var SITES = {
+    "Asthma + Lung UK asthma forum": "healthunlocked.com/asthmauk",
+    "Asthma + Lung UK lung conditions forum": "healthunlocked.com/asthmalunguk-lung",
+    "Pain Concern forum": "healthunlocked.com \"Pain Concern\"",
+    "Chronic Pain on Inspire": "inspire.com/groups/chronic-pain",
+    "Mayo Clinic Connect": "connect.mayoclinic.org"
+  };
+  function searchUrl(r, q) {
+    var m = /^https:\/\/www\.reddit\.com\/r\/([A-Za-z0-9_]+)\/?$/.exec(r.url || "");
+    if (m) return "https://www.reddit.com/r/" + m[1] + "/search/?q=" + encodeURIComponent(q) + "&restrict_sr=1&sort=new";
+    if (SITES[r.community]) return "https://www.google.com/search?q=" + encodeURIComponent("site:" + SITES[r.community] + " " + q);
+    return null;
+  }
+  function requests() {
+    var rows = DATA.communities.slice().sort(function (a, b) { return (b.fit - a.fit) || ((b.members || 0) - (a.members || 0)); });
+    var list = [], closed = [];
+    rows.forEach(function (r) {
+      var qs = SEARCHES[r.focus] || SEARCHES["Chronic pain"];
+      var links = qs.map(function (q) { var u = searchUrl(r, q); return u ? { q: q, u: u } : null; }).filter(Boolean);
+      if (!links.length) { closed.push(r.community); return; }
+      var cell = el("div", { class: "chips" }, links.map(function (l) { return el("a", { class: "chip", href: l.u, target: "_blank", rel: "noopener noreferrer", text: l.q }); }));
+      list.push([{ node: linkOrText(r.community, r.url) }, r.platform, { text: r.promo_rule, cls: promoClass(r.promo_rule) }, { node: cell, cls: "wide" }]);
+    });
+    var first = sectionTitle("Tracker", "requests", "Live searches"); first.style.marginTop = "0";
+    return el("section", { id: "requests", hidden: "" }, [first, el("div", { class: "card" }, [
+      el("p", { class: "note", text: "Each button opens a live search, newest first where the site allows, for people asking about a tracker in that community. You read the posts on the community's own site; none are copied or stored here." }),
+      el("p", { class: "note", text: "Check the promotion rule before replying. Where it is allowed, reply in the thread, say you built WellNest, and answer the question asked. Do not message people privately or contact them outside the thread." }),
+      table(["Community", "Platform", "Promotion rule", "Open a live search"], list),
+      closed.length ? el("p", { class: "note", text: "No public search: " + closed.join(", ") + ". These are closed or organiser-run, so go through the organiser." }) : null
+    ])]);
+  }
+
   function render() {
     var rows = DATA.communities, sized = rows.filter(hasSize);
     var top = sized.slice().sort(function (a, b) { return b.members - a.members; })[0];
@@ -302,7 +349,7 @@
       tile("Rated fit 4 or 5", String(rows.filter(function (r) { return r.fit >= 4; }).length), "Start with these"),
       tile("Combined published members", fmt.format(reach), "People can belong to several"),
       tile("With a published size", String(sized.length), "Of " + rows.length + " communities"));
-    main.replaceChildren(communities(), organisations(), demand());
+    main.replaceChildren(communities(), organisations(), demand(), requests());
     var tabs = document.getElementById("tabs"); tabs.hidden = false;
     function show(id) {
       main.querySelectorAll("section").forEach(function (s) { s.hidden = s.id !== id; });
@@ -312,7 +359,7 @@
       b.addEventListener("click", function () { var id = b.getAttribute("data-tab"); show(id); try { history.replaceState(null, "", "#" + id); } catch (e) {} });
     });
     var h = location.hash.slice(1);
-    if (["communities", "organisations", "demand"].indexOf(h) >= 0) show(h);
+    if (["communities", "organisations", "demand", "requests"].indexOf(h) >= 0) show(h);
   }
 
   (async function () {
