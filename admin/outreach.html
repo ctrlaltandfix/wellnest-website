@@ -29,8 +29,10 @@
   /* ---- hero ---- */
   .hero { padding-bottom: 20px !important; background: radial-gradient(900px 500px at 85% 0%, rgba(216,251,150,.08), transparent 60%), radial-gradient(700px 500px at 0% 100%, rgba(31,122,77,.18), transparent 60%), linear-gradient(180deg, var(--hero), var(--hero-2)); color: var(--on-hero); padding-bottom: 40px; }
   nav { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--hero-line); }
-  .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--on-hero); text-decoration: none; font: 800 26px/1 var(--display); letter-spacing: -.04em; }
-  .brand img { width: 36px; height: auto; }
+  /* Same brand lockup as the landing page and app header (.hb-brand). */
+  .brand { display: inline-flex; align-items: center; gap: 9px; color: #f5fcf4; text-decoration: none; white-space: nowrap; font: 800 30px/1 var(--display); letter-spacing: -.073em; }
+  .brand img { width: 35px; height: 35px; margin: 2px; object-fit: contain; flex: none; }
+  @media (max-width: 650px) { .brand { font-size: 25px; } .brand img { width: 30px; height: 30px; margin: 1.5px; } }
   nav .spacer { flex: 1; }
   nav a.back { color: var(--on-hero); text-decoration: none; font-weight: 600; font-size: 14px; }
   nav a.back:hover { color: var(--lime); }
@@ -127,7 +129,7 @@
 <div class="hero">
   <div class="wrap">
     <nav>
-      <a class="brand" href="/"><img src="/landing/homebeta-header-mark.webp" alt="" width="36" height="25">wellnest</a>
+      <a class="brand" href="/"><img src="/landing/homebeta-header-mark.webp" alt="" width="35" height="35">wellnest</a>
       <span class="spacer"></span>
       <a class="back" href="/">Open site</a>
       <a class="back" href="/admin/analytics">Site statistics</a>
