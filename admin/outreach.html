@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Community &amp; Outreach Index · WellNest</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Matches the wellnest.services landing page: dark green hero, Bricolage Grotesque
+     headlines, lime accents with Instrument Serif italics, then cream. */
+  :root {
+    --hero: #081e1b; --hero-2: #0f2c25; --on-hero: #f6fbf4; --on-hero-2: #bbd0c5; --hero-line: rgba(246,251,244,.12);
+    --lime: #d8fb96; --lime-ink: #10251c;
+    --bg: #f8f8f3; --surface: #ffffff; --ink: #16372f; --ink-2: #33524a; --muted: #6b7d76;
+    --line: #e6e9e1; --grid: #eef0ea; --mark: #1f7a4d; --mark-soft: #e5f3e6; --up: #1f7a4d; --down: #b4472c;
+    --display: "Bricolage Grotesque", Geist, system-ui, sans-serif;
+    --serif: "Instrument Serif", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Geist, Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1184px; margin: 0 auto; padding: 0 24px; }
+  button:focus-visible, summary:focus-visible, a:focus-visible, .chart:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  main button:focus-visible, main summary:focus-visible, main .chart:focus-visible { outline-color: var(--mark); }
+
+  /* ---- hero ---- */
+  .hero { padding-bottom: 20px !important; background: radial-gradient(900px 500px at 85% 0%, rgba(216,251,150,.08), transparent 60%), radial-gradient(700px 500px at 0% 100%, rgba(31,122,77,.18), transparent 60%), linear-gradient(180deg, var(--hero), var(--hero-2)); color: var(--on-hero); padding-bottom: 40px; }
+  nav { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--hero-line); }
+  .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--on-hero); text-decoration: none; font: 800 26px/1 var(--display); letter-spacing: -.04em; }
+  .brand img { width: 36px; height: auto; }
+  nav .spacer { flex: 1; }
+  nav a.back { color: var(--on-hero); text-decoration: none; font-weight: 600; font-size: 14px; }
+  nav a.back:hover { color: var(--lime); }
+  nav a.cta { background: var(--lime); color: var(--lime-ink); text-decoration: none; font-weight: 700; font-size: 14px; padding: 11px 18px; border-radius: 999px; display: inline-flex; gap: 10px; align-items: center; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 10px; margin-top: 16px; padding: 6px 14px 6px 8px; border: 1px solid var(--hero-line); border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .12em; color: var(--on-hero-2); background: rgba(246,251,244,.03); }
+  .eyebrow i { width: 16px; height: 16px; border-radius: 50%; background: rgba(216,251,150,.18); display: grid; place-items: center; }
+  .eyebrow i::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--lime); }
+  .head-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-top: 12px; }
+  .headline { margin: 0; font: 800 clamp(34px, 4.6vw, 52px)/1 var(--display); letter-spacing: -.06em; color: var(--on-hero); }
+  .headline em { font: italic 400 .9em/1 var(--serif); letter-spacing: -.01em; color: var(--lime); margin-left: .25em; }
+  .headline-delta { margin-top: 8px; font-size: 13px; color: var(--on-hero-2); min-height: 1em; }
+  .headline-delta .up { color: var(--lime); font-weight: 600; } .headline-delta .down { color: #ffb89c; font-weight: 600; }
+  .label { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  .hero .label { color: var(--on-hero-2); margin: 28px 0 10px; }
+  .ranges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ranges button { font: 600 14px Geist, Inter, sans-serif; color: var(--on-hero); background: rgba(246,251,244,.04); border: 1px solid rgba(246,251,244,.22); padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+  .ranges button:hover { border-color: rgba(246,251,244,.45); }
+  .ranges button[aria-pressed="true"] { background: var(--lime); border-color: var(--lime); color: var(--lime-ink); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .tiles:empty { display: none; }
+  .tile { background: rgba(246,251,244,.05); border: 1px solid var(--hero-line); border-radius: 16px; padding: 12px 18px; min-width: 0; backdrop-filter: blur(6px); }
+  .tile .k { font-size: 13px; color: var(--on-hero-2); }
+  .tile .value { font: 800 26px/1.05 var(--display); letter-spacing: -.05em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .tile .delta { font-size: 13px; margin-top: 4px; color: var(--on-hero-2); }
+  .tile .delta:empty { display: none; }
+  .tile .up { color: var(--lime); font-weight: 600; } .tile .down { color: #ffb89c; font-weight: 600; }
+
+  /* ---- cream content ---- */
+  main { padding: 20px 0 4px; }
+  .section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 36px 0 14px; }
+  .section-title:first-child { margin-top: 0; }
+  .section-title h2 { margin: 0; font: 800 clamp(28px, 3.4vw, 40px)/1.05 var(--display); letter-spacing: -.06em; color: var(--ink); }
+  .section-title h2 em { font: italic 400 1.05em var(--serif); letter-spacing: -.01em; color: var(--mark); }
+  .section-title .label { color: var(--muted); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; min-width: 0; box-shadow: 0 1px 0 rgba(22,55,47,.03), 0 12px 32px -24px rgba(22,55,47,.25); }
+  .panel h3, .chart-card h3 { margin: 0 0 8px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font: 700 16px/1.2 var(--display); letter-spacing: -.03em; }
+  .panel h3 span, .chart-card h3 span { font: 600 10px Geist, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .chart { position: relative; height: 150px; }
+  .chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .chart .tip { position: absolute; pointer-events: none; background: var(--hero); color: var(--on-hero); border-radius: 12px; padding: 9px 12px; font-size: 12px; white-space: nowrap; transform: translate(-50%, -115%); display: none; box-shadow: 0 10px 24px -10px rgba(8,30,27,.5); }
+  .tip strong { display: block; font: 800 17px var(--display); letter-spacing: -.03em; color: var(--lime); }
+  details { margin-top: 6px; font-size: 13px; color: var(--muted); }
+  summary { cursor: pointer; }
+  details table { margin-top: 8px; }
+
+  .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .board .span4 { grid-column: 1 / -1; } .board .span2 { grid-column: span 2; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th { text-align: right; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0 0 5px 8px; }
+  th:first-child { text-align: left; padding-left: 0; }
+  td { padding: 0; border-top: 1px solid var(--grid); }
+  td.n { text-align: right; padding: 5px 0 5px 8px; color: var(--ink-2); white-space: nowrap; }
+  .bar { position: relative; padding: 5px 8px; min-width: 0; }
+  .bar b { position: absolute; inset: 3px auto 3px 0; background: var(--mark-soft); border-radius: 0 6px 6px 0; }
+  .bar span { position: relative; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+
+  .notice { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 32px; max-width: 620px; }
+  .notice h2 { margin: 0 0 10px; font: 800 30px/1.1 var(--display); letter-spacing: -.05em; }
+  .notice p { margin: 8px 0; color: var(--ink-2); }
+  .notice a.btn { display: inline-block; margin-top: 14px; background: var(--hero); color: var(--lime); padding: 12px 20px; border-radius: 999px; text-decoration: none; font-weight: 700; }
+  code { background: var(--mark-soft); padding: 1px 6px; border-radius: 6px; font-size: 13px; }
+  footer { padding: 14px 0 28px; font-size: 12px; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+  footer svg { flex: none; }
+
+  @media (max-width: 960px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .board { grid-template-columns: minmax(0, 1fr); } .board .span2 { grid-column: auto; } }
+  @media (max-width: 520px) {
+    .wrap { padding: 0 16px; } nav a.back { display: none; } .tiles { grid-template-columns: 1fr 1fr; } .tile:last-child { grid-column: 1 / -1; } .tile .value { font-size: 26px; }
+    .ranges button { padding: 7px 12px; font-size: 13px; }
+    .section-title .label { display: none; }
+  }
+
+  /* ---- outreach index additions ---- */
+  .lede { margin-top: 8px; font-size: 13px; color: var(--on-hero-2); max-width: 640px; }
+  .lede b { color: var(--lime); font-weight: 600; }
+  .note { margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .filters select { font: 600 13px Geist, Inter, sans-serif; color: var(--ink); background-color: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; max-width: 100%; }
+  .scroll { overflow-x: auto; }
+  table.idx { min-width: 820px; }
+  table.idx th { text-align: left; padding: 0 10px 6px 0; white-space: nowrap; }
+  table.idx td { padding: 7px 10px 7px 0; vertical-align: top; color: var(--ink-2); }
+  table.idx td:first-child { color: var(--ink); font-weight: 500; }
+  table.idx td.wide { min-width: 240px; }
+  table.idx a { color: var(--mark); font-weight: 600; text-decoration: none; }
+  table.idx a:hover { text-decoration: underline; }
+  .s-bad { color: var(--down) !important; font-weight: 600; } .s-warn { color: #8a5a00 !important; font-weight: 600; }
+  .s-ok { color: var(--mark) !important; font-weight: 600; } .s-muted { color: var(--muted) !important; }
+  section[hidden] { display: none; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="/"><img src="/landing/homebeta-header-mark.webp" alt="" width="36" height="25">wellnest</a>
+      <span class="spacer"></span>
+      <a class="back" href="/">Open site</a>
+      <a class="back" href="/admin/analytics">Site statistics</a>
+      <a class="cta" href="/admin/edit">Edit WellNest <span aria-hidden="true">↗</span></a>
+    </nav>
+    <div class="eyebrow"><i></i><span>COMMUNITY AND OUTREACH INDEX</span></div>
+    <div class="head-row">
+      <div><h1 class="headline" id="headline">Your communities<em>loading…</em></h1><div class="lede" id="lede"></div></div>
+      <div class="ranges" role="group" aria-label="View" id="tabs" hidden>
+        <button data-tab="communities" aria-pressed="true">Communities</button><button data-tab="organisations" aria-pressed="false">Organisations to call</button><button data-tab="demand" aria-pressed="false">Demand themes</button>
+      </div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+  </div>
+</div>
+<div class="wrap">
+  <main id="main"><p class="empty">Loading…</p></main>
+  <footer>This index lists places and organisations, not individual people. Researched November 2026; member counts will drift.</footer>
+</div>
+<script type="application/json" id="outreach-data">{"communities": [{"community": "r/ChronicPain", "platform": "Reddit", "focus": "Chronic pain", "region": "Global", "members": 177000, "promo_rule": "Not checked", "fit": 5, "approach": "Answer questions about tracking pain and preparing for appointments. Mention WellNest only when someone asks for an app, and say you built it.", "url": "https://www.reddit.com/r/ChronicPain/", "source": "Hive Index listing, updated Apr 2026"}, {"community": "r/Fibromyalgia", "platform": "Reddit", "focus": "Fibromyalgia", "region": "Global", "members": 123000, "promo_rule": "Not checked", "fit": 4, "approach": "Share your fibromyalgia guide when it answers a question. Read the rules before posting any link.", "url": "https://www.reddit.com/r/Fibromyalgia/", "source": "Hive Index listing, updated Apr 2026"}, {"community": "r/ChronicIllness", "platform": "Reddit", "focus": "Any chronic illness", "region": "Global", "members": 116000, "promo_rule": "Not checked", "fit": 4, "approach": "Support-first community. Take part in threads about flares and symptom logs before mentioning any product.", "url": "https://www.reddit.com/r/ChronicIllness/", "source": "Hive Index listing, updated Apr 2026"}, {"community": "r/Epilepsy", "platform": "Reddit", "focus": "Epilepsy", "region": "Global", "members": 60000, "promo_rule": "Not checked", "fit": 5, "approach": "Seizure diary and seizure-free streaks match common questions here. Ask moderators before any post about the app.", "url": "https://www.reddit.com/r/Epilepsy/", "source": "AAN 2026 conference abstract (60K+ members)"}, {"community": "r/CRPS", "platform": "Reddit", "focus": "CRPS", "region": "Global", "members": null, "promo_rule": "Limited", "fit": 5, "approach": "Rule: about ten genuine contributions for each promotional one. New accounts post in the weekly free-talk thread. Members are protective, so be open about who you are.", "url": "https://www.reddit.com/r/CRPS/", "source": "r/CRPS rules wiki"}, {"community": "r/Asthma", "platform": "Reddit", "focus": "Asthma", "region": "Global", "members": null, "promo_rule": "Not checked", "fit": 4, "approach": "Peak flow and reliever-use tracking fit threads about control and triggers. Check the rules first.", "url": "https://www.reddit.com/r/Asthma/", "source": "JMIR 2026 study of r/Asthma posts"}, {"community": "r/cfs", "platform": "Reddit", "focus": "ME/CFS", "region": "Global", "members": null, "promo_rule": "Not allowed", "fit": 2, "approach": "No ads or self-promotion in any form. Read to learn what people need; do not post about WellNest.", "url": "https://www.reddit.com/r/cfs/", "source": "r/cfs spam policy wiki"}, {"community": "Chronic Pain Australia forum", "platform": "Charity forum", "focus": "Chronic pain", "region": "Australia", "members": null, "promo_rule": "Ask the charity", "fit": 5, "approach": "Home market. Contact Chronic Pain Australia rather than posting cold; ask about a resource listing or a demo for members.", "url": "https://www.chronicpainaustralia.org.au/", "source": "Chronic Pain Australia website"}, {"community": "Chronic Pain Australia pain support groups", "platform": "Support groups", "focus": "Chronic pain", "region": "Australia", "members": null, "promo_rule": "Ask the charity", "fit": 5, "approach": "Monthly groups, some online with closed Facebook groups, that teach self-management. Offer facilitators a short demo of the free tools.", "url": "https://www.chronicpainaustralia.org.au/", "source": "Chronic Pain Australia volunteer listings"}, {"community": "Adelaide Pain Support Network", "platform": "Facebook", "focus": "Chronic pain", "region": "Australia", "members": null, "promo_rule": "Ask the organiser", "fit": 4, "approach": "Peer-run group. Message the organiser and offer the printable medication list and appointment checklist.", "url": "https://www.facebook.com/adelaide.painsupport", "source": "Pain Toolkit article and the network's public profile"}, {"community": "Our Recovery", "platform": "Peer program", "focus": "Chronic pain", "region": "Australia", "members": null, "promo_rule": "Ask the organiser", "fit": 4, "approach": "Peer-led online program with group sessions and one-to-one coaching. A tracking tool suits their self-management focus.", "url": "", "source": "ANZCTR trial registration; Pain Toolkit article"}, {"community": "Asthma + Lung UK asthma forum", "platform": "HealthUnlocked", "focus": "Asthma", "region": "UK", "members": 23000, "promo_rule": "Ask the charity", "fit": 3, "approach": "Moderated by the charity; about 2,000 members are active in a month. Approach Asthma + Lung UK rather than members.", "url": "https://healthunlocked.com/asthmauk", "source": "JMIR 2025 moderator study"}, {"community": "Asthma + Lung UK lung conditions forum", "platform": "HealthUnlocked", "focus": "Lung conditions", "region": "UK", "members": 56843, "promo_rule": "Ask the charity", "fit": 2, "approach": "Large, but mostly COPD and other lung conditions. Lower fit than the asthma forum.", "url": "https://healthunlocked.com/asthmalunguk-lung", "source": "HealthUnlocked community page"}, {"community": "Pain Concern forum", "platform": "HealthUnlocked", "focus": "Chronic pain", "region": "UK", "members": null, "promo_rule": "Not allowed", "fit": 3, "approach": "Advertising posts are removed and can lead to a ban. Contact Pain Concern about their resources pages instead.", "url": "https://painconcern.org.uk/forum/", "source": "Pain Concern forum policy"}, {"community": "Fibromyalgia Action UK community", "platform": "HealthUnlocked", "focus": "Fibromyalgia", "region": "UK", "members": null, "promo_rule": "Ask the charity", "fit": 3, "approach": "Run with the charity. Ask Fibromyalgia Action UK whether they list self-management tools.", "url": "https://healthunlocked.com/", "source": "Hive Index listing, updated Apr 2026"}, {"community": "Chronic Pain on Inspire", "platform": "Inspire", "focus": "Chronic pain", "region": "US", "members": null, "promo_rule": "Not checked", "fit": 3, "approach": "Forum for coping strategies. Read the platform terms before mentioning a product.", "url": "https://www.inspire.com/groups/chronic-pain/", "source": "Hive Index listing, updated Apr 2026"}, {"community": "Epilepsy Foundation community", "platform": "Charity forum", "focus": "Epilepsy", "region": "US", "members": null, "promo_rule": "Ask the charity", "fit": 3, "approach": "Hosted by the foundation. Go through the organisation.", "url": "https://www.epilepsy.com/", "source": "arXiv study of r/Epilepsy (names the foundation's groups)"}, {"community": "Mayo Clinic Connect", "platform": "Hospital forum", "focus": "Many conditions, CRPS threads", "region": "US", "members": null, "promo_rule": "Not checked", "fit": 2, "approach": "Moderated patient discussions. Useful for reading what people ask; unlikely to welcome product posts.", "url": "https://connect.mayoclinic.org/", "source": "Mayo Clinic Connect CRPS thread"}], "organisations": [{"organisation": "Chronic Pain Australia", "country": "Australia", "focus": "Chronic pain", "type": "Peak consumer body", "pitch": "Runs a forum, pain support groups and National Pain Week. Ask for a resource listing and a demo slot for group facilitators.", "url": "https://www.chronicpainaustralia.org.au/", "checked": "Seen in research"}, {"organisation": "Musculoskeletal Health Australia", "country": "Australia", "focus": "Pain, arthritis", "type": "Charity with helpline", "pitch": "Helpline staff suggest self-management tools. Offer the free printable tools for their resource pages.", "url": "https://msk.org.au/", "checked": "Seen in research"}, {"organisation": "Painaustralia", "country": "Australia", "focus": "Chronic pain", "type": "National advocacy body", "pitch": "Policy-focused. Ask about their consumer resource directory.", "url": "https://www.painaustralia.org.au/", "checked": "Confirm before calling"}, {"organisation": "Epilepsy Action Australia", "country": "Australia", "focus": "Epilepsy", "type": "Charity", "pitch": "Seizure diary with doctor-ready reports. Ask how they recommend seizure tracking tools.", "url": "https://www.epilepsy.org.au/", "checked": "Confirm before calling"}, {"organisation": "Epilepsy Foundation (Australia)", "country": "Australia", "focus": "Epilepsy", "type": "Charity", "pitch": "Seizure log and emergency plan features suit their support services.", "url": "https://epilepsyfoundation.org.au/", "checked": "Confirm before calling"}, {"organisation": "Asthma Australia", "country": "Australia", "focus": "Asthma", "type": "Charity", "pitch": "Peak flow, reliever use and asthma action plan in one app. Ask about digital tool recommendations.", "url": "https://asthma.org.au/", "checked": "Confirm before calling"}, {"organisation": "National Asthma Council Australia", "country": "Australia", "focus": "Asthma", "type": "Professional body", "pitch": "Sets asthma action plan guidance. Seek feedback on the plan feature before pitching.", "url": "https://www.nationalasthma.org.au/", "checked": "Confirm before calling"}, {"organisation": "Epilepsy New Zealand", "country": "New Zealand", "focus": "Epilepsy", "type": "Charity", "pitch": "Field educators support people directly. Offer the seizure diary as a tool they can suggest.", "url": "https://epilepsy.org.nz/", "checked": "Confirm before calling"}, {"organisation": "Asthma and Respiratory Foundation NZ", "country": "New Zealand", "focus": "Asthma", "type": "Charity", "pitch": "Ask about their self-management resources and whether they list apps.", "url": "https://www.asthmafoundation.org.nz/", "checked": "Confirm before calling"}, {"organisation": "Pain Concern", "country": "UK", "focus": "Chronic pain", "type": "Charity", "pitch": "Their forum bans advertising, so go to the charity. Offer the appointment checklist for their resources.", "url": "https://painconcern.org.uk/", "checked": "Seen in research"}, {"organisation": "Asthma + Lung UK", "country": "UK", "focus": "Asthma", "type": "Charity", "pitch": "Moderates a 23,000-member asthma forum. Ask about partnerships or reviews of digital tools.", "url": "https://www.asthmaandlung.org.uk/", "checked": "Seen in research"}, {"organisation": "Fibromyalgia Action UK", "country": "UK", "focus": "Fibromyalgia", "type": "Charity", "pitch": "Runs a peer community. Offer your fibromyalgia guide and symptom tracking for flare patterns.", "url": "https://www.fmauk.org/", "checked": "Seen in research"}, {"organisation": "Burning Nights CRPS Support", "country": "UK", "focus": "CRPS", "type": "Charity", "pitch": "CRPS-specific. Body-location pain tracking is a direct fit.", "url": "https://www.burningnightscrps.org/", "checked": "Confirm before calling"}, {"organisation": "Epilepsy Action", "country": "UK", "focus": "Epilepsy", "type": "Charity", "pitch": "Ask how they recommend seizure diaries to members.", "url": "https://www.epilepsy.org.uk/", "checked": "Confirm before calling"}, {"organisation": "Epilepsy Foundation", "country": "US", "focus": "Epilepsy", "type": "Charity", "pitch": "Hosts online support groups. Approach about tool listings.", "url": "https://www.epilepsy.com/", "checked": "Seen in research"}, {"organisation": "American Chronic Pain Association", "country": "US", "focus": "Chronic pain", "type": "Charity", "pitch": "Publishes workbooks and runs peer boards. Offer the free tools as companions.", "url": "", "checked": "Seen in research"}, {"organisation": "RSDSA", "country": "US", "focus": "CRPS", "type": "Charity", "pitch": "National CRPS organisation. Pain-location tracking and specialist reports.", "url": "https://rsds.org/", "checked": "Confirm before calling"}, {"organisation": "U.S. Pain Foundation", "country": "US", "focus": "Chronic pain", "type": "Charity", "pitch": "Runs support groups and awareness programs. Ask about their resource lists.", "url": "https://uspainfoundation.org/", "checked": "Confirm before calling"}], "demand": [{"need": "Getting doctors to take pain seriously", "condition": "Chronic pain", "evidence": "The pinned post on r/ChronicPain is a guide to being taken seriously by doctors.", "feature": "Doctor-ready PDF reports, appointment summary maker", "fit": "Strong", "source": "The Spectator article on r/ChronicPain"}, {"need": "Finding what triggers flares and what eases them", "condition": "Chronic illness", "evidence": "Recurring threads on r/ChronicIllness ask what has reduced flares for other people.", "feature": "Daily symptom, trigger and trend tracking", "fit": "Strong", "source": "Hive Index analysis of r/ChronicIllness"}, {"need": "Driving, work and pregnancy with epilepsy", "condition": "Epilepsy", "evidence": "A study of r/Epilepsy posts found driving restrictions, workplace worries and pregnancy among the main topics.", "feature": "Seizure log with seizure-free streaks", "fit": "Strong", "source": "arXiv 2412.01692"}, {"need": "Comparing treatment and medication experiences", "condition": "Epilepsy", "evidence": "Treatment experiences were one of five main themes in 25,222 r/Epilepsy posts from 2023 to 2024.", "feature": "Medication log, dose and refill reminders", "fit": "Medium", "source": "Fisher et al. thematic analysis of r/Epilepsy"}, {"need": "Reliever inhaler use and unclear symptoms", "condition": "Asthma", "evidence": "Researchers studied UK asthma forum posts about symptoms and how people use reliever inhalers.", "feature": "Reliever use, peak flow and night symptom tracking", "fit": "Strong", "source": "JMIR 2023 study of the UK asthma online community"}, {"need": "Possible new diagnosis, what to do next", "condition": "CRPS", "evidence": "r/CRPS has a rule against asking for a diagnosis, which shows how often newcomers arrive with that question.", "feature": "Body-location pain tracking, symptom history for a specialist", "fit": "Medium", "source": "r/CRPS rules wiki"}, {"need": "Learning self-management and using appointments well", "condition": "Chronic pain", "evidence": "Chronic Pain Australia's support groups teach self-management and how to use healthcare settings effectively.", "feature": "Free appointment checklist and medication list", "fit": "Strong", "source": "Chronic Pain Australia volunteer listings"}, {"need": "Isolation and not being believed", "condition": "Chronic illness", "evidence": "Anger and isolation were the most common theme on r/ChronicIllness, with 25 posts in a month.", "feature": "Journal, sharing reports with a care circle", "fit": "Weak", "source": "Hive Index analysis of r/ChronicIllness"}]}</script>
+<script>
+(function () {
+  "use strict";
+  var API = location.hostname.endsWith("github.io") ? "https://wellnest.services" : "";
+  var main = document.getElementById("main");
+  var DATA = JSON.parse(document.getElementById("outreach-data").textContent);
+  var fmt = new Intl.NumberFormat();
+  var RESTRICT = ["Not allowed", "Limited", "Ask the charity", "Ask the organiser"];
+
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    for (var k in attrs || {}) {
+      if (k === "text") n.textContent = attrs[k];
+      else if (k === "class") n.className = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { if (c) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return n;
+  }
+  function headline(big, small) {
+    document.getElementById("headline").replaceChildren(document.createTextNode(big), el("em", { text: small }));
+  }
+
+  // ---------- admin check: same sign-in and admin list as /admin/analytics ----------
+  function stored() { try { return JSON.parse(localStorage.getItem("gotrue.user") || "null"); } catch (e) { return null; } }
+  async function refresh() {
+    var u = stored();
+    if (!u || !u.token || !u.token.refresh_token) return false;
+    var res = await fetch(API + "/api/_identity/token", {
+      method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(u.token.refresh_token),
+    });
+    if (!res.ok) return false;
+    var t = await res.json();
+    u.token = Object.assign({}, u.token, t, { expires_at: Date.now() + (t.expires_in || 3600) * 1000 });
+    try { localStorage.setItem("gotrue.user", JSON.stringify(u)); } catch (e) {}
+    return true;
+  }
+  async function adminCheck(retry) {
+    var u = stored();
+    var headers = u && u.token && u.token.access_token ? { Authorization: "Bearer " + u.token.access_token } : {};
+    var res = await fetch(API + "/api/analytics/stats?days=1", { headers: headers, credentials: "include" });
+    if (res.status === 401 && !retry && await refresh()) return adminCheck(true);
+    return res;
+  }
+  function notice(title, lines, link) {
+    headline("Outreach index", "nothing to show yet.");
+    main.replaceChildren(el("div", { class: "notice" }, [el("h2", { text: title })].concat(lines.map(function (l) {
+      return el("p", { text: l });
+    })).concat(link ? [el("a", { class: "btn", href: link[1], text: link[0] })] : [])));
+  }
+
+  // ---------- pieces ----------
+  function hasSize(r) { return r.members !== null && r.members !== undefined && r.members !== ""; }
+  function sectionTitle(a, em, label) {
+    return el("div", { class: "section-title" }, [el("h2", {}, [a + " ", el("em", { text: em })]), el("span", { class: "label", text: label })]);
+  }
+  function linkOrText(text, url) {
+    if (typeof url === "string" && url.indexOf("https://") === 0) return el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: text });
+    return document.createTextNode(text);
+  }
+  function promoClass(p) { return p === "Not allowed" ? "s-bad" : p === "Not checked" ? "s-muted" : "s-warn"; }
+  function table(cols, rows) {
+    var t = el("table", { class: "idx" }, [el("thead", {}, [el("tr", {}, cols.map(function (c) { return el("th", { text: c }); }))])]);
+    var tb = el("tbody"); t.appendChild(tb);
+    rows.forEach(function (cells) {
+      tb.appendChild(el("tr", {}, cells.map(function (c) {
+        if (c && c.node) return el("td", { class: c.cls || "" }, [c.node]);
+        if (c && typeof c === "object") return el("td", { class: c.cls || "", text: String(c.text) });
+        return el("td", { text: c == null ? "" : String(c) });
+      })));
+    });
+    return el("div", { class: "scroll" }, [t]);
+  }
+  function select(label, options, onchange) {
+    var s = el("select", { "aria-label": label }, options.map(function (o, i) { return el("option", { value: i ? o : "", text: o }); }));
+    s.addEventListener("change", onchange);
+    return s;
+  }
+
+  function communities() {
+    var rows = DATA.communities, sized = rows.filter(hasSize).slice().sort(function (a, b) { return b.members - a.members; });
+    var max = sized.length ? sized[0].members : 1;
+    var bars = el("table", {}, [el("thead", {}, [el("tr", {}, [el("th", { text: "Community" }), el("th", { text: "Members" })])])]);
+    var bb = el("tbody"); bars.appendChild(bb);
+    sized.forEach(function (r) {
+      var b = el("b"); b.style.width = (r.members / max * 100) + "%";
+      bb.appendChild(el("tr", {}, [el("td", {}, [el("div", { class: "bar", title: r.source }, [b, el("span", { text: r.community })])]), el("td", { class: "n", text: fmt.format(r.members) })]));
+    });
+    var holder = el("div");
+    var region = select("Region", ["All regions", "Australia", "UK", "US", "Global"], draw);
+    var promo = select("Promotion rule", ["All promotion rules", "Not allowed", "Limited", "Ask the charity", "Ask the organiser", "Not checked"], draw);
+    function draw() {
+      var list = rows.filter(function (r) { return (!region.value || r.region === region.value) && (!promo.value || r.promo_rule === promo.value); })
+        .slice().sort(function (a, b) { return (b.fit - a.fit) || ((b.members || 0) - (a.members || 0)); });
+      holder.replaceChildren(list.length ? table(["Community", "Platform", "Region", "Members", "Promotion rule", "Fit, 1 to 5", "How to approach", "Source"], list.map(function (r) {
+        return [{ node: linkOrText(r.community, r.url) }, r.platform, r.region,
+          hasSize(r) ? fmt.format(r.members) : { text: "Not published", cls: "s-muted" },
+          { text: r.promo_rule, cls: promoClass(r.promo_rule) }, r.fit, { text: r.approach, cls: "wide" }, { text: r.source, cls: "s-muted" }];
+      })) : el("p", { class: "empty", text: "No communities match these filters." }));
+    }
+    draw();
+    var first = sectionTitle("Where they", "gather", "Member counts"); first.style.marginTop = "0";
+    return el("section", { id: "communities" }, [
+      first,
+      el("div", { class: "card panel" }, [el("h3", {}, ["Community size", el("span", { text: "Where published" })]), bars]),
+      sectionTitle("Community", "index", "Sorted by fit"),
+      el("div", { class: "card" }, [el("div", { class: "filters" }, [region, promo]), holder]),
+      el("details", {}, [el("summary", { text: "How the fit score and promotion rules were set" }), el("p", { text: "Fit is a 1 to 5 judgement of how closely a community matches the conditions and features on wellnest.services, with extra weight for Australia. Promotion rule is what the community or its host publishes. Not checked means the rule page was not read, so read it before posting. Facebook groups are under-represented because most do not publish sizes or rules." })]),
+    ]);
+  }
+  function organisations() {
+    var holder = el("div");
+    var country = select("Country", ["All countries", "Australia", "New Zealand", "UK", "US"], draw);
+    function draw() {
+      holder.replaceChildren(table(["Organisation", "Country", "Focus", "Type", "Pitch angle", "Status"], DATA.organisations.filter(function (r) { return !country.value || r.country === country.value; }).map(function (r) {
+        return [{ node: linkOrText(r.organisation, r.url) }, r.country, r.focus, r.type, { text: r.pitch, cls: "wide" }, { text: r.checked, cls: r.checked === "Seen in research" ? "s-ok" : "s-warn" }];
+      })));
+    }
+    draw();
+    var first = sectionTitle("Organisations to", "call", "AU, NZ, UK, US"); first.style.marginTop = "0";
+    return el("section", { id: "organisations", hidden: "" }, [first, el("div", { class: "card" }, [
+      el("p", { class: "note", text: "These are organisations with public contact pages. Take phone numbers from each site. Rows marked Confirm before calling were listed from general knowledge and their links are not yet checked." }),
+      el("div", { class: "filters" }, [country]), holder])]);
+  }
+  function demand() {
+    var order = { Strong: 0, Medium: 1, Weak: 2 };
+    var rows = DATA.demand.slice().sort(function (a, b) { return order[a.fit] - order[b.fit]; });
+    var first = sectionTitle("What people", "ask about", "Matched to features"); first.style.marginTop = "0";
+    return el("section", { id: "demand", hidden: "" }, [first, el("div", { class: "card" }, [
+      el("p", { class: "note", text: "Themes come from published studies and community pages. Search volumes are not included." }),
+      table(["Need", "Condition", "WellNest feature", "Fit", "Evidence", "Source"], rows.map(function (r) {
+        return [r.need, r.condition, r.feature, { text: r.fit, cls: r.fit === "Strong" ? "s-ok" : r.fit === "Weak" ? "s-muted" : "s-warn" }, { text: r.evidence, cls: "wide" }, { text: r.source, cls: "s-muted" }];
+      }))])]);
+  }
+
+  function render() {
+    var rows = DATA.communities, sized = rows.filter(hasSize);
+    var top = sized.slice().sort(function (a, b) { return b.members - a.members; })[0];
+    var reach = sized.reduce(function (s, r) { return s + r.members; }, 0);
+    headline("Your communities", rows.length + " indexed");
+    var lede = document.getElementById("lede");
+    lede.replaceChildren();
+    if (top) lede.append("The largest community with a published size is ", el("b", { text: top.community }), " at ", el("b", { text: fmt.format(top.members) }), " members. ");
+    lede.append(el("b", { text: String(rows.filter(function (r) { return RESTRICT.indexOf(r.promo_rule) >= 0; }).length) }), " of them ban promotion, limit it or need permission first. Rules for the rest are not yet checked.");
+    function tile(k, v, d) { return el("div", { class: "tile" }, [el("div", { class: "k", text: k }), el("div", { class: "value", text: v }), el("div", { class: "delta", text: d })]); }
+    document.getElementById("tiles").replaceChildren(
+      tile("Rated fit 4 or 5", String(rows.filter(function (r) { return r.fit >= 4; }).length), "Start with these"),
+      tile("Combined published members", fmt.format(reach), "People can belong to several"),
+      tile("With a published size", String(sized.length), "Of " + rows.length + " communities"));
+    main.replaceChildren(communities(), organisations(), demand());
+    var tabs = document.getElementById("tabs"); tabs.hidden = false;
+    function show(id) {
+      main.querySelectorAll("section").forEach(function (s) { s.hidden = s.id !== id; });
+      tabs.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-tab") === id)); });
+    }
+    tabs.querySelectorAll("button").forEach(function (b) {
+      b.addEventListener("click", function () { var id = b.getAttribute("data-tab"); show(id); try { history.replaceState(null, "", "#" + id); } catch (e) {} });
+    });
+    var h = location.hash.slice(1);
+    if (["communities", "organisations", "demand"].indexOf(h) >= 0) show(h);
+  }
+
+  (async function () {
+    try {
+      var res = await adminCheck(false);
+      if (res.status === 401) return notice("Sign in to see the outreach index", ["Sign in to WellNest with your admin account, then come back to this page."], ["Sign in", "/login?redirect=" + encodeURIComponent(location.pathname)]);
+      if (res.status === 403) return notice("This account can't see the outreach index", ["It uses the same admin list as Site statistics."]);
+      if (!res.ok) throw new Error(res.statusText);
+      render();
+    } catch (e) {
+      notice("Couldn't load the outreach index", ["Please try again in a moment. (" + (e && e.message || "network error") + ")"]);
+    }
+  })();
+})();
+</script>
+</body>
+</html>
