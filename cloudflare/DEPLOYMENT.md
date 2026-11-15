@@ -1,6 +1,6 @@
 # Production source
 
-`wrangler.jsonc` deploys `cloudflare/worker.js`. That file now includes the
+`wrangler.jsonc` deploys `cloudflare/entry.js`, a small wrapper that adds the admin outreach API and delegates all existing routes and scheduled events to `cloudflare/worker.js`. That file now includes the
 self-contained production Worker recovered from Cloudflare on 12 November 2026,
 including calendar OAuth, subscriptions, quick-add/download pages, account
 analytics and discoverability response transforms. It contains no secret values;

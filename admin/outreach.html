@@ -126,6 +126,13 @@
   table.idx a.chip { display: inline-block; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--mark-soft); color: var(--ink); font-weight: 600; font-size: 12px; white-space: nowrap; }
   table.idx a.chip:hover { border-color: var(--mark); text-decoration: none; }
   section[hidden] { display: none; }
+.lead-panel input, .lead-panel textarea, .lead-panel select { font: inherit; padding: 9px; border: 1px solid var(--line); border-radius: 8px; max-width: 100%; }
+  .lead-panel button { font: 600 13px Geist, sans-serif; padding: 9px 13px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--mark-soft); cursor: pointer; }
+  .lead-panel button:disabled { opacity: .5; cursor: wait; }
+  .lead-form { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 20px; max-width: 720px; }
+  .lead-form label { display: block; margin-bottom: 14px; font-weight: 600; }
+  .lead-form input, .lead-form textarea, .lead-form select { display: block; width: 100%; margin-top: 5px; }
+  .lead-panel :focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; }
 </style>
 </head>
 <body>
@@ -144,7 +151,7 @@
     <div class="head-row">
       <div><h1 class="headline" id="headline">Your communities<em>loading…</em></h1><div class="lede" id="lede"></div></div>
       <div class="ranges" role="group" aria-label="View" id="tabs" hidden>
-        <button data-tab="communities" aria-pressed="true">Communities</button><button data-tab="organisations" aria-pressed="false">Organisations to call</button><button data-tab="demand" aria-pressed="false">Demand themes</button><button data-tab="requests" aria-pressed="false">Tracker requests</button>
+        <button data-tab="communities" aria-pressed="true">Communities</button><button data-tab="organisations" aria-pressed="false">Organisations to call</button><button data-tab="demand" aria-pressed="false">Demand themes</button><button data-tab="requests" aria-pressed="false">Tracker requests</button><button data-tab="leads" aria-pressed="false">Individual leads</button>
       </div>
     </div>
     <div class="tiles" id="tiles"></div>
@@ -152,7 +159,7 @@
 </div>
 <div class="wrap">
   <main id="main"><p class="empty">Loading…</p></main>
-  <footer>This index lists places and organisations, not individual people. Researched November 2026; member counts will drift.</footer>
+  <footer>Community research and saved individual outreach leads. Researched November 2026; member counts will drift.</footer>
 </div>
 <script type="application/json" id="outreach-data">{"communities": [{"community": "r/ChronicPain", "platform": "Reddit", "focus": "Chronic pain", "region": "Global", "members": 177000, "promo_rule": "Not checked", "fit": 5, "approach": "Answer questions about tracking pain and preparing for appointments. Mention WellNest only when someone asks for an app, and say you built it.", "url": "https://www.reddit.com/r/ChronicPain/", "source": "Hive Index listing, updated Apr 2026"}, {"community": "r/Fibromyalgia", "platform": "Reddit", "focus": "Fibromyalgia", "region": "Global", "members": 123000, "promo_rule": "Not checked", "fit": 4, "approach": "Share your fibromyalgia guide when it answers a question. Read the rules before posting any link.", "url": "https://www.reddit.com/r/Fibromyalgia/", "source": "Hive Index listing, updated Apr 2026"}, {"community": "r/ChronicIllness", "platform": "Reddit", "focus": "Any chronic illness", "region": "Global", "members": 116000, "promo_rule": "Not checked", "fit": 4, "approach": "Support-first community. Take part in threads about flares and symptom logs before mentioning any product.", "url": "https://www.reddit.com/r/ChronicIllness/", "source": "Hive Index listing, updated Apr 2026"}, {"community": "r/Epilepsy", "platform": "Reddit", "focus": "Epilepsy", "region": "Global", "members": 60000, "promo_rule": "Not checked", "fit": 5, "approach": "Seizure diary and seizure-free streaks match common questions here. Ask moderators before any post about the app.", "url": "https://www.reddit.com/r/Epilepsy/", "source": "AAN 2026 conference abstract (60K+ members)"}, {"community": "r/CRPS", "platform": "Reddit", "focus": "CRPS", "region": "Global", "members": null, "promo_rule": "Limited", "fit": 5, "approach": "Rule: about ten genuine contributions for each promotional one. New accounts post in the weekly free-talk thread. Members are protective, so be open about who you are.", "url": "https://www.reddit.com/r/CRPS/", "source": "r/CRPS rules wiki"}, {"community": "r/Asthma", "platform": "Reddit", "focus": "Asthma", "region": "Global", "members": null, "promo_rule": "Not checked", "fit": 4, "approach": "Peak flow and reliever-use tracking fit threads about control and triggers. Check the rules first.", "url": "https://www.reddit.com/r/Asthma/", "source": "JMIR 2026 study of r/Asthma posts"}, {"community": "r/cfs", "platform": "Reddit", "focus": "ME/CFS", "region": "Global", "members": null, "promo_rule": "Not allowed", "fit": 2, "approach": "No ads or self-promotion in any form. Read to learn what people need; do not post about WellNest.", "url": "https://www.reddit.com/r/cfs/", "source": "r/cfs spam policy wiki"}, {"community": "Chronic Pain Australia forum", "platform": "Charity forum", "focus": "Chronic pain", "region": "Australia", "members": null, "promo_rule": "Ask the charity", "fit": 5, "approach": "Home market. Contact Chronic Pain Australia rather than posting cold; ask about a resource listing or a demo for members.", "url": "https://www.chronicpainaustralia.org.au/", "source": "Chronic Pain Australia website"}, {"community": "Chronic Pain Australia pain support groups", "platform": "Support groups", "focus": "Chronic pain", "region": "Australia", "members": null, "promo_rule": "Ask the charity", "fit": 5, "approach": "Monthly groups, some online with closed Facebook groups, that teach self-management. Offer facilitators a short demo of the free tools.", "url": "https://www.chronicpainaustralia.org.au/", "source": "Chronic Pain Australia volunteer listings"}, {"community": "Adelaide Pain Support Network", "platform": "Facebook", "focus": "Chronic pain", "region": "Australia", "members": null, "promo_rule": "Ask the organiser", "fit": 4, "approach": "Peer-run group. Message the organiser and offer the printable medication list and appointment checklist.", "url": "https://www.facebook.com/adelaide.painsupport", "source": "Pain Toolkit article and the network's public profile"}, {"community": "Our Recovery", "platform": "Peer program", "focus": "Chronic pain", "region": "Australia", "members": null, "promo_rule": "Ask the organiser", "fit": 4, "approach": "Peer-led online program with group sessions and one-to-one coaching. A tracking tool suits their self-management focus.", "url": "", "source": "ANZCTR trial registration; Pain Toolkit article"}, {"community": "Asthma + Lung UK asthma forum", "platform": "HealthUnlocked", "focus": "Asthma", "region": "UK", "members": 23000, "promo_rule": "Ask the charity", "fit": 3, "approach": "Moderated by the charity; about 2,000 members are active in a month. Approach Asthma + Lung UK rather than members.", "url": "https://healthunlocked.com/asthmauk", "source": "JMIR 2025 moderator study"}, {"community": "Asthma + Lung UK lung conditions forum", "platform": "HealthUnlocked", "focus": "Lung conditions", "region": "UK", "members": 56843, "promo_rule": "Ask the charity", "fit": 2, "approach": "Large, but mostly COPD and other lung conditions. Lower fit than the asthma forum.", "url": "https://healthunlocked.com/asthmalunguk-lung", "source": "HealthUnlocked community page"}, {"community": "Pain Concern forum", "platform": "HealthUnlocked", "focus": "Chronic pain", "region": "UK", "members": null, "promo_rule": "Not allowed", "fit": 3, "approach": "Advertising posts are removed and can lead to a ban. Contact Pain Concern about their resources pages instead.", "url": "https://painconcern.org.uk/forum/", "source": "Pain Concern forum policy"}, {"community": "Fibromyalgia Action UK community", "platform": "HealthUnlocked", "focus": "Fibromyalgia", "region": "UK", "members": null, "promo_rule": "Ask the charity", "fit": 3, "approach": "Run with the charity. Ask Fibromyalgia Action UK whether they list self-management tools.", "url": "https://healthunlocked.com/", "source": "Hive Index listing, updated Apr 2026"}, {"community": "Chronic Pain on Inspire", "platform": "Inspire", "focus": "Chronic pain", "region": "US", "members": null, "promo_rule": "Not checked", "fit": 3, "approach": "Forum for coping strategies. Read the platform terms before mentioning a product.", "url": "https://www.inspire.com/groups/chronic-pain/", "source": "Hive Index listing, updated Apr 2026"}, {"community": "Epilepsy Foundation community", "platform": "Charity forum", "focus": "Epilepsy", "region": "US", "members": null, "promo_rule": "Ask the charity", "fit": 3, "approach": "Hosted by the foundation. Go through the organisation.", "url": "https://www.epilepsy.com/", "source": "arXiv study of r/Epilepsy (names the foundation's groups)"}, {"community": "Mayo Clinic Connect", "platform": "Hospital forum", "focus": "Many conditions, CRPS threads", "region": "US", "members": null, "promo_rule": "Not checked", "fit": 2, "approach": "Moderated patient discussions. Useful for reading what people ask; unlikely to welcome product posts.", "url": "https://connect.mayoclinic.org/", "source": "Mayo Clinic Connect CRPS thread"}], "organisations": [{"organisation": "Chronic Pain Australia", "country": "Australia", "focus": "Chronic pain", "type": "Peak consumer body", "pitch": "Runs a forum, pain support groups and National Pain Week. Ask for a resource listing and a demo slot for group facilitators.", "url": "https://www.chronicpainaustralia.org.au/", "checked": "Seen in research"}, {"organisation": "Musculoskeletal Health Australia", "country": "Australia", "focus": "Pain, arthritis", "type": "Charity with helpline", "pitch": "Helpline staff suggest self-management tools. Offer the free printable tools for their resource pages.", "url": "https://msk.org.au/", "checked": "Seen in research"}, {"organisation": "Painaustralia", "country": "Australia", "focus": "Chronic pain", "type": "National advocacy body", "pitch": "Policy-focused. Ask about their consumer resource directory.", "url": "https://www.painaustralia.org.au/", "checked": "Confirm before calling"}, {"organisation": "Epilepsy Action Australia", "country": "Australia", "focus": "Epilepsy", "type": "Charity", "pitch": "Seizure diary with doctor-ready reports. Ask how they recommend seizure tracking tools.", "url": "https://www.epilepsy.org.au/", "checked": "Confirm before calling"}, {"organisation": "Epilepsy Foundation (Australia)", "country": "Australia", "focus": "Epilepsy", "type": "Charity", "pitch": "Seizure log and emergency plan features suit their support services.", "url": "https://epilepsyfoundation.org.au/", "checked": "Confirm before calling"}, {"organisation": "Asthma Australia", "country": "Australia", "focus": "Asthma", "type": "Charity", "pitch": "Peak flow, reliever use and asthma action plan in one app. Ask about digital tool recommendations.", "url": "https://asthma.org.au/", "checked": "Confirm before calling"}, {"organisation": "National Asthma Council Australia", "country": "Australia", "focus": "Asthma", "type": "Professional body", "pitch": "Sets asthma action plan guidance. Seek feedback on the plan feature before pitching.", "url": "https://www.nationalasthma.org.au/", "checked": "Confirm before calling"}, {"organisation": "Epilepsy New Zealand", "country": "New Zealand", "focus": "Epilepsy", "type": "Charity", "pitch": "Field educators support people directly. Offer the seizure diary as a tool they can suggest.", "url": "https://epilepsy.org.nz/", "checked": "Confirm before calling"}, {"organisation": "Asthma and Respiratory Foundation NZ", "country": "New Zealand", "focus": "Asthma", "type": "Charity", "pitch": "Ask about their self-management resources and whether they list apps.", "url": "https://www.asthmafoundation.org.nz/", "checked": "Confirm before calling"}, {"organisation": "Pain Concern", "country": "UK", "focus": "Chronic pain", "type": "Charity", "pitch": "Their forum bans advertising, so go to the charity. Offer the appointment checklist for their resources.", "url": "https://painconcern.org.uk/", "checked": "Seen in research"}, {"organisation": "Asthma + Lung UK", "country": "UK", "focus": "Asthma", "type": "Charity", "pitch": "Moderates a 23,000-member asthma forum. Ask about partnerships or reviews of digital tools.", "url": "https://www.asthmaandlung.org.uk/", "checked": "Seen in research"}, {"organisation": "Fibromyalgia Action UK", "country": "UK", "focus": "Fibromyalgia", "type": "Charity", "pitch": "Runs a peer community. Offer your fibromyalgia guide and symptom tracking for flare patterns.", "url": "https://www.fmauk.org/", "checked": "Seen in research"}, {"organisation": "Burning Nights CRPS Support", "country": "UK", "focus": "CRPS", "type": "Charity", "pitch": "CRPS-specific. Body-location pain tracking is a direct fit.", "url": "https://www.burningnightscrps.org/", "checked": "Confirm before calling"}, {"organisation": "Epilepsy Action", "country": "UK", "focus": "Epilepsy", "type": "Charity", "pitch": "Ask how they recommend seizure diaries to members.", "url": "https://www.epilepsy.org.uk/", "checked": "Confirm before calling"}, {"organisation": "Epilepsy Foundation", "country": "US", "focus": "Epilepsy", "type": "Charity", "pitch": "Hosts online support groups. Approach about tool listings.", "url": "https://www.epilepsy.com/", "checked": "Seen in research"}, {"organisation": "American Chronic Pain Association", "country": "US", "focus": "Chronic pain", "type": "Charity", "pitch": "Publishes workbooks and runs peer boards. Offer the free tools as companions.", "url": "", "checked": "Seen in research"}, {"organisation": "RSDSA", "country": "US", "focus": "CRPS", "type": "Charity", "pitch": "National CRPS organisation. Pain-location tracking and specialist reports.", "url": "https://rsds.org/", "checked": "Confirm before calling"}, {"organisation": "U.S. Pain Foundation", "country": "US", "focus": "Chronic pain", "type": "Charity", "pitch": "Runs support groups and awareness programs. Ask about their resource lists.", "url": "https://uspainfoundation.org/", "checked": "Confirm before calling"}], "demand": [{"need": "Getting doctors to take pain seriously", "condition": "Chronic pain", "evidence": "The pinned post on r/ChronicPain is a guide to being taken seriously by doctors.", "feature": "Doctor-ready PDF reports, appointment summary maker", "fit": "Strong", "source": "The Spectator article on r/ChronicPain"}, {"need": "Finding what triggers flares and what eases them", "condition": "Chronic illness", "evidence": "Recurring threads on r/ChronicIllness ask what has reduced flares for other people.", "feature": "Daily symptom, trigger and trend tracking", "fit": "Strong", "source": "Hive Index analysis of r/ChronicIllness"}, {"need": "Driving, work and pregnancy with epilepsy", "condition": "Epilepsy", "evidence": "A study of r/Epilepsy posts found driving restrictions, workplace worries and pregnancy among the main topics.", "feature": "Seizure log with seizure-free streaks", "fit": "Strong", "source": "arXiv 2412.01692"}, {"need": "Comparing treatment and medication experiences", "condition": "Epilepsy", "evidence": "Treatment experiences were one of five main themes in 25,222 r/Epilepsy posts from 2023 to 2024.", "feature": "Medication log, dose and refill reminders", "fit": "Medium", "source": "Fisher et al. thematic analysis of r/Epilepsy"}, {"need": "Reliever inhaler use and unclear symptoms", "condition": "Asthma", "evidence": "Researchers studied UK asthma forum posts about symptoms and how people use reliever inhalers.", "feature": "Reliever use, peak flow and night symptom tracking", "fit": "Strong", "source": "JMIR 2023 study of the UK asthma online community"}, {"need": "Possible new diagnosis, what to do next", "condition": "CRPS", "evidence": "r/CRPS has a rule against asking for a diagnosis, which shows how often newcomers arrive with that question.", "feature": "Body-location pain tracking, symptom history for a specialist", "fit": "Medium", "source": "r/CRPS rules wiki"}, {"need": "Learning self-management and using appointments well", "condition": "Chronic pain", "evidence": "Chronic Pain Australia's support groups teach self-management and how to use healthcare settings effectively.", "feature": "Free appointment checklist and medication list", "fit": "Strong", "source": "Chronic Pain Australia volunteer listings"}, {"need": "Isolation and not being believed", "condition": "Chronic illness", "evidence": "Anger and isolation were the most common theme on r/ChronicIllness, with 25 posts in a month.", "feature": "Journal, sharing reports with a care circle", "fit": "Weak", "source": "Hive Index analysis of r/ChronicIllness"}]}</script>
 <script>
@@ -328,11 +335,98 @@
     });
     var first = sectionTitle("Tracker", "requests", "Live searches"); first.style.marginTop = "0";
     return el("section", { id: "requests", hidden: "" }, [first, el("div", { class: "card" }, [
-      el("p", { class: "note", text: "Each button opens a live search, newest first where the site allows, for people asking about a tracker in that community. You read the posts on the community's own site; none are copied or stored here." }),
+      el("p", { class: "note", text: "Each button opens a live search, newest first where the site allows, for people asking about a tracker in that community. You read the posts on the community's own site; add the members you want to follow up with in Individual leads." }),
       el("p", { class: "note", text: "Check the promotion rule before replying. Where it is allowed, reply in the thread, say you built WellNest, and answer the question asked. Do not message people privately or contact them outside the thread." }),
       table(["Community", "Platform", "Promotion rule", "Open a live search"], list),
       closed.length ? el("p", { class: "note", text: "No public search: " + closed.join(", ") + ". These are closed or organiser-run, so go through the organiser." }) : null
     ])]);
+  }
+
+  function leads() {
+    var items = [], selected = null;
+    var stages = ['New', 'Contacted', 'Replied', 'Interested', 'Signed up', 'Not interested', 'Do not contact'];
+    var status = el('p', { role: 'status', 'aria-live': 'polite' });
+    var holder = el('div'), editor = el('div'), summary = el('p', { class: 'note' });
+    var search = el('input', { type: 'search', placeholder: 'Search members, communities or requests', 'aria-label': 'Search leads' });
+    var stage = select('Outreach stage', ['All stages'].concat(stages), draw);
+    var contact = select('Contact history', ['All contact history', 'Not contacted', 'Already contacted'], draw);
+    var due = select('Follow-up', ['All follow-ups', 'Due today or overdue'], draw);
+    search.addEventListener('input', draw);
+    function today() { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+    async function call(method, body, retry) {
+      var u = stored(), headers = { 'Content-Type': 'application/json' };
+      if (u && u.token) headers.Authorization = 'Bearer ' + u.token.access_token;
+      var res = await fetch(API + '/api/outreach/leads', { method: method, headers: headers, credentials: 'include', body: body ? JSON.stringify(body) : undefined });
+      if (res.status === 401 && !retry && await refresh()) return call(method, body, true);
+      var data = await res.json();
+      if (!res.ok) throw Error(data.error || 'Could not save lead');
+      return data;
+    }
+    function draw() {
+      var list = items.filter(function (r) {
+        return (!stage.value || stage.value === r.stage) && (!search.value || [r.member, r.community, r.request].join(' ').toLowerCase().includes(search.value.toLowerCase())) &&
+          (!contact.value || (contact.value === 'Already contacted' ? !!r.contacted : !r.contacted)) &&
+          (!due.value || (r.followup && r.followup <= today() && !['Signed up', 'Not interested', 'Do not contact'].includes(r.stage)));
+      });
+      summary.textContent = items.length + ' leads · ' + items.filter(function (r) { return !!r.contacted; }).length + ' contacted · ' + list.length + ' shown';
+      holder.replaceChildren(list.length ? table(['Member', 'Community', 'Tracker request', 'Stage', 'Last contacted', 'Follow-up', 'Details'], list.map(function (r) {
+        var button = el('button', { type: 'button', text: 'View / edit', 'aria-label': 'View ' + r.member });
+        button.onclick = function () { edit(r); };
+        return [r.member, r.community, { node: linkOrText(r.request, r.source), cls: 'wide' }, r.stage, r.contacted || 'Not contacted', r.followup || '—', { node: button }];
+      })) : el('p', { class: 'empty', text: items.length ? 'No leads match these filters.' : 'No saved leads yet. Open Tracker requests to find a post, then add the member and their request here.' }));
+    }
+    function edit(record) {
+      selected = record;
+      var form = el('form', { class: 'lead-form' }), fields = {};
+      form.appendChild(el('h3', { text: record ? 'Member details · ' + record.member : 'Add a community member' }));
+      [['member', 'Member name or handle', 'text'], ['community', 'Community', 'text'], ['source', 'Original request link', 'url'], ['request', 'What tracker are they asking for?', 'textarea'], ['stage', 'Outreach stage', 'select'], ['contacted', 'Last contacted', 'date'], ['followup', 'Next follow-up', 'date'], ['notes', 'Outreach notes', 'textarea']].forEach(function (f) {
+        var input = f[2] === 'select' ? el('select', {}, stages.map(function (s) { return el('option', { value: s, text: s }); })) : el(f[2] === 'textarea' ? 'textarea' : 'input', f[2] === 'textarea' ? { rows: '3' } : { type: f[2] });
+        input.value = record ? record[f[0]] : f[0] === 'stage' ? 'New' : '';
+        input.id = 'lead-' + f[0]; input.name = f[0];
+        if (['member', 'community', 'source', 'request'].includes(f[0])) input.required = true;
+        input.maxLength = ({ member: 150, community: 150, source: 2000, request: 2000, notes: 5000 })[f[0]] || 5000;
+        fields[f[0]] = input;
+        form.appendChild(el('label', { for: input.id }, [f[1], input]));
+      });
+      var save = el('button', { type: 'submit', text: 'Save lead' }), cancel = el('button', { type: 'button', text: 'Close' });
+      cancel.onclick = function () { editor.replaceChildren(); selected = null; };
+      var contacted = el('button', { type: 'button', text: 'Mark contacted today' });
+      contacted.onclick = function () { fields.contacted.value = today(); if (fields.stage.value === 'New') fields.stage.value = 'Contacted'; };
+      form.appendChild(el('div', { class: 'filters' }, [save, contacted, cancel]));
+      var message = el('p', { role: 'status' }); form.appendChild(message);
+      form.onsubmit = async function (e) {
+        e.preventDefault(); save.disabled = true;
+        var data = record ? { id: record.id, version: record.version } : {};
+        Object.keys(fields).forEach(function (k) { data[k] = fields[k].value; });
+        try {
+          var saved = await call(record ? 'PUT' : 'POST', data);
+          items = items.filter(function (r) { return r.id !== saved.id; }); items.unshift(saved);
+          draw(); edit(saved); status.textContent = 'Lead saved.';
+        } catch (error) { message.textContent = error.message; } finally { save.disabled = false; }
+      };
+      if (record) {
+        var remove = el('button', { type: 'button', text: 'Delete lead' });
+        remove.onclick = async function () {
+          if (!confirm('Delete this saved lead?')) return;
+          remove.disabled = true;
+          try { await call('DELETE', { id: record.id, version: record.version }); items = items.filter(function (r) { return r.id !== record.id; }); editor.replaceChildren(); selected = null; draw(); status.textContent = 'Lead deleted.'; }
+          catch (error) { message.textContent = error.message; remove.disabled = false; }
+        };
+        form.appendChild(remove);
+      }
+      editor.replaceChildren(form); fields.member.focus();
+    }
+    var add = el('button', { type: 'button', text: '+ Add member' }); add.onclick = function () { edit(null); };
+    var reload = el('button', { type: 'button', text: 'Refresh leads' });
+    async function load() {
+      reload.disabled = true; status.textContent = 'Loading leads…';
+      try { items = (await call('GET')).items; draw(); status.textContent = ''; }
+      catch (error) { status.textContent = error.message + '. Use Refresh leads to try again.'; }
+      finally { reload.disabled = false; }
+    }
+    reload.onclick = function () { if (editor.childNodes.length && !confirm('Discard unsaved edits and refresh?')) return; editor.replaceChildren(); selected = null; load(); };
+    load();
+    return el('section', { id: 'leads', hidden: '' }, [sectionTitle('Individual', 'leads', 'Outreach pipeline'), el('div', { class: 'card lead-panel' }, [el('p', { class: 'note', text: 'Save members who explicitly ask for a tracker, with a link to their request. Use Tracker requests to discover posts. Leads are shared with authorised WellNest admins.' }), el('div', { class: 'filters' }, [add, reload]), status, summary, el('div', { class: 'filters' }, [search, stage, contact, due]), holder, editor])]);
   }
 
   function render() {
@@ -349,7 +443,7 @@
       tile("Rated fit 4 or 5", String(rows.filter(function (r) { return r.fit >= 4; }).length), "Start with these"),
       tile("Combined published members", fmt.format(reach), "People can belong to several"),
       tile("With a published size", String(sized.length), "Of " + rows.length + " communities"));
-    main.replaceChildren(communities(), organisations(), demand(), requests());
+    main.replaceChildren(communities(), organisations(), demand(), requests(), leads());
     var tabs = document.getElementById("tabs"); tabs.hidden = false;
     function show(id) {
       main.querySelectorAll("section").forEach(function (s) { s.hidden = s.id !== id; });
@@ -359,7 +453,7 @@
       b.addEventListener("click", function () { var id = b.getAttribute("data-tab"); show(id); try { history.replaceState(null, "", "#" + id); } catch (e) {} });
     });
     var h = location.hash.slice(1);
-    if (["communities", "organisations", "demand", "requests"].indexOf(h) >= 0) show(h);
+    if (["communities", "organisations", "demand", "requests", "leads"].indexOf(h) >= 0) show(h);
   }
 
   (async function () {
