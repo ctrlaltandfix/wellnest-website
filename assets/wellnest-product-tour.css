@@ -3,13 +3,25 @@
   padding: clamp(24px, 5vw, 64px) 0 0;
 }
 
-.hb-product-tour-card {
-  background: radial-gradient(ellipse at top right, #254c3b, #102a23 64%);
-  border: 1px solid #36594c;
-  border-radius: clamp(20px, 3vw, 36px);
-  box-shadow: 0 20px 52px #102a231a;
-  color: #f4fbf6;
-  padding: clamp(16px, 4vw, 48px);
+.hb-fc.hb-product-tour-card {
+  width: 100%;
+  padding: clamp(16px, 3.5vw, 40px);
+  box-shadow: 0 20px 52px #010d0f30, 0 0 0 1px #d8fa8d2e, inset 0 1px 0 #ffffff1f;
+}
+
+.hb-product-tour-controls {
+  width: max-content;
+  max-width: 100%;
+}
+
+.hb-product-tour-controls .hb-fc-tab {
+  min-height: 44px;
+  padding-inline: clamp(8px, 1vw, 13px);
+  white-space: nowrap;
+}
+
+.hb-product-tour-controls .hb-fc-tab.is-active .hb-fc-tab-bar {
+  animation-duration: 6s;
 }
 
 .hb-product-tour-heading {
@@ -21,56 +33,26 @@
   margin-bottom: 18px;
 }
 
-.hb-product-tour-card h2 {
-  color: inherit;
+.hb-product-tour-heading .hb-fc-title {
   font-size: clamp(1.85rem, 4vw, 3.25rem);
-  letter-spacing: -.045em;
-  line-height: 1.08;
   margin: 0;
 }
 
-.hb-product-tour-controls {
-  display: flex;
-  gap: clamp(4px, .5vw, 7px);
-  margin: 0 -4px 16px;
-  overflow-x: auto;
-  padding: 4px;
-}
-
-.hb-product-tour-card button {
-  background: #ffffff0a;
-  border: 1px solid #829e91;
-  border-radius: 999px;
-  color: inherit;
+.hb-product-tour-toggle {
+  border: 0;
   cursor: pointer;
-  font: inherit;
-  flex-shrink: 0;
-  font-size: .8125rem;
-  font-weight: 650;
   min-height: 44px;
-  padding: 7px clamp(8px, .7vw, 11px);
-  white-space: nowrap;
-}
-
-.hb-product-tour-card button:hover {
-  background: #ffffff1a;
-}
-
-.hb-product-tour-controls button[aria-pressed="true"] {
-  background: #d5fa98;
-  border-color: #d5fa98;
-  color: #102a23;
 }
 
 .hb-product-tour-card :is(button, a):focus-visible {
-  outline: 2px solid #d5fa98;
-  outline-offset: 3px;
+  outline: 2px solid #d8fa8d;
+  outline-offset: 2px;
 }
 
 .hb-product-tour-card figure {
-  background: #0a1e19;
-  border: 1px solid #456358;
-  border-radius: 16px;
+  background: #ffffff0d;
+  border: 1px solid #ffffff12;
+  border-radius: 14px;
   margin: 0;
   overflow: hidden;
 }
@@ -86,7 +68,7 @@
 
 .hb-product-tour-card figcaption {
   align-items: baseline;
-  border-top: 1px solid #456358;
+  border-top: 1px solid #ffffff12;
   display: flex;
   flex-wrap: wrap;
   gap: 10px 24px;
@@ -95,15 +77,7 @@
 }
 
 .hb-product-tour-card figcaption p {
-  color: #c2d8ce;
+  color: #a9c4b5;
   font-size: .9rem;
   margin: 4px 0 0;
-}
-
-.hb-product-tour-card figcaption a {
-  color: #d5fa98;
-  font-size: .875rem;
-  font-weight: 650;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }

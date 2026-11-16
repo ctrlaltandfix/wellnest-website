@@ -45,31 +45,37 @@ export function createProductTour({ jsx, jsxs }, { useEffect, useRef, useState }
       children: jsx('div', {
         className: 'hb-container',
         children: jsxs('div', {
-          className: 'hb-product-tour-card',
+          className: playing ? 'hb-fc hb-product-tour-card' : 'hb-fc hb-product-tour-card is-paused',
           children: [
+            jsx('div', {
+              className: 'hb-fc-tabs hb-product-tour-controls',
+              ref: controls,
+              role: 'group',
+              'aria-label': 'Choose a section to preview',
+              children: sections.map(([id, title], index) => jsxs('button', {
+                type: 'button',
+                className: index === selected ? 'hb-fc-tab is-active' : 'hb-fc-tab',
+                'aria-pressed': index === selected,
+                'aria-controls': 'hb-product-tour-preview',
+                onClick: () => setSelected(index),
+                children: [title, jsx('span', { className: 'hb-fc-tab-bar', 'aria-hidden': true })],
+              }, id)),
+            }),
             jsxs('div', {
               className: 'hb-product-tour-heading',
               children: [
-                jsx('h2', { id: 'hb-product-tour-title', children: 'Explore WellNest' }),
+                jsxs('h2', {
+                  id: 'hb-product-tour-title',
+                  className: 'hb-fc-title',
+                  children: ['Explore ', jsx('em', { children: 'WellNest' })],
+                }),
                 jsx('button', {
                   type: 'button',
+                  className: 'hb-fc-btn hb-product-tour-toggle',
                   onClick: () => setPlaying(value => !value),
                   children: playing ? 'Pause tour' : 'Play tour',
                 }),
               ],
-            }),
-            jsx('div', {
-              className: 'hb-product-tour-controls',
-              ref: controls,
-              role: 'group',
-              'aria-label': 'Choose a section to preview',
-              children: sections.map(([id, title], index) => jsx('button', {
-                type: 'button',
-                'aria-pressed': index === selected,
-                'aria-controls': 'hb-product-tour-preview',
-                onClick: () => setSelected(index),
-                children: title,
-              }, id)),
             }),
             jsxs('figure', {
               id: 'hb-product-tour-preview',
@@ -88,7 +94,7 @@ export function createProductTour({ jsx, jsxs }, { useEffect, useRef, useState }
                       'aria-live': playing ? 'off' : 'polite',
                       children: [jsx('strong', { children: label }), jsx('p', { children: description })],
                     }),
-                    jsx('a', { href: screenshot, target: '_blank', rel: 'noopener', children: 'Open full screenshot ↗' }),
+                    jsx('a', { className: 'hb-fc-share', href: screenshot, target: '_blank', rel: 'noopener', children: 'Open full screenshot ↗' }),
                   ],
                 }),
               ],
