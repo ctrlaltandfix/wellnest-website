@@ -12,9 +12,30 @@ const sections = [
   ['emergency-plan', 'Emergency Plan', 'Keep essential medical details and emergency contacts together.'],
 ];
 
-export function createProductTour({ jsx, jsxs }, useState) {
+export function createProductTour({ jsx, jsxs }, { useEffect, useRef, useState }) {
   return function ProductTour() {
     const [selected, setSelected] = useState(0);
+    const [playing, setPlaying] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const controls = useRef(null);
+
+    useEffect(() => {
+      if (!playing) return;
+      const timer = window.setTimeout(() => setSelected(index => (index + 1) % sections.length), 6000);
+      return () => window.clearTimeout(timer);
+    }, [playing, selected]);
+
+    useEffect(() => {
+      const row = controls.current;
+      const active = row.querySelector('[aria-pressed="true"]');
+      const rowBounds = row.getBoundingClientRect();
+      const activeBounds = active.getBoundingClientRect();
+      if (activeBounds.left < rowBounds.left) {
+        row.scrollLeft += activeBounds.left - rowBounds.left;
+      } else if (activeBounds.right > rowBounds.right) {
+        row.scrollLeft += activeBounds.right - rowBounds.right;
+      }
+    }, [selected]);
+
     const [slug, label, description] = sections[selected];
     const screenshot = '/wellnest-website/landing/product-tour/' + slug + '.webp';
 
@@ -26,9 +47,20 @@ export function createProductTour({ jsx, jsxs }, useState) {
         children: jsxs('div', {
           className: 'hb-product-tour-card',
           children: [
-            jsx('h2', { id: 'hb-product-tour-title', children: 'Explore WellNest' }),
+            jsxs('div', {
+              className: 'hb-product-tour-heading',
+              children: [
+                jsx('h2', { id: 'hb-product-tour-title', children: 'Explore WellNest' }),
+                jsx('button', {
+                  type: 'button',
+                  onClick: () => setPlaying(value => !value),
+                  children: playing ? 'Pause tour' : 'Play tour',
+                }),
+              ],
+            }),
             jsx('div', {
               className: 'hb-product-tour-controls',
+              ref: controls,
               role: 'group',
               'aria-label': 'Choose a section to preview',
               children: sections.map(([id, title], index) => jsx('button', {
@@ -53,7 +85,7 @@ export function createProductTour({ jsx, jsxs }, useState) {
                 jsxs('figcaption', {
                   children: [
                     jsxs('div', {
-                      'aria-live': 'polite',
+                      'aria-live': playing ? 'off' : 'polite',
                       children: [jsx('strong', { children: label }), jsx('p', { children: description })],
                     }),
                     jsx('a', { href: screenshot, target: '_blank', rel: 'noopener', children: 'Open full screenshot ↗' }),

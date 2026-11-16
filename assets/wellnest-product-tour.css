@@ -12,35 +12,47 @@
   padding: clamp(16px, 4vw, 48px);
 }
 
+.hb-product-tour-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
 .hb-product-tour-card h2 {
   color: inherit;
   font-size: clamp(1.85rem, 4vw, 3.25rem);
   letter-spacing: -.045em;
   line-height: 1.08;
-  margin: 0 0 24px;
+  margin: 0;
 }
 
 .hb-product-tour-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: clamp(4px, .5vw, 7px);
+  margin: 0 -4px 16px;
+  overflow-x: auto;
+  padding: 4px;
 }
 
-.hb-product-tour-controls button {
+.hb-product-tour-card button {
   background: #ffffff0a;
   border: 1px solid #829e91;
   border-radius: 999px;
   color: inherit;
   cursor: pointer;
   font: inherit;
-  font-size: .875rem;
+  flex-shrink: 0;
+  font-size: .8125rem;
   font-weight: 650;
   min-height: 44px;
-  padding: 7px 13px;
+  padding: 7px clamp(8px, .7vw, 11px);
+  white-space: nowrap;
 }
 
-.hb-product-tour-controls button:hover {
+.hb-product-tour-card button:hover {
   background: #ffffff1a;
 }
 
