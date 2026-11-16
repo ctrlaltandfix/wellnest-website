@@ -2,7 +2,8 @@
   padding-block-end: 0;
 }
 
-.hb-site .hb-night-section {
+.hb-site .hb-night-section,
+.hb-site .hb-how {
   margin-block-end: clamp(32px, 5vw, 64px);
 }
 
