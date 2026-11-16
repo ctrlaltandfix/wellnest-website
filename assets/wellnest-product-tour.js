@@ -15,7 +15,10 @@ const sections = [
 export function createProductTour({ jsx, jsxs }, { useEffect, useRef, useState }) {
   return function ProductTour() {
     const [selected, setSelected] = useState(0);
-    const [playing, setPlaying] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const [reducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const [pointerInside, setPointerInside] = useState(false);
+    const [focusInside, setFocusInside] = useState(false);
+    const playing = !reducedMotion && !pointerInside && !focusInside;
     const controls = useRef(null);
 
     useEffect(() => {
@@ -41,11 +44,17 @@ export function createProductTour({ jsx, jsxs }, { useEffect, useRef, useState }
 
     return jsx('section', {
       className: 'hb-product-tour',
-      'aria-labelledby': 'hb-product-tour-title',
+      'aria-label': 'Explore WellNest',
       children: jsx('div', {
         className: 'hb-container',
         children: jsxs('div', {
           className: playing ? 'hb-fc hb-product-tour-card' : 'hb-fc hb-product-tour-card is-paused',
+          onMouseEnter: () => setPointerInside(true),
+          onMouseLeave: () => setPointerInside(false),
+          onFocus: () => setFocusInside(true),
+          onBlur: event => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setFocusInside(false);
+          },
           children: [
             jsx('div', {
               className: 'hb-fc-tabs hb-product-tour-controls',
@@ -61,32 +70,21 @@ export function createProductTour({ jsx, jsxs }, { useEffect, useRef, useState }
                 children: [title, jsx('span', { className: 'hb-fc-tab-bar', 'aria-hidden': true })],
               }, id)),
             }),
-            jsxs('div', {
-              className: 'hb-product-tour-heading',
-              children: [
-                jsxs('h2', {
-                  id: 'hb-product-tour-title',
-                  className: 'hb-fc-title',
-                  children: ['Explore ', jsx('em', { children: 'WellNest' })],
-                }),
-                jsx('button', {
-                  type: 'button',
-                  className: 'hb-fc-btn hb-product-tour-toggle',
-                  onClick: () => setPlaying(value => !value),
-                  children: playing ? 'Pause tour' : 'Play tour',
-                }),
-              ],
-            }),
             jsxs('figure', {
               id: 'hb-product-tour-preview',
               children: [
-                jsx('img', {
-                  src: screenshot,
-                  alt: 'WellNest ' + label + ' interface',
-                  loading: 'lazy',
-                  decoding: 'async',
-                  width: 1440,
-                  height: 1335,
+                jsx('div', {
+                  className: 'hb-product-tour-screenshots',
+                  children: sections.map(([id, title], index) => jsx('img', {
+                    className: index === selected ? 'is-active' : undefined,
+                    src: '/wellnest-website/landing/product-tour/' + id + '.webp',
+                    alt: 'WellNest ' + title + ' interface',
+                    'aria-hidden': index !== selected,
+                    loading: 'lazy',
+                    decoding: 'async',
+                    width: 1440,
+                    height: 1335,
+                  }, id)),
                 }),
                 jsxs('figcaption', {
                   children: [

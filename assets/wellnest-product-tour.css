@@ -24,26 +24,6 @@
   animation-duration: 6s;
 }
 
-.hb-product-tour-heading {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-
-.hb-product-tour-heading .hb-fc-title {
-  font-size: clamp(1.85rem, 4vw, 3.25rem);
-  margin: 0;
-}
-
-.hb-product-tour-toggle {
-  border: 0;
-  cursor: pointer;
-  min-height: 44px;
-}
-
 .hb-product-tour-card :is(button, a):focus-visible {
   outline: 2px solid #d8fa8d;
   outline-offset: 2px;
@@ -57,13 +37,33 @@
   overflow: hidden;
 }
 
-.hb-product-tour-card img {
+.hb-product-tour-screenshots {
   aspect-ratio: 16 / 9;
+  overflow: hidden;
+  position: relative;
+}
+
+.hb-product-tour-screenshots img {
   display: block;
-  height: auto;
+  height: 100%;
+  inset: 0;
   object-fit: cover;
   object-position: top;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 450ms ease;
   width: 100%;
+}
+
+.hb-product-tour-screenshots img.is-active {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hb-product-tour-screenshots img {
+    transition: none;
+  }
 }
 
 .hb-product-tour-card figcaption {
