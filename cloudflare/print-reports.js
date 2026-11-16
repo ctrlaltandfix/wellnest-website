@@ -1,3 +1,5 @@
+import { REPORT_DOCUMENT_SOURCE } from './report-document.js';
+
 // "Print …" buttons for the dashboard sections, in the same style and behaviour as
 // Care Circle's "Print contact list" (care-circle.js): a db-btn-dark pill with a
 // round printer icon beside the section's Add button. It opens a clean printable
@@ -10,8 +12,7 @@
 
 const PRINTER_ICON = "(0,$.jsx)('span',{className:'db-btn-dark-circle','aria-hidden':true,children:(0,$.jsxs)('svg',{width:16,height:16,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',children:[(0,$.jsx)('path',{d:'M6 9V3h12v6 M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2'}),(0,$.jsx)('rect',{x:6,y:14,width:12,height:8}),(0,$.jsx)('path',{d:'M18 12h.01'})]})})";
 
-export const PRINT_CLIENT_SOURCE = String.raw`
-function wnPrintEscape(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+const SECTION_REPORT_SOURCE = String.raw`
 function wnPrintValue(v){if(v==null)return '';if(Array.isArray(v))return v.filter(x=>x!=null&&x!=='').join(', ');if(v===true)return 'Yes';if(v===false)return 'No';return String(v).trim();}
 function wnPrintDate(d){try{return d?Y(d):'';}catch(e){return d||'';}}
 function wnPrintTime(t){try{return t?Ue(t):'';}catch(e){return t||'';}}
@@ -19,9 +20,12 @@ function wnPrintWhen(r){return [wnPrintDate(r.date),wnPrintTime(r.time)].filter(
 function wnPrintNewest(list){return [...(list||[])].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.time||'').localeCompare(String(a.time||'')));}
 function wnPrintRange(list){const d=(list||[]).map(r=>r.date).filter(Boolean).sort();return d.length?(d.length===1?wnPrintDate(d[0]):wnPrintDate(d[0])+' to '+wnPrintDate(d[d.length-1])):'';}
 function wnPrintHtml(r){
- const e=wnPrintEscape;
- const items=r.items.map(item=>{const rows=item.fields.map(([label,value])=>[label,wnPrintValue(value)]).filter(([,value])=>value);return '<article><h2>'+e(item.heading)+'</h2>'+(rows.length?'<dl>'+rows.map(([label,value])=>'<dt>'+e(label)+'</dt><dd>'+e(value)+'</dd>').join('')+'</dl>':'<p class="none">No details recorded.</p>')+'</article>';}).join('');
- return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+e(r.title)+' — WellNest</title><style>body{font:15px/1.5 system-ui,sans-serif;color:#16392e;max-width:900px;margin:32px auto;padding:0 24px}h1{margin-bottom:4px}.summary{margin:12px 0 16px;padding:14px 18px;border-radius:12px;background:#eef5f0;list-style:none}.summary li{margin:2px 0}article{border:1px solid #cbd9d0;border-radius:12px;padding:18px;margin:18px 0;break-inside:avoid}h2{margin:0 0 12px;font-size:18px}dl{display:grid;grid-template-columns:190px 1fr;gap:8px;margin:0}dt{font-weight:700}dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.none{margin:0;color:#557}button{padding:12px 20px;cursor:pointer}.foot{margin-top:28px;font-size:12px;color:#557}@media print{button{display:none}body{margin:0;padding:0;color:#000}article{border-color:#aaa}.summary{background:none;border:1px solid #aaa}}@page{margin:16mm}</style></head><body><h1>'+e(r.title)+'</h1><p>WellNest · '+e(r.count)+' · Prepared '+e((()=>{try{return Y(J());}catch(x){return new Date().toLocaleDateString('en-AU');}})())+'</p>'+(r.summary&&r.summary.filter(Boolean).length?'<ul class="summary">'+r.summary.filter(Boolean).map(s=>'<li>'+e(s)+'</li>').join('')+'</ul>':'')+'<button onclick="window.print()">Print / save as PDF</button>'+items+'<p class="foot">Prepared with WellNest from the owner’s own records. Not a medical document.</p></body></html>';
+ const date=(()=>{try{return Y(J());}catch(x){return new Date().toLocaleDateString('en-AU');}})();
+ return wnReportDocument({
+   ...r,date,
+   items:r.items.map(item=>({...item,fields:item.fields.map(([label,value])=>[label,wnPrintValue(value)]).filter(([,value])=>value)})),
+   footer:'Prepared with WellNest from the owner’s own records. Not a medical document.'
+ });
 }
 function wnPainReport(logs){
  const list=wnPrintNewest(logs),sev=list.map(r=>Number(r.severity)).filter(n=>Number.isFinite(n)&&String(n)!=='');
@@ -91,6 +95,8 @@ const OLD_MED_PRINT = "(0,$.jsxs)(`button`,{type:`button`,className:`db-btn-outl
 const WRAP = "(0,$.jsxs)(`div`,{className:`db-print-header-actions`,style:{display:`flex`,alignItems:`center`,gap:12,flexWrap:`wrap`},children:[";
 
 // Adds the buttons. A section whose header has changed shape is skipped (never broken).
+export const PRINT_CLIENT_SOURCE = REPORT_DOCUMENT_SOURCE + "\n" + SECTION_REPORT_SOURCE;
+
 export function printReportsSource(source) {
   if (source.includes("function WnPrintReport(")) return source;
   let out = source, added = 0;
@@ -104,5 +110,5 @@ export function printReportsSource(source) {
   }
   // Medications already had its own print button lower down; the header one now runs it.
   if (out.includes("onPrint:()=>!!re({medications:O(e)})") && out.split(OLD_MED_PRINT).length === 2) out = out.replace("," + OLD_MED_PRINT, "");
-  return added ? out + "\n" + PRINT_CLIENT_SOURCE : source;
+  return added ? out + "\n" + (source.includes('const wnReportDocument =') ? SECTION_REPORT_SOURCE : PRINT_CLIENT_SOURCE) : source;
 }
