@@ -1,0 +1,69 @@
+const sections = [
+  ['dashboard', 'Dashboard', 'See recent trends, daily care and upcoming appointments at a glance.'],
+  ['chronic-pain', 'Chronic Pain', 'Log pain severity, locations, flare triggers and relief notes.'],
+  ['asthma', 'Asthma', 'Keep peak flow readings, symptoms and your action plan together.'],
+  ['epilepsy', 'Epilepsy', 'Record seizure events, warning signs, duration and recovery.'],
+  ['medications', 'Medications', 'Organise prescriptions, dose times, eScripts and refills.'],
+  ['appointments', 'Appointments', 'Review upcoming visits, clinic locations and preparation notes.'],
+  ['care-circle', 'Care Circle', 'Keep your care team and emergency contacts within reach.'],
+  ['exercises', 'Exercises', 'Log physiotherapy, movement, duration and intensity.'],
+  ['reflection', 'Reflection', 'Make space for journaling, reminders and guided breathing.'],
+  ['expenses', 'Expenses', 'Organise healthcare costs, receipts and supporting documents.'],
+  ['emergency-plan', 'Emergency Plan', 'Keep essential medical details and emergency contacts together.'],
+];
+
+export function createProductTour({ jsx, jsxs }, useState) {
+  return function ProductTour() {
+    const [selected, setSelected] = useState(0);
+    const [slug, label, description] = sections[selected];
+    const screenshot = '/wellnest-website/landing/product-tour/' + slug + '.webp';
+
+    return jsx('section', {
+      className: 'hb-product-tour',
+      'aria-labelledby': 'hb-product-tour-title',
+      children: jsx('div', {
+        className: 'hb-container',
+        children: jsxs('div', {
+          className: 'hb-product-tour-card',
+          children: [
+            jsx('h2', { id: 'hb-product-tour-title', children: 'Explore WellNest' }),
+            jsx('div', {
+              className: 'hb-product-tour-controls',
+              role: 'group',
+              'aria-label': 'Choose a section to preview',
+              children: sections.map(([id, title], index) => jsx('button', {
+                type: 'button',
+                'aria-pressed': index === selected,
+                'aria-controls': 'hb-product-tour-preview',
+                onClick: () => setSelected(index),
+                children: title,
+              }, id)),
+            }),
+            jsxs('figure', {
+              id: 'hb-product-tour-preview',
+              children: [
+                jsx('img', {
+                  src: screenshot,
+                  alt: 'WellNest ' + label + ' interface',
+                  loading: 'lazy',
+                  decoding: 'async',
+                  width: 1440,
+                  height: 1335,
+                }),
+                jsxs('figcaption', {
+                  children: [
+                    jsxs('div', {
+                      'aria-live': 'polite',
+                      children: [jsx('strong', { children: label }), jsx('p', { children: description })],
+                    }),
+                    jsx('a', { href: screenshot, target: '_blank', rel: 'noopener', children: 'Open full screenshot ↗' }),
+                  ],
+                }),
+              ],
+            }),
+          ],
+        }),
+      }),
+    });
+  };
+}
