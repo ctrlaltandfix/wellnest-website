@@ -1,6 +1,6 @@
 .hb-site .hb-product-tour {
   background: #f8f8f3;
-  padding: clamp(24px, 5vw, 64px) 0 0;
+  padding: clamp(24px, 5vw, 64px) 0 clamp(32px, 5vw, 64px);
 }
 
 .hb-fc.hb-product-tour-card {
