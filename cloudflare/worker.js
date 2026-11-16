@@ -1,3 +1,4 @@
+import {careCircleSource} from './care-circle.js';
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
@@ -4538,7 +4539,7 @@ function accountRecordSource(source){
 async function accountRecordResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
  const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';if(!dashboard&&!entry)return response;
- const text=dashboard?medicationScriptSource(await response.text()):await response.text(),next=dashboard?polishedCustomisationSource(settingsBackupControlsSource(compactSettingsSource(epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text))))))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1&compactsettings=1&backupcontrols=1&medscripts=20261114');
+ const text=dashboard?careCircleSource(medicationScriptSource(await response.text())):await response.text(),next=dashboard?polishedCustomisationSource(settingsBackupControlsSource(compactSettingsSource(epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text))))))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1&compactsettings=1&backupcontrols=1&medscripts=20261114&carecircle=20261116');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }
 
