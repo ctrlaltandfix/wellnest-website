@@ -1,3 +1,7 @@
+#root .hb-site .hb-features:has(+ .hb-product-tour) {
+  padding-block-end: 0;
+}
+
 .hb-site .hb-product-tour {
   background: #f8f8f3;
   padding: clamp(32px, 5vw, 64px) 0;
