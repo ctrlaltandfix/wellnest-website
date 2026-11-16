@@ -67,11 +67,11 @@ function WnPrintReport({label,records,build,onPrint}){
  const [status,setStatus]=K.useState('');
  const list=Array.isArray(records)?records:[];
  return (0,$.jsxs)('div',{style:{position:'relative'},children:[(0,$.jsxs)('button',{type:'button',className:'db-btn-dark',disabled:!list.length,title:list.length?undefined:'Nothing to print yet',onClick:()=>{
-  if(onPrint){setStatus(onPrint()?'Print view opened. Choose Print / save as PDF in that window.':'Allow the print window, then try again.');return;}
+  if(onPrint){setStatus(onPrint()?'':'Allow the print window, then try again.');return;}
   const popup=window.open('','_blank');
   if(!popup){setStatus('Allow the print window, then try again.');return;}
   popup.opener=null;popup.document.open();popup.document.write(wnPrintHtml(build()));popup.document.close();
-  setStatus('Print view opened. Choose Print / save as PDF in that window.');
+  setStatus('');
  },children:[label,${PRINTER_ICON}]}),status&&(0,$.jsx)('p',{role:'status',className:'db-print-status',style:{position:'absolute',top:'100%',right:0,width:260,fontSize:13,zIndex:1},children:status})]});
 }
 `;
