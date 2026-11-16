@@ -19,10 +19,13 @@ const styles = `
   @media print{body{background:#fff;margin:0;padding:0;max-width:none;font-size:10pt}button{display:none}h1{font-size:24pt}h2{font-size:12pt;break-after:avoid}.summary{background:none}.foot{break-inside:avoid}}
 `;
 
-function renderReportDocument(report, reportFont, reportBrandStyles, styles, brand) {
-  const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+function escapeReportText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   })[char]);
+}
+
+function renderReportDocument(report, reportFont, reportBrandStyles, styles, brand, escape) {
   const summary = (report.summary || []).filter(Boolean);
   const items = report.items.map(item => {
     const rows = item.fields.map(([label, value]) => '<dt>' + escape(label) + '</dt><dd>' + escape(value) + '</dd>');
@@ -42,9 +45,9 @@ function renderReportDocument(report, reportFont, reportBrandStyles, styles, bra
 const brand = reportBrand('/landing/report-wordmark.png');
 
 export function wnReportDocument(report) {
-  return renderReportDocument(report, reportFont, reportBrandStyles, styles, brand);
+  return renderReportDocument(report, reportFont, reportBrandStyles, styles, brand, escapeReportText);
 }
 
-const presentation = [reportFont, reportBrandStyles, styles, brand].map(value => JSON.stringify(value)).join(',');
+const presentation = [reportFont, reportBrandStyles, styles, brand].map(value => JSON.stringify(value)).concat(escapeReportText.toString()).join(',');
 export const REPORT_DOCUMENT_SOURCE = 'const wnReportDocument = report => (' +
   renderReportDocument.toString() + ')(report,' + presentation + ');';
