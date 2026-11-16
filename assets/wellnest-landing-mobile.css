@@ -1,0 +1,180 @@
+@media (max-width: 700px) {
+  #homebeta .hb-container {
+    width: calc(100% - 2 * clamp(16px, 4vw, 24px));
+  }
+
+  #homebeta .hb-nav {
+    min-height: 68px;
+  }
+
+  #homebeta .hb-nav-links {
+    top: 68px;
+    inset-inline: clamp(16px, 4vw, 24px);
+    padding: 8px 16px;
+  }
+
+  #homebeta .hb-nav-links a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  #homebeta .hb-hero {
+    gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #homebeta .hb-hero-eyebrow {
+    margin-bottom: 18px;
+  }
+
+  #homebeta .hb-hero h1 {
+    font-size: clamp(2.55rem, 11vw, 4.4rem);
+  }
+
+  #homebeta .hb-hero h1 .hb-hero-headline-understand {
+    font-size: clamp(1.85rem, 7.8vw, 3.1rem);
+  }
+
+  #homebeta .hb-hero h1 .hb-hero-headline-live {
+    font-size: clamp(2.35rem, 10vw, 4.05rem);
+  }
+
+  #homebeta .hb-hero-chip,
+  #homebeta .hb-fc-tab {
+    min-height: 44px;
+  }
+
+  #homebeta .hb-hero-ctas {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  #homebeta .hb-hero-primary-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #homebeta .hb-hero-primary-actions .hb-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  #homebeta .hb-hero .hb-fc-stage {
+    width: 100%;
+    margin: 0;
+    padding: 8px 0 22px;
+  }
+
+  #homebeta .hb-fc-stage .hb-fc {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #homebeta .hb-fc-chip {
+    display: none;
+  }
+
+  #homebeta .hb-features .hb-intro-grid {
+    margin-bottom: 24px;
+  }
+
+  #homebeta .hb-features .hb-bento {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  #homebeta .hb-features .hb-feature-card {
+    padding: clamp(18px, 5vw, 28px);
+  }
+
+  #homebeta .hb-product-tour-card {
+    min-width: 0;
+    padding: 12px;
+  }
+
+  #homebeta .hb-product-tour-controls {
+    scrollbar-width: thin;
+    scrollbar-color: #72988b transparent;
+  }
+
+  #homebeta .hb-product-tour-controls::-webkit-scrollbar {
+    display: block;
+    height: 4px;
+  }
+
+  #homebeta .hb-product-tour-controls::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #72988b;
+  }
+
+  #homebeta .hb-product-tour-screenshots {
+    aspect-ratio: 4 / 3;
+  }
+
+  #homebeta .hb-product-tour-card figcaption {
+    display: grid;
+    gap: 4px;
+  }
+
+  #homebeta .hb-product-tour-card figcaption a {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    min-height: 44px;
+  }
+
+  #homebeta .hb-night-layout {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    gap: 24px;
+  }
+
+  #homebeta .hb-night-headline-line {
+    white-space: normal;
+  }
+
+  #homebeta .hb-night-visual {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #homebeta .hb-report-frame {
+    width: 100%;
+    transform: none;
+  }
+
+  #homebeta .hb-night-asterisk {
+    display: none;
+  }
+
+  #homebeta .hb-how-banner img {
+    aspect-ratio: auto;
+    object-fit: contain;
+  }
+
+  #homebeta .hb-how-appstore-group {
+    position: static;
+    transform: none;
+    margin: 0 auto;
+    padding: 8px 0 16px;
+  }
+
+  #homebeta .hb-footer-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 16px;
+  }
+
+  #homebeta .hb-footer-links a,
+  #homebeta .hb-footer-more a {
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+  }
+}
+
+@media (max-width: 400px) {
+  #homebeta .hb-fc-stage .hb-fc {
+    padding-inline: 14px;
+  }
+}
