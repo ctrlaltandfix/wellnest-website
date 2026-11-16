@@ -58,6 +58,7 @@
   position: relative;
 }
 
+.hb-night-section .hb-report-frame.hb-fc-shimmer::before,
 .hb-product-tour-screenshots::before {
   inset: 0;
   z-index: 1;
