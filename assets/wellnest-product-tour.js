@@ -74,7 +74,7 @@ export function createProductTour({ jsx, jsxs }, { useEffect, useRef, useState }
               id: 'hb-product-tour-preview',
               children: [
                 jsx('div', {
-                  className: 'hb-product-tour-screenshots',
+                  className: 'hb-product-tour-screenshots hb-fc-shimmer',
                   children: sections.map(([id, title], index) => jsx('img', {
                     className: index === selected ? 'is-active' : undefined,
                     src: '/wellnest-website/landing/product-tour/' + id + '.webp',

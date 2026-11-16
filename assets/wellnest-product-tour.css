@@ -9,6 +9,10 @@
   box-shadow: 0 20px 52px #010d0f30, 0 0 0 1px #d8fa8d2e, inset 0 1px 0 #ffffff1f;
 }
 
+.hb-fc.hb-product-tour-card::before {
+  content: none;
+}
+
 .hb-product-tour-controls {
   width: max-content;
   max-width: 100%;
@@ -39,8 +43,15 @@
 
 .hb-product-tour-screenshots {
   aspect-ratio: 16 / 9;
+  border-radius: 13px;
+  isolation: isolate;
   overflow: hidden;
   position: relative;
+}
+
+.hb-product-tour-screenshots::before {
+  inset: 0;
+  z-index: 1;
 }
 
 .hb-product-tour-screenshots img {
