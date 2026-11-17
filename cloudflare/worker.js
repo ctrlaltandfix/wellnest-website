@@ -4350,7 +4350,7 @@ __name22(routineSyncSource, "routineSyncSource");
 __name222(routineSyncSource, "routineSyncSource");
 async function routineSyncResponse(request, response, path) {
   if (request.method !== "GET" || response.status !== 200) return response;
-  const dashboard = path === "/assets/dashboardbeta-calendar-20261107-wn2.js", entry = path === "/assets/index-calendar-20261107-wn2.js";
+  const dashboard = path === "/assets/dashboardbeta-calendar-20261107-wn2.js", entry = path === "/assets/index-calendar-20261117-wn3.js";
   if (!dashboard && !entry) return response;
   const text = await response.text(), next = dashboard ? routineSyncSource(text).split('(0,$.jsx)(`div`,{children:(0,$.jsxs)(`button`,{type:`button`,className:`db-tag db-widget-title`,onClick:()=>t(`meds`),"aria-label":`Daily Care Routine \u2014 open Medications`,children:[(0,$.jsx)(g,{size:14}),` DAILY CARE ROUTINE`]})}),(0,$.jsx)(WnRoutineSyncButton,{onSync:wnSyncRoutine})').join('(0,$.jsxs)(`div`,{style:{display:`flex`,alignItems:`center`,justifyContent:`space-between`,gap:12,flexWrap:`wrap`,width:`100%`},children:[(0,$.jsxs)(`button`,{type:`button`,className:`db-tag db-widget-title`,onClick:()=>t(`meds`),"aria-label":`Daily Care Routine \u2014 open Medications`,style:{margin:0},children:[(0,$.jsx)(g,{size:14}),` DAILY CARE ROUTINE`]}),(0,$.jsx)(WnRoutineSyncButton,{onSync:wnSyncRoutine})]})') : text.split("dashboardbeta-calendar-20261107-wn2.js?settings=20261112").join("dashboardbeta-calendar-20261107-wn2.js?settings=20261112&routine=20261112-header");
   const out = new Response(next, response);
@@ -4372,7 +4372,7 @@ __name(accountSyncSource, "accountSyncSource");
 __name2(accountSyncSource, "accountSyncSource");
 async function accountSyncResponse(request, response, path) {
   if (request.method !== "GET" || response.status !== 200) return response;
-  const dashboard = path === "/assets/dashboardbeta-calendar-20261107-wn2.js", entry = path === "/assets/index-calendar-20261107-wn2.js";
+  const dashboard = path === "/assets/dashboardbeta-calendar-20261107-wn2.js", entry = path === "/assets/index-calendar-20261117-wn3.js";
   if (!dashboard && !entry) return response;
   const text = await response.text(), next = dashboard ? accountSyncSource(text) : text.split("&routine=20261112-header").join("&routine=20261112-header&accountsync=20261112");
   const out = new Response(next, response);
@@ -4458,7 +4458,7 @@ function doseSyncSource(source) {
 __name(doseSyncSource, "doseSyncSource");
 async function doseSyncResponse(request, response, path) {
   if (request.method !== "GET" || response.status !== 200) return response;
-  const dashboard = path === "/assets/dashboardbeta-calendar-20261107-wn2.js", entry = path === "/assets/index-calendar-20261107-wn2.js";
+  const dashboard = path === "/assets/dashboardbeta-calendar-20261107-wn2.js", entry = path === "/assets/index-calendar-20261117-wn3.js";
   if (!dashboard && !entry) return response;
   const text = await response.text(), next = dashboard ? doseSyncSource(text) : text.split("&accountsync=20261112").join("&accountsync=20261112&dosemerge=20261112");
   const out = new Response(next, response);
@@ -4541,7 +4541,7 @@ function accountRecordSource(source){
 }
 async function accountRecordResponse(request,response,path){
  if(request.method!=='GET'||response.status!==200)return response;
- const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261107-wn2.js';if(!dashboard&&!entry)return response;
+ const dashboard=path==='/assets/dashboardbeta-calendar-20261107-wn2.js',entry=path==='/assets/index-calendar-20261117-wn3.js';if(!dashboard&&!entry)return response;
  const text=dashboard?careCircleSource(medicationScriptSource(await response.text())):await response.text(),next=dashboard?printReportsSource(polishedCustomisationSource(settingsBackupControlsSource(compactSettingsSource(epilepsyViewSource(asthmaViewSource(painViewSource(appointmentViewSource(appointmentContactSource(appointmentWidgetSyncSource(safeSyncSource(accountRecordSource(text)))))))))))):text.split('&dosemerge=20261112').join('&dosemerge=20261112&recordmerge=20261112&safe=3&apptsync=1&apptcontact=1&apptview=1&painview=1&asthmaview=1&epilepsyview=1&compactsettings=1&backupcontrols=1&medscripts=20261114&carecircle=20261116-header&printreports=20261116-quiet&reportdesign=20261117&carecircletitle=1');
  const out=new Response(next,response);out.headers.delete('ETag');out.headers.delete('Content-Length');out.headers.set('Cache-Control','no-cache');return out;
 }

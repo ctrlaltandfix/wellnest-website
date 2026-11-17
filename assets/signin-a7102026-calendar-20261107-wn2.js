@@ -1,4 +1,4 @@
-import{o as e}from"./rolldown-runtime-BCiCTKAo-wn2.js";import{n as t,t as n}from"./jsx-runtime-Cl3nUQcN-wn2.js";import{_ as r,f as i,g as a,h as o,m as s,v as c,y as l}from"./index-calendar-20261107-wn2.js";var u=e(t(),1),d=n();var wnSigninCss=`
+import{o as e}from"./rolldown-runtime-BCiCTKAo-wn2.js";import{n as t,t as n}from"./jsx-runtime-Cl3nUQcN-wn2.js";import{_ as r,f as i,g as a,h as o,m as s,v as c,y as l}from"./index-calendar-20261117-wn3.js";var u=e(t(),1),d=n();var wnSigninCss=`
 .si-page{--si-night:#081e1b;--si-ink:#16372f;--si-ink-soft:#4e665c;--si-border:#dce5dc;--si-border-strong:#bfd0c3;--si-lime:#d8fb96;position:relative;isolation:isolate;overflow:hidden;min-height:100vh;min-height:100svh;background:var(--si-night);color:#f6fbf4;font-family:Geist,Inter,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.55;display:flex;flex-direction:column}
 .si-ambient{pointer-events:none;position:absolute;z-index:-1;border-radius:50%;filter:blur(85px);opacity:.6}
 .si-ambient-one{background:radial-gradient(circle,#2b9b8c61,#0000 70%);width:620px;height:520px;top:-60px;right:-140px}

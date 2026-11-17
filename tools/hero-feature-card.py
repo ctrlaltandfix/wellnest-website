@@ -11,7 +11,7 @@ Usage: python3 tools/hero-feature-card.py [repo_dir]
 import json, math, pathlib, random, re, sys
 
 ROOT = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
-BUNDLE = ROOT / "assets" / "index-calendar-20261107-wn2.js"
+BUNDLE = ROOT / "assets" / "index-calendar-20261117-wn3.js"
 CSS = ROOT / "assets" / "index-Cj0oiCRe-wn2.css"
 PAGES = [ROOT / "index.html", ROOT / "404.html"]
 

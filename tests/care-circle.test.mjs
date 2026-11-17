@@ -19,6 +19,6 @@ test('production injects both controls, preserves other views and refreshes cach
  for(const text of ['WnContactView,{contact:e}','WnContactPrint,{contacts:e}','function WnAppointmentView(','function WnContactView(','disabled:!contacts.length'])assert.ok(source.includes(text),text);
  execFileSync(process.execPath,['--check','--input-type=module'],{input:source});
  assert.equal(careCircleSource(source),source);
- const entry=await worker.fetch(new Request('https://wellnest.services/assets/index-calendar-20261107-wn2.js'),env);
+ const entry=await worker.fetch(new Request('https://wellnest.services/assets/index-calendar-20261117-wn3.js'),env);
  assert.match(await entry.text(),/carecircle=20261116/);
 });

@@ -23,7 +23,7 @@ test('every section gets a print button beside its Add button, in the served das
   assert.ok(source.includes('onPrint:()=>!!re({medications:O(e)})'), 'Medications uses the app\'s own print');
   execFileSync(process.execPath, ['--check', '--input-type=module'], { input: source });
   assert.equal(printReportsSource(source), source);                          // safe to run twice
-  const entry = await worker.fetch(new Request('https://wellnest.services/assets/index-calendar-20261107-wn2.js'), env);
+  const entry = await worker.fetch(new Request('https://wellnest.services/assets/index-calendar-20261117-wn3.js'), env);
   assert.match(await entry.text(), /printreports=20261116/);                   // browsers fetch the new version
 });
 
