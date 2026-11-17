@@ -105,6 +105,28 @@
     .ranges button { padding: 7px 12px; font-size: 13px; }
     .section-title .label { display: none; }
   }
+
+  #account-admin { margin: 20px 0; }
+  #account-admin > summary { cursor: pointer; font: 700 24px var(--display); }
+  .account-admin-tools, .account-admin-actions { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin: 12px 0; }
+  .account-admin-tools label { flex: 1 1 220px; font-weight: 650; }
+  .account-admin-tools input { display: block; width: 100%; margin-top: 4px; padding: 9px 12px; font: inherit; border: 1px solid #a6b7af; border-radius: 8px; }
+  .account-admin-actions button, .account-admin-tools button, .account-admin-view {
+    min-height: 44px; padding: 7px 14px; border: 1px solid #a6b7af; border-radius: 999px;
+    background: var(--mark-soft); color: var(--ink); font: 700 14px/1.2 Geist, system-ui, sans-serif; cursor: pointer;
+  }
+  #account-admin [hidden] { display: none; }
+  #account-admin button:disabled { opacity: .55; cursor: default; }
+  .account-admin-table { overflow: auto; }
+  .account-admin-table table { min-width: 630px; width: 100%; border-collapse: collapse; }
+  .account-admin-table th, .account-admin-table td { padding: 9px; text-align: left; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+  .account-admin-table small { display: block; color: var(--muted); }
+  #account-admin-dialog { width: min(560px, calc(100% - 28px)); max-height: 85vh; border: 1px solid var(--line); border-radius: 16px; padding: 20px; color: var(--ink); overflow-wrap: anywhere; }
+  #account-admin-dialog::backdrop { background: #081e1baa; }
+  #account-admin-dialog h2 { margin: 0; }
+  #account-admin-dialog dl { display: grid; grid-template-columns: minmax(105px, 1fr) minmax(0, 1.6fr); gap: 6px 12px; }
+  #account-admin-dialog dt { font-weight: 700; }
+  #account-admin-dialog dd { margin: 0; }
 </style>
 </head>
 <body>
@@ -130,6 +152,36 @@
   </div>
 </div>
 <div class="wrap">
+  <details class="card panel" id="account-admin">
+    <summary>User account administration</summary>
+    <p>Find WellNest accounts, review their Stripe billing and how they signed up, and manage complimentary access.</p>
+    <form class="account-admin-tools" id="account-admin-search">
+      <label for="account-admin-query">Search accounts
+        <input id="account-admin-query" type="search" maxlength="160" placeholder="Name, email, account ID or Stripe ID">
+      </label>
+      <button type="submit">Search</button>
+    </form>
+    <p id="account-admin-status" role="status"></p>
+    <div class="account-admin-table" id="account-admin-table" hidden>
+      <table aria-label="Registered WellNest accounts">
+        <thead><tr><th scope="col">Account</th><th scope="col">Signed up</th><th scope="col">Billing</th><th scope="col">Details</th></tr></thead>
+        <tbody id="account-admin-rows"></tbody>
+      </table>
+    </div>
+    <div class="account-admin-actions" id="account-admin-pages" hidden>
+      <button type="button" id="account-admin-prev">Previous</button>
+      <button type="button" id="account-admin-next">Next</button>
+    </div>
+    <dialog id="account-admin-dialog" aria-labelledby="account-admin-heading">
+      <form method="dialog" class="account-admin-actions"><button autofocus>Close</button></form>
+      <h2 id="account-admin-heading"></h2>
+      <dl id="account-admin-details"></dl>
+      <div class="account-admin-actions" id="account-admin-stripe"></div>
+      <p id="account-admin-checkout" role="status"></p>
+      <div class="account-admin-actions" id="account-admin-access"></div>
+      <p id="account-admin-action-status" role="status"></p>
+    </dialog>
+  </details>
   <main id="main"><p class="empty">Loading…</p></main>
   <footer><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Counted by WellNest's own server — no cookies, no IP addresses stored. Visitors are counted once per day.</footer>
 </div>
@@ -185,13 +237,159 @@
     try { localStorage.setItem("gotrue.user", JSON.stringify(u)); } catch (e) {}
     return true;
   }
-  async function getStats(retry) {
+  async function adminFetch(path, options = {}, retry = false) {
     var u = stored();
     var headers = u && u.token && u.token.access_token ? { Authorization: "Bearer " + u.token.access_token } : {};
-    var res = await fetch(API + "/api/analytics/stats?days=" + days + "&tz=" + (-new Date().getTimezoneOffset()), { headers: headers, credentials: "include" });
-    if (res.status === 401 && !retry && await refresh()) return getStats(true);
+    var res = await fetch(API + path, { ...options, headers: { ...headers, ...options.headers }, credentials: "include", cache: "no-store" });
+    if (res.status === 401 && !retry && await refresh()) return adminFetch(path, options, true);
     return res;
   }
+
+  function setupAccountAdmin() {
+    const byId = id => document.getElementById('account-admin-' + id);
+    const panel = document.getElementById('account-admin');
+    const dialog = byId('dialog');
+    const date = new Intl.DateTimeFormat('en-AU', { dateStyle: 'medium' });
+    const formatDate = value => value && Number.isFinite(new Date(value).getTime()) ? date.format(new Date(value)) : '—';
+    const title = value => value ? value.replaceAll('_', ' ').replace(/^./, char => char.toUpperCase()) : '—';
+    const provider = value => value === 'google' ? 'Google' : title(value);
+    const billing = value => ({ fullaccess: 'Premium Monthly', yearly: 'Premium Yearly' })[value.plan] || null;
+    const status = value => value.status === 'none' ? (value.customerUrl ? 'No Stripe subscription' : 'No linked Stripe billing') : title(value.status);
+    let query = '', cursors = [null], page = 0, next = null, requestNumber = 0, selected = null, detailNumber = 0;
+
+    async function request(params, options) {
+      const response = await adminFetch('/api/admin/accounts?' + new URLSearchParams(params), options);
+      if (response.status === 401) throw Error('Sign in with your WellNest admin account.');
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw Error(data.error || 'Account information could not load. Try again.');
+      return data;
+    }
+
+    function addDetail(list, label, value) {
+      list.append(el('dt', { text: label }), el('dd', { text: value }));
+    }
+
+    function renderAccount(account, row) {
+      const view = el('button', { type: 'button', class: 'account-admin-view', text: 'Manage', 'aria-label': 'Manage ' + account.email });
+      view.addEventListener('click', () => showDetails(account, row));
+      row.replaceChildren(
+        el('td', {}, [el('strong', { text: account.name || account.email }), account.name && el('small', { text: account.email }), !account.confirmedAt && el('small', { text: 'Email unconfirmed' })]),
+        el('td', {}, [formatDate(account.createdAt), el('small', { text: provider(account.provider) })]),
+        el('td', {}, [status(account.billing), billing(account.billing) && el('small', { text: billing(account.billing) }), account.complimentary && el('small', { text: 'Complimentary access' })]),
+        el('td', {}, [view]),
+      );
+    }
+
+    async function load() {
+      const id = ++requestNumber;
+      const after = cursors[page];
+      byId('status').textContent = 'Loading accounts…';
+      byId('table').hidden = true;
+      byId('rows').replaceChildren();
+      byId('pages').hidden = true;
+      try {
+        const data = await request(after ? { q: query, after } : { q: query });
+        if (id !== requestNumber) return;
+        next = data.next;
+        for (const account of data.accounts) {
+          const row = el('tr');
+          renderAccount(account, row);
+          byId('rows').append(row);
+        }
+        byId('table').hidden = !data.accounts.length;
+        byId('pages').hidden = page === 0 && !next;
+        byId('prev').disabled = page === 0;
+        byId('next').disabled = !next;
+        byId('status').textContent = data.accounts.length ? 'Page ' + (page + 1) : 'No matching accounts.';
+      } catch (error) {
+        if (id !== requestNumber) return;
+        byId('status').textContent = error.message;
+      }
+    }
+
+    function paintDetails(account, row) {
+      byId('heading').textContent = account.name || account.email;
+      const details = byId('details');
+      details.replaceChildren();
+      addDetail(details, 'Email', account.email);
+      addDetail(details, 'Account ID', account.id);
+      addDetail(details, 'Account created', formatDate(account.createdAt));
+      addDetail(details, 'Sign-up method', provider(account.provider));
+      addDetail(details, 'Email confirmed', formatDate(account.confirmedAt));
+      addDetail(details, 'Stripe status', status(account.billing));
+      addDetail(details, 'Stripe plan', billing(account.billing) || '—');
+      addDetail(details, account.billing.ending ? 'Scheduled end' : 'Current period ends', formatDate(account.billing.periodEnd));
+      addDetail(details, 'Complimentary access', account.complimentary ? 'Enabled' : 'Disabled');
+
+      const stripe = byId('stripe');
+      stripe.replaceChildren();
+      for (const [url, label] of [[account.billing.customerUrl, 'Open Stripe customer'], [account.billing.subscriptionUrl, 'Manage Stripe subscription']]) {
+        if (url && /^https:\/\/dashboard\.stripe\.com\/(?:test\/)?(?:customers\/cus_|subscriptions\/sub_)[A-Za-z0-9]+$/.test(url)) {
+          stripe.append(el('a', { href: url, target: '_blank', rel: 'noopener noreferrer', text: label }));
+        }
+      }
+
+      const actions = byId('access');
+      actions.replaceChildren();
+      if (!account.canManage || (!account.confirmedAt && !account.complimentary)) return;
+      const enabled = !account.complimentary;
+      const label = enabled ? 'Grant complimentary access' : 'Revoke complimentary access';
+      const button = el('button', { type: 'button', text: label });
+      actions.append(button);
+      button.addEventListener('click', async () => {
+        if (!window.confirm(label + ' for ' + account.email + '? This does not change Stripe billing.')) return;
+        button.disabled = true;
+        const current = detailNumber;
+        try {
+          const data = await request({ id: account.id }, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ complimentary: enabled }),
+          });
+          renderAccount(data.account, row);
+          if (current !== detailNumber || selected !== account.id) return;
+          paintDetails(data.account, row);
+          byId('action-status').textContent = enabled ? 'Complimentary access granted.' : 'Complimentary access revoked.';
+        } catch (error) {
+          if (current === detailNumber && selected === account.id) byId('action-status').textContent = error.message;
+        } finally {
+          button.disabled = false;
+        }
+      });
+    }
+
+    async function showDetails(account, row) {
+      const id = ++detailNumber;
+      selected = account.id;
+      paintDetails(account, row);
+      byId('checkout').textContent = account.billing.customerUrl ? 'Loading Stripe Checkout details…' : '';
+      byId('action-status').textContent = '';
+      dialog.showModal();
+      if (!account.billing.customerUrl) return;
+      try {
+        const { checkout } = await request({ id: account.id });
+        if (id !== detailNumber) return;
+        byId('checkout').textContent = checkout ?
+          checkout.source + ' · Started ' + formatDate(checkout.startedAt * 1000) + ' · Payment status: ' + title(checkout.paymentStatus) :
+          'No completed Stripe Checkout session found for this account.';
+      } catch (error) {
+        if (id === detailNumber) byId('checkout').textContent = error.message;
+      }
+    }
+
+    dialog.addEventListener('close', () => { detailNumber++; selected = null; });
+    panel.addEventListener('toggle', () => { if (panel.open) load(); });
+    byId('search').addEventListener('submit', event => {
+      event.preventDefault();
+      query = byId('query').value.trim();
+      cursors = [null];
+      page = 0;
+      load();
+    });
+    byId('prev').addEventListener('click', () => { if (page > 0) { page--; load(); } });
+    byId('next').addEventListener('click', () => { if (next) { cursors[++page] = next; load(); } });
+    if (panel.open) load();
+  }
+  setupAccountAdmin();
 
   function notice(title, lines, link) {
     headline("Site statistics", "nothing to show yet.");
@@ -360,7 +558,7 @@
   async function load() {
     document.querySelectorAll("#ranges button").forEach(function (b) { b.setAttribute("aria-pressed", String(Number(b.dataset.days) === days)); });
     try {
-      var res = await getStats(false);
+      var res = await adminFetch("/api/analytics/stats?days=" + days + "&tz=" + (-new Date().getTimezoneOffset()));
       if (res.status === 401) {
         notice("Sign in to see site statistics", ["Sign in to WellNest with your admin account, then come back to this page."], ["Sign in", "/login?redirect=" + encodeURIComponent(location.pathname)]);
         return;

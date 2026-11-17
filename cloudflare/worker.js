@@ -1,3 +1,4 @@
+import { handleAccountAdmin } from './account-admin.js';
 import {careCircleSource} from './care-circle.js';
 import {printReportsSource} from './print-reports.js';
 var __defProp = Object.defineProperty;
@@ -2931,6 +2932,7 @@ async function api(request, env, path) {
   const user = await currentUser(env, request);
   if (!user) return fail(401, "Authentication required");
   if (path === "/api/analytics/stats" && request.method === "GET") return handleStats(request, env, user);
+  if (path === "/api/admin/accounts") return handleAccountAdmin(request, env, user, { isAdmin: isAnalyticsAdmin, ensureBilling, stripe });
   if (path === "/api/analytics/accounts" && request.method === "GET") return handleAccountAnalytics(request, env, user);
   if (parts[0] === "editor" && parts[1]) return handleEditor(request, env, user, parts[1]);
   if (path === "/api/seo/indexnow") return handleIndexNow(request, env, user);
