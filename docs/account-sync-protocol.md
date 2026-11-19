@@ -41,6 +41,15 @@ record edits, deletes and dose toggles against this protocol before claiming
 end-to-end compatibility. Conflicts retain local changes; resolution UI remains
 future work.
 
-The visible web dashboard polls through the shared tracker every 30 seconds;
-manual routine/account sync uses that same queue and applies server-returned
-records before refreshing the dashboard.
+The visible web dashboard polls through the shared tracker every 30 seconds and
+again whenever it becomes visible; manual routine/account sync uses that same
+queue and applies server-returned records before refreshing the dashboard.
+A poll only saves when a collection's records differ in content (ignoring order
+and emptied dose days). Saving on every poll bumped `sync_revision` every 30
+seconds, which made the iPhone's next save stale, so its unchecks and medication
+edits were rejected with 409.
+
+Native (`WellNest/` user agent) snapshots made from the current revision also
+reconcile medications: an omitted medication is deleted and a changed one is
+edited, as for appointments. Stale snapshots stay passive, and an empty list
+replacing several medications is ignored.
