@@ -1,16 +1,22 @@
 import worker from './worker.js';
 import { handleOutreach } from './outreach.js';
 import { corsHeaders, fail } from './lib.js';
-import { shouldLog, recordSync, handleSyncLog } from './synclog.js';
+import { shouldLog, startSync, finishSync, failSync, handleSyncLog } from './synclog.js';
 
 // Pass a request to the main Worker, recording account backup traffic in the sync log.
 async function logged(request, env, ctx, url) {
   if (!shouldLog(request, url)) return worker.fetch(request, env, ctx);
   const requestText = request.method === 'GET' || request.method === 'HEAD' ? '' : await request.clone().text().catch(() => '');
+  const entry = await startSync(env, request, url, requestText);
   const started = Date.now();
-  const response = await worker.fetch(request, env, ctx);
-  const copy = response.clone();
-  const done = recordSync(env, request, url, requestText, copy, Date.now() - started);
+  let response;
+  try {
+    response = await worker.fetch(request, env, ctx);
+  } catch (error) {
+    await failSync(env, entry, error, Date.now() - started);
+    throw error;
+  }
+  const done = finishSync(env, entry, requestText, response.clone(), Date.now() - started);
   if (ctx?.waitUntil) ctx.waitUntil(done); else await done;
   return response;
 }
