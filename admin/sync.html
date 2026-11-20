@@ -221,21 +221,23 @@
     var d = new Date(iso);
     return d.toLocaleDateString(undefined, { day: "numeric", month: "short" }) + " " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" });
   }
-  function days(obj) {
-    if (!obj) return "";
-    return Object.keys(obj).map(function (k) { return k + " " + Object.keys(obj[k]).map(function (d) { return d + "×" + obj[k][d]; }).join(", "); }).join(" · ");
+  function doseText(log) {
+    if (!log) return "";
+    return Object.keys(log).map(function (k) {
+      var d = log[k] || {}, dates = d.dates || {};
+      return k + " " + Object.keys(dates).map(function (x) { return x + "×" + dates[x]; }).join(", ") + (d.formats && d.formats.length ? " [" + d.formats.join(" ") + "]" : "");
+    }).join(" · ");
   }
+  function statusText(e) { return e.status === 0 ? "cut off" : e.status === -1 ? "crashed" : String(e.status); }
   function summary(e) {
-    var d = e.detail || {}, s = d.sent || {}, parts = [];
-    if (s.revision != null || (d.stored && d.stored.revision != null)) parts.push("revision " + (s.revision != null ? s.revision : "–") + " → " + (d.stored && d.stored.revision != null ? d.stored.revision : "–"));
+    var d = e.detail || {}, s = d.sent || {}, st = d.stored || {}, parts = [];
+    if (e.status === 0) parts.push("Started but never finished: the request was stopped before the server answered (for example a CPU or time limit).");
+    if (d.bytes) parts.push(Math.round(d.bytes / 1024).toLocaleString() + " KB sent");
+    if (s.revision != null || st.revision != null) parts.push("revision " + (s.revision != null ? s.revision : "–") + " → " + (st.revision != null ? st.revision : "–"));
     if (s.protocol != null) parts.push("protocol " + s.protocol);
-    if (s.dose_ops && s.dose_ops.length) parts.push("dose changes " + s.dose_ops.join(", "));
-    var sentDays = days(s.dose_days);
-    if (sentDays) parts.push("sent " + sentDays);
-    var storedDays = d.stored && days(d.stored.dose_days);
-    if (storedDays) parts.push("stored " + storedDays);
+    var sent = doseText(s.dose_log); if (sent) parts.push("sent " + sent);
+    var stored = doseText(st.dose_log); if (stored) parts.push("stored " + stored);
     if (d.error) parts.push("error: " + d.error);
-    if (!parts.length && d.bytes) parts.push(d.bytes.toLocaleString() + " bytes");
     return parts.join(" · ");
   }
   function render(entries) {
@@ -244,12 +246,12 @@
     var lastPhone = iphone[0];
     var lede = lastPhone ? "Last iPhone request " + when(lastPhone.at) + " (" + lastPhone.method + " " + lastPhone.status + ")." : "No iPhone requests recorded yet. Make a change in the iPhone app, then wait for this page to refresh.";
     var rows = entries.map(function (e) {
-      var ok = e.status < 400;
+      var ok = e.status > 0 && e.status < 400;
       return el("tr", {}, [
         el("td", { class: "when", text: when(e.at) }),
         el("td", {}, [el("span", { class: "dev " + e.client, text: e.client === "iphone" ? "iPhone" : "Web" })]),
         el("td", { text: e.method + " " + e.path.replace(/^\/api\/(apps\/[^/]+\/)?/, "") }),
-        el("td", { class: ok ? "ok" : "bad", text: String(e.status) }),
+        el("td", { class: ok ? "ok" : "bad", text: statusText(e) }),
         el("td", {}, [summary(e), el("details", {}, [el("summary", { text: "Details" }), el("pre", { text: JSON.stringify(e.detail, null, 1) })])]),
       ]);
     });
