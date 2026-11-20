@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Sync log · WellNest</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Matches the wellnest.services landing page: dark green hero, Bricolage Grotesque
+     headlines, lime accents with Instrument Serif italics, then cream. */
+  :root {
+    --hero: #081e1b; --hero-2: #0f2c25; --on-hero: #f6fbf4; --on-hero-2: #bbd0c5; --hero-line: rgba(246,251,244,.12);
+    --lime: #d8fb96; --lime-ink: #10251c;
+    --bg: #f8f8f3; --surface: #ffffff; --ink: #16372f; --ink-2: #33524a; --muted: #6b7d76;
+    --line: #e6e9e1; --grid: #eef0ea; --mark: #1f7a4d; --mark-soft: #e5f3e6; --up: #1f7a4d; --down: #b4472c;
+    --display: "Bricolage Grotesque", Geist, system-ui, sans-serif;
+    --serif: "Instrument Serif", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Geist, Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1184px; margin: 0 auto; padding: 0 24px; }
+  button:focus-visible, summary:focus-visible, a:focus-visible, .chart:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  main button:focus-visible, main summary:focus-visible, main .chart:focus-visible { outline-color: var(--mark); }
+
+  /* ---- hero ---- */
+  .hero { padding-bottom: 20px !important; background: radial-gradient(900px 500px at 85% 0%, rgba(216,251,150,.08), transparent 60%), radial-gradient(700px 500px at 0% 100%, rgba(31,122,77,.18), transparent 60%), linear-gradient(180deg, var(--hero), var(--hero-2)); color: var(--on-hero); padding-bottom: 40px; }
+  nav { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--hero-line); }
+  /* Same brand lockup as the landing page and app header (.hb-brand). */
+  .brand { display: inline-flex; align-items: center; gap: 4px; color: #f5fcf4; text-decoration: none; white-space: nowrap; font: 800 30px/1 var(--display); letter-spacing: -.073em; }
+  .brand img { width: 35px; height: 35px; margin: 2px; object-fit: contain; flex: none; position: relative; top: 3px; }
+  @media (max-width: 650px) { .brand { font-size: 25px; } .brand img { width: 30px; height: 30px; margin: 1.5px; } }
+  nav .spacer { flex: 1; }
+  nav a.back { color: var(--on-hero); text-decoration: none; font-weight: 600; font-size: 14px; }
+  nav a.back:hover { color: var(--lime); }
+  nav a.cta { background: var(--lime); color: var(--lime-ink); text-decoration: none; font-weight: 700; font-size: 14px; padding: 11px 18px; border-radius: 999px; display: inline-flex; gap: 10px; align-items: center; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 10px; margin-top: 16px; padding: 6px 14px 6px 8px; border: 1px solid var(--hero-line); border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .12em; color: var(--on-hero-2); background: rgba(246,251,244,.03); }
+  .eyebrow i { width: 16px; height: 16px; border-radius: 50%; background: rgba(216,251,150,.18); display: grid; place-items: center; }
+  .eyebrow i::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--lime); }
+  .head-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-top: 12px; }
+  .headline { margin: 0; font: 800 clamp(34px, 4.6vw, 52px)/1 var(--display); letter-spacing: -.06em; color: var(--on-hero); }
+  .headline em { font: italic 400 .9em/1 var(--serif); letter-spacing: -.01em; color: var(--lime); margin-left: .25em; }
+  .headline-delta { margin-top: 8px; font-size: 13px; color: var(--on-hero-2); min-height: 1em; }
+  .headline-delta .up { color: var(--lime); font-weight: 600; } .headline-delta .down { color: #ffb89c; font-weight: 600; }
+  .label { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  .hero .label { color: var(--on-hero-2); margin: 28px 0 10px; }
+  .ranges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ranges button { font: 600 14px Geist, Inter, sans-serif; color: var(--on-hero); background: rgba(246,251,244,.04); border: 1px solid rgba(246,251,244,.22); padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+  .ranges button:hover { border-color: rgba(246,251,244,.45); }
+  .ranges button[aria-pressed="true"] { background: var(--lime); border-color: var(--lime); color: var(--lime-ink); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .tiles:empty { display: none; }
+  .tile { background: rgba(246,251,244,.05); border: 1px solid var(--hero-line); border-radius: 16px; padding: 12px 18px; min-width: 0; backdrop-filter: blur(6px); }
+  .tile .k { font-size: 13px; color: var(--on-hero-2); }
+  .tile .value { font: 800 26px/1.05 var(--display); letter-spacing: -.05em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .tile .delta { font-size: 13px; margin-top: 4px; color: var(--on-hero-2); }
+  .tile .delta:empty { display: none; }
+  .tile .up { color: var(--lime); font-weight: 600; } .tile .down { color: #ffb89c; font-weight: 600; }
+
+  /* ---- cream content ---- */
+  main { padding: 20px 0 4px; }
+  .section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 36px 0 14px; }
+  .section-title:first-child { margin-top: 0; }
+  .section-title h2 { margin: 0; font: 800 clamp(28px, 3.4vw, 40px)/1.05 var(--display); letter-spacing: -.06em; color: var(--ink); }
+  .section-title h2 em { font: italic 400 1.05em var(--serif); letter-spacing: -.01em; color: var(--mark); }
+  .section-title .label { color: var(--muted); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; min-width: 0; box-shadow: 0 1px 0 rgba(22,55,47,.03), 0 12px 32px -24px rgba(22,55,47,.25); }
+  .panel h3, .chart-card h3 { margin: 0 0 8px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font: 700 16px/1.2 var(--display); letter-spacing: -.03em; }
+  .panel h3 span, .chart-card h3 span { font: 600 10px Geist, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .chart { position: relative; height: 150px; }
+  .chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .chart .tip { position: absolute; pointer-events: none; background: var(--hero); color: var(--on-hero); border-radius: 12px; padding: 9px 12px; font-size: 12px; white-space: nowrap; transform: translate(-50%, -115%); display: none; box-shadow: 0 10px 24px -10px rgba(8,30,27,.5); }
+  .tip strong { display: block; font: 800 17px var(--display); letter-spacing: -.03em; color: var(--lime); }
+  details { margin-top: 6px; font-size: 13px; color: var(--muted); }
+  summary { cursor: pointer; }
+  details table { margin-top: 8px; }
+
+  .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .board .span4 { grid-column: 1 / -1; } .board .span2 { grid-column: span 2; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th { text-align: right; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0 0 5px 8px; }
+  th:first-child { text-align: left; padding-left: 0; }
+  td { padding: 0; border-top: 1px solid var(--grid); }
+  td.n { text-align: right; padding: 5px 0 5px 8px; color: var(--ink-2); white-space: nowrap; }
+  .bar { position: relative; padding: 5px 8px; min-width: 0; }
+  .bar b { position: absolute; inset: 3px auto 3px 0; background: var(--mark-soft); border-radius: 0 6px 6px 0; }
+  .bar span { position: relative; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+
+  .notice { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 32px; max-width: 620px; }
+  .notice h2 { margin: 0 0 10px; font: 800 30px/1.1 var(--display); letter-spacing: -.05em; }
+  .notice p { margin: 8px 0; color: var(--ink-2); }
+  .notice a.btn { display: inline-block; margin-top: 14px; background: var(--hero); color: var(--lime); padding: 12px 20px; border-radius: 999px; text-decoration: none; font-weight: 700; }
+  code { background: var(--mark-soft); padding: 1px 6px; border-radius: 6px; font-size: 13px; }
+  footer { padding: 14px 0 28px; font-size: 12px; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+  footer svg { flex: none; }
+
+  @media (max-width: 960px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .board { grid-template-columns: minmax(0, 1fr); } .board .span2 { grid-column: auto; } }
+  @media (max-width: 520px) {
+    .wrap { padding: 0 16px; } nav a.back { display: none; } .tiles { grid-template-columns: 1fr 1fr; } .tile:last-child { grid-column: 1 / -1; } .tile .value { font-size: 26px; }
+    .ranges button { padding: 7px 12px; font-size: 13px; }
+    .section-title .label { display: none; }
+  }
+
+  /* ---- outreach index additions ---- */
+  .lede { margin-top: 8px; font-size: 13px; color: var(--on-hero-2); max-width: 640px; }
+  .lede b { color: var(--lime); font-weight: 600; }
+  .note { margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .filters select { font: 600 13px Geist, Inter, sans-serif; color: var(--ink); background-color: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; max-width: 100%; }
+  .scroll { overflow-x: auto; }
+  table.idx { min-width: 820px; }
+  table.idx th { text-align: left; padding: 0 10px 6px 0; white-space: nowrap; }
+  table.idx td { padding: 7px 10px 7px 0; vertical-align: top; color: var(--ink-2); }
+  table.idx td:first-child { color: var(--ink); font-weight: 500; }
+  table.idx td.wide { min-width: 240px; }
+  table.idx a { color: var(--mark); font-weight: 600; text-decoration: none; }
+  table.idx a:hover { text-decoration: underline; }
+  .s-bad { color: var(--down) !important; font-weight: 600; } .s-warn { color: #8a5a00 !important; font-weight: 600; }
+  .s-ok { color: var(--mark) !important; font-weight: 600; } .s-muted { color: var(--muted) !important; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  table.idx a.chip { display: inline-block; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--mark-soft); color: var(--ink); font-weight: 600; font-size: 12px; white-space: nowrap; }
+  table.idx a.chip:hover { border-color: var(--mark); text-decoration: none; }
+  section[hidden] { display: none; }
+.lead-panel input, .lead-panel textarea, .lead-panel select { font: inherit; padding: 9px; border: 1px solid var(--line); border-radius: 8px; max-width: 100%; }
+  .lead-panel button { font: 600 13px Geist, sans-serif; padding: 9px 13px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--mark-soft); cursor: pointer; }
+  .lead-panel button:disabled { opacity: .5; cursor: wait; }
+  .lead-form { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 20px; max-width: 720px; }
+  .lead-form label { display: block; margin-bottom: 14px; font-weight: 600; }
+  .lead-form input, .lead-form textarea, .lead-form select { display: block; width: 100%; margin-top: 5px; }
+  .lead-panel :focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; }
+.post-index .post-search { flex: 1 1 280px; min-width: 180px; }
+  .post-index .post-dates { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  .post-index .post-dates label { display: grid; gap: 4px; font-size: 12px; }
+  .post-index td.wide { min-width: 260px; max-width: 440px; }
+  .post-index time { white-space: nowrap; }
+  .request-searches { margin-top: 20px; }
+  .request-searches summary { font-weight: 600; margin-bottom: 12px; }
+
+  .synclog td { vertical-align: top; padding: 7px 10px 7px 0; font-size: 13px; color: var(--ink-2); }
+  .synclog th { text-align: left; padding: 0 10px 6px 0; white-space: nowrap; }
+  .synclog td.when { white-space: nowrap; color: var(--ink); font-weight: 500; }
+  .synclog .ok { color: var(--mark); font-weight: 600; } .synclog .bad { color: var(--down); font-weight: 600; }
+  .synclog .dev { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--mark-soft); color: var(--ink); }
+  .synclog .dev.iphone { background: #fff1d6; }
+  .synclog details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+  .synclog pre { white-space: pre-wrap; word-break: break-word; font-size: 11px; max-width: 640px; margin: 6px 0 0; color: var(--ink-2); }
+  .synclog .scroll { overflow-x: auto; }
+  .note { margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .bar-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .bar-row button { font: 600 13px Geist, Inter, sans-serif; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="/"><img src="/landing/homebeta-header-mark.webp" alt="" width="35" height="35">wellnest</a>
+      <span class="spacer"></span>
+      <a class="back" href="/">Open site</a>
+      <a class="back" href="/dashboard">Open app</a>
+      <a class="back" href="/admin/analytics">Site statistics</a>
+      <a class="back" href="/admin/outreach">Open Outreach</a>
+      <a class="cta" href="/admin/edit">Edit WellNest <span aria-hidden="true">↗</span></a>
+    </nav>
+    <div class="eyebrow"><i></i><span>ACCOUNT SYNC LOG</span></div>
+    <div class="head-row"><div><h1 class="headline" id="headline">Sync log<em>loading…</em></h1>
+    <div class="lede" id="lede" style="margin-top:8px;font-size:13px;color:var(--on-hero-2);max-width:680px">Every save the iPhone app sends, and every save from the web dashboard, with the server's answer. Record contents are never stored here.</div></div></div>
+  </div>
+</div>
+<div class="wrap">
+  <main id="main" class="synclog"><p class="empty">Loading…</p></main>
+  <footer>Keeps the newest 300 entries. Refreshes every 10 seconds.</footer>
+</div>
+<script>
+(function () {
+  "use strict";
+  var API = location.hostname.endsWith("github.io") ? "https://wellnest.services" : "";
+  var main = document.getElementById("main");
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    for (var k in attrs || {}) { if (k === "text") n.textContent = attrs[k]; else if (k === "class") n.className = attrs[k]; else n.setAttribute(k, attrs[k]); }
+    (kids || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return n;
+  }
+  function headline(big, small) { document.getElementById("headline").replaceChildren(document.createTextNode(big), el("em", { text: small })); }
+  function stored() { try { return JSON.parse(localStorage.getItem("gotrue.user") || "null"); } catch (e) { return null; } }
+  async function refresh() {
+    var u = stored();
+    if (!u || !u.token || !u.token.refresh_token) return false;
+    var res = await fetch(API + "/api/_identity/token", {
+      method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(u.token.refresh_token),
+    });
+    if (!res.ok) return false;
+    var t = await res.json();
+    u.token = Object.assign({}, u.token, t, { expires_at: Date.now() + (t.expires_in || 3600) * 1000 });
+    try { localStorage.setItem("gotrue.user", JSON.stringify(u)); } catch (e) {}
+    return true;
+  }
+  async function adminCheck(retry) {
+    var u = stored();
+    var headers = u && u.token && u.token.access_token ? { Authorization: "Bearer " + u.token.access_token } : {};
+    var res = await fetch(API + "/api/analytics/stats?days=1", { headers: headers, credentials: "include" });
+    if (res.status === 401 && !retry && await refresh()) return adminCheck(true);
+    return res;
+  }
+
+  async function load(retry) {
+    var u = stored();
+    var headers = u && u.token && u.token.access_token ? { Authorization: "Bearer " + u.token.access_token } : {};
+    var res = await fetch(API + "/api/admin/sync-log", { headers: headers, credentials: "include", cache: "no-store" });
+    if (res.status === 401 && !retry && await refresh()) return load(true);
+    return res;
+  }
+  function when(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString(undefined, { day: "numeric", month: "short" }) + " " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" });
+  }
+  function days(obj) {
+    if (!obj) return "";
+    return Object.keys(obj).map(function (k) { return k + " " + Object.keys(obj[k]).map(function (d) { return d + "×" + obj[k][d]; }).join(", "); }).join(" · ");
+  }
+  function summary(e) {
+    var d = e.detail || {}, s = d.sent || {}, parts = [];
+    if (s.revision != null || (d.stored && d.stored.revision != null)) parts.push("revision " + (s.revision != null ? s.revision : "–") + " → " + (d.stored && d.stored.revision != null ? d.stored.revision : "–"));
+    if (s.protocol != null) parts.push("protocol " + s.protocol);
+    if (s.dose_ops && s.dose_ops.length) parts.push("dose changes " + s.dose_ops.join(", "));
+    var sentDays = days(s.dose_days);
+    if (sentDays) parts.push("sent " + sentDays);
+    var storedDays = d.stored && days(d.stored.dose_days);
+    if (storedDays) parts.push("stored " + storedDays);
+    if (d.error) parts.push("error: " + d.error);
+    if (!parts.length && d.bytes) parts.push(d.bytes.toLocaleString() + " bytes");
+    return parts.join(" · ");
+  }
+  function render(entries) {
+    var iphone = entries.filter(function (e) { return e.client === "iphone"; });
+    headline("Sync log", entries.length + " entries");
+    var lastPhone = iphone[0];
+    var lede = lastPhone ? "Last iPhone request " + when(lastPhone.at) + " (" + lastPhone.method + " " + lastPhone.status + ")." : "No iPhone requests recorded yet. Make a change in the iPhone app, then wait for this page to refresh.";
+    var rows = entries.map(function (e) {
+      var ok = e.status < 400;
+      return el("tr", {}, [
+        el("td", { class: "when", text: when(e.at) }),
+        el("td", {}, [el("span", { class: "dev " + e.client, text: e.client === "iphone" ? "iPhone" : "Web" })]),
+        el("td", { text: e.method + " " + e.path.replace(/^\/api\/(apps\/[^/]+\/)?/, "") }),
+        el("td", { class: ok ? "ok" : "bad", text: String(e.status) }),
+        el("td", {}, [summary(e), el("details", {}, [el("summary", { text: "Details" }), el("pre", { text: JSON.stringify(e.detail, null, 1) })])]),
+      ]);
+    });
+    main.replaceChildren(
+      el("div", { class: "card" }, [
+        el("p", { class: "note", text: lede }),
+        el("p", { class: "note", text: "To test: tick or untick a dose in the Daily Care Routine on the iPhone app. An iPhone row should appear within a few seconds of the phone saving." }),
+        el("div", { class: "scroll" }, [el("table", {}, [el("thead", {}, [el("tr", {}, ["When", "Device", "Request", "Status", "What was sent and stored"].map(function (h) { return el("th", { text: h }); }))]), el("tbody", {}, rows)])]),
+      ]));
+  }
+  async function tick() {
+    try {
+      var res = await load(false);
+      if (res.status === 401) { headline("Sync log", "sign in first."); main.replaceChildren(el("div", { class: "notice" }, [el("h2", { text: "Sign in to see the sync log" }), el("a", { class: "btn", href: "/login?redirect=" + encodeURIComponent(location.pathname), text: "Sign in" })])); return; }
+      if (res.status === 403) { headline("Sync log", "admins only."); main.replaceChildren(el("p", { class: "empty", text: "This account can't see the sync log. It uses the same admin list as Site statistics." })); return; }
+      if (!res.ok) throw new Error(res.statusText);
+      render((await res.json()).entries || []);
+    } catch (err) {
+      headline("Sync log", "couldn't load.");
+    }
+  }
+  tick();
+  setInterval(function () { if (document.visibilityState === "visible") tick(); }, 10000);
+})();
+</script>
+</body>
+</html>
