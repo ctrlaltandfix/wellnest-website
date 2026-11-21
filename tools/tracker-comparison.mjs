@@ -15,6 +15,21 @@ function insert(text, anchor, replacement) {
 export function trackerComparison(text, path) {
   const pages = ['best-chronic-illness-tracker-apps.html', 'best-chronic-illness-tracker-apps/index.html'];
   const app = path === 'assets/index-calendar-20261117-wn3.js';
+  const productPages = ['chronic-illness-tracker.html', 'chronic-illness-tracker/index.html'];
+  const heading = 'Which chronic health tracker fits your routine?';
+  const detail = 'If you want to bring a record to an appointment, WellNest lets you enter pain flares, peak-flow readings or seizure events, keep a medication history and export a dated PDF. You can keep that diary on iPhone or in a web browser. If you want a wearable to guide activity pacing, see Visible. For a symptom and treatment timeline, consider Human Health. For exploring patterns across mood, symptoms and daily habits, consider Bearable.';
+  const comparison = '/best-chronic-illness-tracker-apps';
+  const label = 'Compare WellNest, Visible, Human Health and Bearable';
+  if (productPages.includes(path)) {
+    const anchor = '<h2 class="cp-h2">One medication and appointment history</h2>';
+    const section = '<h2 class="cp-h2">'+heading+'</h2><p class="cp-p">'+detail+'</p><a class="cp-section-link" href="'+comparison+'">'+label+'</a></div></section><section class="cp-content reveal"><div class="cp-content-inner">';
+    return insert(text, anchor, section+anchor);
+  }
+  if (app) {
+    const anchor = '{heading:`One medication and appointment history`';
+    const section = {heading, body:detail, link:{href:comparison,label}};
+    text = insert(text, anchor, JSON.stringify(section)+','+anchor);
+  }
   if (!app && !pages.includes(path)) return text;
   text = insert(text, 'Descriptions of other apps are based on their own published information as of September 2026.', 'The four linked product descriptions were checked on 21 November 2026. Other listings were reviewed in September 2026.');
   if (pages.includes(path)) {
