@@ -4,7 +4,7 @@ the hero, tools/pricing-polish.css for the pricing page) into the stylesheet the
 pages load. Re-runnable: each block replaces its earlier copy."""
 import os, re
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BLOCKS = [("features-polish.css", "hb-features-polish"), ("pricing-polish.css", "wp-pricing-polish")]
+BLOCKS = [("features-polish.css", "hb-features-polish"), ("pricing-polish.css", "wp-pricing-polish"), ("printables.css", "wn-printables")]
 index = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
 for rel in sorted(set(re.findall(r'assets/index[^"/]*\.css', index))):
     p = os.path.join(ROOT, rel)
