@@ -4432,12 +4432,14 @@ async function handleMedicationBackup(request, env, user, id) {
     const existing = row2 ? JSON.parse(row2.data) : {};
     if (row2 && existing.backup_key !== "wellnest-local-data") return null;
     let merged;
-    try { const revisionMatches=Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision;
-      const appointments=prepareAppointmentSync(existing.data?.local_data||{},input.data.local_data,trackerOps,protocol,revisionMatches,/^WellNest\//.test(request.headers.get('User-Agent')||''));
-      const medications=prepareMedicationSync(existing.data?.local_data||{},appointments.incoming,appointments.operations,protocol,revisionMatches,/^WellNest\//.test(request.headers.get('User-Agent')||''));
+    const revisionMatches = Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision;
+    const nativeSnapshot = /^WellNest\//.test(request.headers.get('User-Agent')||'');
+    try {
+      const appointments=prepareAppointmentSync(existing.data?.local_data||{},input.data.local_data,trackerOps,protocol,revisionMatches,nativeSnapshot);
+      const medications=prepareMedicationSync(existing.data?.local_data||{},appointments.incoming,appointments.operations,protocol,revisionMatches,nativeSnapshot);
       merged = mergeAccountRecords(existing.data?.local_data || {}, medications.incoming, medications.operations, protocol, revisionMatches); }
     catch(error) { if(error.status === 409 || error.status === 400) return fail(error.status,error.message); throw error; }
-    let state;try { state = mergeRoutineDoseState(existing.data?.local_data || {}, input.data.local_data, operations, protocol, Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision); } catch(error) { if(error.status)return fail(error.status,error.message);throw error; }
+    let state;try { state = mergeRoutineDoseState(existing.data?.local_data || {}, input.data.local_data, operations, protocol, revisionMatches, nativeSnapshot); } catch(error) { if(error.status)return fail(error.status,error.message);throw error; }
     const patch = { ...input, data: { ...input.data, sync_revision: (existing.data?.sync_revision || 0) + 1, local_data: projectRoutineDoseFields({ ...merged, medlog: state.medlog, trackerDeleted: { ...merged.trackerDeleted, medlog: state.deleted } }) } };
     const time = now();
     let saved;
@@ -4609,7 +4611,8 @@ export {readAccountBackupBody};
 function routineDoseLog(local){return local?.medlog??local?.['wn-medlog']??{};}
 function routineDoseEqual(a,b){return syncSame(a,b);}
 function routineDoseTokens(log){return Object.fromEntries(Object.entries(log||{}).filter(([date,tokens])=>/^\d{4}-\d{2}-\d{2}$/.test(date)&&Array.isArray(tokens)).map(([date,tokens])=>[date,[...new Set(tokens.filter(t=>typeof t==='string'))].sort()]));}
-function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatches){
+function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatches,nativeSnapshot=false){
+ const reconcileSnapshot = (protocol!==2 && protocol!==3) || (nativeSnapshot && revisionMatches && !operations.length);
  const remote=routineDoseTokens(routineDoseLog(current));
  let next=routineDoseTokens(routineDoseLog(incoming));
  const alias=incoming?.['wn-medlog'];
@@ -4617,7 +4620,7 @@ function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatc
   const alternate=routineDoseTokens(alias);
   if(!routineDoseEqual(next,alternate)){
    if(routineDoseEqual(next,remote))next=alternate;
-   else if(!routineDoseEqual(alternate,remote)&&protocol!==2&&protocol!==3)throw Object.assign(Error('Conflicting medication dose fields. Refresh account data before syncing.'),{status:409});
+   else if(!routineDoseEqual(alternate,remote)&&reconcileSnapshot)throw Object.assign(Error('Conflicting medication dose fields. Refresh account data before syncing.'),{status:409});
   }
  }
  const coalesced=new Map();
@@ -4627,7 +4630,7 @@ function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatc
   coalesced.set(key,first?{...operation,baseTaken:first.baseTaken}:operation);
  }
  let ops=[...coalesced.values()];
- if(protocol!==2&&protocol!==3&&!operations.length){
+ if(reconcileSnapshot&&!operations.length){
   const removed=new Set(current?.trackerDeleted?.medlog||[]),changes=[];
   for(const [date,tokens] of Object.entries(next)){
    const before=new Set(remote[date]||[]),after=new Set(tokens);

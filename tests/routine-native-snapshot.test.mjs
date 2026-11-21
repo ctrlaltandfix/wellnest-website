@@ -40,3 +40,15 @@ test('coalesced changes still reject a genuine concurrent conflict',()=>{
  const ops=[{date,token,taken:false,baseTaken:false},{date,token,taken:false,baseTaken:false}];
  assert.throws(()=>mergeRoutineDoseState(current,{medlog:{[date]:[]}},ops,2,false),e=>e.status===409);
 });
+
+test('a current native snapshot can restore an evening check-off without dose operations',()=>{
+ const evening='med__evening';
+ const current={medlog:{[date]:[]},trackerDeleted:{medlog:[JSON.stringify([date,evening])]}};
+ const incoming={medlog:current.medlog,'wn-medlog':{[date]:[evening]}};
+ for(const protocol of [2,3]){
+  const merge=(matches,native)=>mergeRoutineDoseState(current,incoming,[],protocol,matches,native);
+  assert.deepEqual(merge(true,true),{medlog:{[date]:[evening]},deleted:[]});
+  assert.deepEqual(merge(false,true).medlog,current.medlog);
+  assert.deepEqual(merge(true,false).medlog,current.medlog);
+ }
+});
