@@ -11,6 +11,7 @@ import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFi
 import { join, relative, extname, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { stripBase } from "../cloudflare/sitepaths.js";
+import { trackerComparison } from "./tracker-comparison.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "dist-cloudflare");
@@ -52,7 +53,7 @@ function walk(dir) {
     files++;
     if (TEXT.has(extname(name))) {
       const text = readFileSync(src, "utf8");
-      let out = stripBase(text);
+      let out = trackerComparison(stripBase(text), rel.split("\\").join("/"));
       if (extname(name) === ".html") out = addStats(out, rel.split("\\").join("/"));
       if (out !== text) changed++;
       writeFileSync(dest, out);
