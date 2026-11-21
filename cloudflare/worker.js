@@ -1,3 +1,4 @@
+import {unpackBackup,saveBackup} from './account-backup-storage.js';
 import { handleAccountAdmin } from './account-admin.js';
 import {careCircleSource} from './care-circle.js';
 import {printReportsSource} from './print-reports.js';
@@ -2557,12 +2558,13 @@ __name2222(handleMe, "handleMe");
 __name22222(handleMe, "handleMe");
 __name222222(handleMe, "handleMe");
 __name2222222(handleMe, "handleMe");
-function serialize(row2, user) {
+async function serialize(row2, user, env) {
   let data = {};
   try {
     data = JSON.parse(row2.data);
   } catch {
   }
+  if (row2.entity === 'CloudDataBackup' && Object.hasOwn(data,'_wn_chunk_revision')) data = await unpackBackup(env.DB,row2,user.id);
   if(row2.entity === 'CloudDataBackup' && data.backup_key === 'wellnest-local-data' && data.data?.local_data)data={...data,data:{...data.data,local_data:projectRoutineDoseFields(data.data.local_data)}};
   return { ...data, id: row2.id, created_by_id: row2.owner_id, created_by: user.email, created_date: row2.created_date, updated_date: row2.updated_date };
 }
@@ -2658,7 +2660,7 @@ async function handleEntities(request, env, user, entity, id) {
     const rows = await env.DB.prepare(
       `SELECT * FROM records WHERE ${where.join(" AND ")} ORDER BY ${sortExpr} ${desc ? "DESC" : "ASC"}, id LIMIT ? OFFSET ?`
     ).bind(...params, limit, skip).all();
-    const items = rows.results.map((r) => serialize(r, user));
+    const items = await Promise.all(rows.results.map((r) => serialize(r, user, env)));
     return json({ items, next_cursor: items.length === limit ? String(skip + limit) : null });
   }
   if (m === "POST" && !id) {
@@ -2668,7 +2670,7 @@ async function handleEntities(request, env, user, entity, id) {
     const row3 = await env.DB.prepare(
       "INSERT INTO records (entity, id, owner_id, created_date, updated_date, data) VALUES (?, ?, ?, ?, ?, ?) RETURNING *"
     ).bind(entity, uuid(), user.id, t, t, JSON.stringify(data)).first();
-    return json(serialize(row3, user), 201);
+    return json(await serialize(row3, user, env), 201);
   }
   if (!id) return fail(405, "Method not allowed");
   let row2;
@@ -2685,7 +2687,7 @@ async function handleEntities(request, env, user, entity, id) {
   } else {
     return fail(405, "Method not allowed");
   }
-  return row2 ? json(serialize(row2, user)) : fail(404, "Record not found");
+  return row2 ? json(await serialize(row2, user, env)) : fail(404, "Record not found");
 }
 __name(handleEntities, "handleEntities");
 __name2(handleEntities, "handleEntities");
@@ -3413,7 +3415,7 @@ async function handleCalendar(request, env) {
     }
     const backup = await env.DB.prepare("SELECT * FROM records WHERE owner_id=? AND entity='CloudDataBackup' AND json_extract(data,'$.backup_key')='wellnest-local-data' ORDER BY updated_date DESC LIMIT 1").bind(owner).first();
     const originalData = backup?.data;
-    if (backup) backup.data = JSON.parse(backup.data);
+    if (backup) backup.data = await unpackBackup(env.DB,backup,owner);
     if (!backup) {
       return json2({ error: "Wait for account sync to finish, then try again." }, 409);
     }
@@ -3443,13 +3445,10 @@ async function handleCalendar(request, env) {
     const savedAt = (/* @__PURE__ */ new Date()).toISOString();
     const nextBackup = { ...backup.data, last_synced_at: savedAt, data: { ...backup.data.data, saved_at: savedAt, local_data: { ...local, appts: result.appointments, trackerDeleted: { ...local.trackerDeleted, appts: result.deletedIds } } } };
     const commitTime = Date.now();
-    const results = await env.DB.batch([
-      env.DB.prepare(`UPDATE google_calendar SET sync_state=?,last_synced_at=? WHERE owner_id=? AND lock_token=? AND lock_until>? AND EXISTS
-        (SELECT 1 FROM records WHERE entity='CloudDataBackup' AND id=? AND owner_id=? AND data=?)`).bind(JSON.stringify({ ...connection.sync_state, [calendar]: { links: result.links } }), savedAt, owner, lease, commitTime, backup.id, owner, originalData),
-      env.DB.prepare(`UPDATE records SET data=?,updated_date=? WHERE entity='CloudDataBackup' AND id=? AND owner_id=? AND data=? AND EXISTS
-        (SELECT 1 FROM google_calendar WHERE owner_id=? AND lock_token=? AND lock_until>?)`).bind(JSON.stringify(nextBackup), savedAt, backup.id, owner, originalData, owner, lease, commitTime)
-    ]);
-    if (!results.every((r) => r.meta.changes === 1)) return json2({ error: "Appointments changed during sync. Sync again to load the latest changes." }, 409);
+    const prerequisite = env.DB.prepare(`UPDATE google_calendar SET sync_state=?,last_synced_at=? WHERE owner_id=? AND lock_token=? AND lock_until>? AND EXISTS
+        (SELECT 1 FROM records WHERE entity='CloudDataBackup' AND id=? AND owner_id=? AND data=?)`).bind(JSON.stringify({ ...connection.sync_state, [calendar]: { links: result.links } }), savedAt, owner, lease, commitTime, backup.id, owner, originalData);
+    const saved = await saveBackup(env.DB,owner,backup.id,{data:originalData},nextBackup,savedAt,prerequisite);
+    if (!saved) return json2({ error: "Appointments changed during sync. Sync again to load the latest changes." }, 409);
     return json2({ lastSyncedAt: savedAt, count: result.appointments.length, partial: result.partial });
   } catch (error) {
     if (action === "callback") return redirect("failed");
@@ -3660,9 +3659,9 @@ async function handleCalendarFeed(request, env) {
   await subscriptionSchema(env);
   const row2 = await env.DB.prepare("SELECT * FROM calendar_subscriptions WHERE id=?").bind(m[1]).first();
   if (!row2 || !await hmacVerify(env, "calendar-subscription", row2.id + ":" + row2.nonce, m[2])) return fail(404, "Calendar subscription not found");
-  const backup = await env.DB.prepare("SELECT data FROM records WHERE owner_id=? AND entity='CloudDataBackup' AND json_extract(data,'$.backup_key')='wellnest-local-data' ORDER BY updated_date DESC LIMIT 1").bind(row2.owner_id).first();
+  const backup = await env.DB.prepare("SELECT id,data FROM records WHERE owner_id=? AND entity='CloudDataBackup' AND json_extract(data,'$.backup_key')='wellnest-local-data' ORDER BY updated_date DESC LIMIT 1").bind(row2.owner_id).first();
   if (!backup) return new Response("Your appointments are still syncing. Please try again shortly.", { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "60" } });
-  const text = await appointmentsCalendar(row2.owner_id, JSON.parse(backup.data), row2.time_zone);
+  const text = await appointmentsCalendar(row2.owner_id, await unpackBackup(env.DB,backup,row2.owner_id), row2.time_zone);
   return new Response(request.method === "HEAD" ? null : text, { headers: { "Content-Type": "text/calendar; charset=utf-8", "Content-Disposition": 'inline; filename="wellnest-appointments.ics"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer" } });
 }
 __name(handleCalendarFeed, "handleCalendarFeed");
@@ -3683,9 +3682,9 @@ async function simpleCalendarDownload(request, env) {
   } catch {
     return fail(400, "Enter a valid time zone, such as Australia/Sydney.");
   }
-  const row2 = await env.DB.prepare("SELECT data FROM records WHERE owner_id=? AND entity='CloudDataBackup' AND json_extract(data,'$.backup_key')='wellnest-local-data' ORDER BY updated_date DESC LIMIT 1").bind(user.id).first();
+  const row2 = await env.DB.prepare("SELECT id,data FROM records WHERE owner_id=? AND entity='CloudDataBackup' AND json_extract(data,'$.backup_key')='wellnest-local-data' ORDER BY updated_date DESC LIMIT 1").bind(user.id).first();
   if (!row2) return fail(409, "No saved appointments were found. Open your dashboard, let your account finish syncing, then try again.");
-  const backup = JSON.parse(row2.data);
+  const backup = await unpackBackup(env.DB,row2,user.id);
   const text = await appointmentsCalendar(user.id, backup, zone);
   if (!text.includes("BEGIN:VEVENT")) return fail(409, "There are no saved appointments with valid dates to export. Add an appointment in your dashboard first.");
   return new Response(text, { headers: { "Content-Type": "text/calendar; charset=utf-8", "Content-Disposition": 'attachment; filename="wellnest-appointments.ics"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
@@ -3733,8 +3732,8 @@ async function calendarQuickAddData(request, env) {
   await ensureSchema(env);
   const user = await currentUser(env, request);
   if (!user) return fail(401, "Sign in to WellNest, then return to this page.");
-  const row2 = await env.DB.prepare("SELECT data FROM records WHERE owner_id=? AND entity='CloudDataBackup' AND json_extract(data,'$.backup_key')='wellnest-local-data' ORDER BY updated_date DESC LIMIT 1").bind(user.id).first();
-  const local = row2 ? JSON.parse(row2.data)?.data?.local_data || {} : {};
+  const row2 = await env.DB.prepare("SELECT id,data FROM records WHERE owner_id=? AND entity='CloudDataBackup' AND json_extract(data,'$.backup_key')='wellnest-local-data' ORDER BY updated_date DESC LIMIT 1").bind(user.id).first();
+  const local = row2 ? (await unpackBackup(env.DB,row2,user.id))?.data?.local_data || {} : {};
   const deleted = new Set((local.trackerDeleted?.appts || []).map(String));
   const appointments = (local.appts || []).filter((a) => a.id && !deleted.has(String(a.id)) && /^\d{4}-\d{2}-\d{2}$/.test(a.date || "")).map((a) => ({ id: a.id, title: a.title || "Appointment", date: a.date, time: a.time || "", loc: a.loc || "" })).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   return json({ owner: user.id, appointments });
@@ -4429,24 +4428,23 @@ async function handleMedicationBackup(request, env, user, id) {
   for (let attempt = 0; attempt < 6; attempt++) {
     const row2 = id ? await env.DB.prepare("SELECT * FROM records WHERE entity = 'CloudDataBackup' AND id = ? AND owner_id = ?").bind(id, user.id).first() : await env.DB.prepare("SELECT * FROM records WHERE entity = 'CloudDataBackup' AND owner_id = ? AND json_extract(data, '$.backup_key') = 'wellnest-local-data' ORDER BY updated_date DESC, id LIMIT 1").bind(user.id).first();
     if (id && !row2) return fail(404, "Record not found");
-    const existing = row2 ? JSON.parse(row2.data) : {};
+    const existing = row2 ? await unpackBackup(env.DB,row2,user.id) : {};
     if (row2 && existing.backup_key !== "wellnest-local-data") return null;
     let merged;
-    try { const revisionMatches=Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision;
-      const appointments=prepareAppointmentSync(existing.data?.local_data||{},input.data.local_data,trackerOps,protocol,revisionMatches,/^WellNest\//.test(request.headers.get('User-Agent')||''));
-      const medications=prepareMedicationSync(existing.data?.local_data||{},appointments.incoming,appointments.operations,protocol,revisionMatches,/^WellNest\//.test(request.headers.get('User-Agent')||''));
+    const revisionMatches = Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision;
+    const nativeSnapshot = /^WellNest\//.test(request.headers.get('User-Agent')||'');
+    try {
+      const appointments=prepareAppointmentSync(existing.data?.local_data||{},input.data.local_data,trackerOps,protocol,revisionMatches,nativeSnapshot);
+      const medications=prepareMedicationSync(existing.data?.local_data||{},appointments.incoming,appointments.operations,protocol,revisionMatches,nativeSnapshot);
       merged = mergeAccountRecords(existing.data?.local_data || {}, medications.incoming, medications.operations, protocol, revisionMatches); }
     catch(error) { if(error.status === 409 || error.status === 400) return fail(error.status,error.message); throw error; }
-    let state;try { state = mergeRoutineDoseState(existing.data?.local_data || {}, input.data.local_data, operations, protocol, Number.isSafeInteger(input.data.sync_revision) && input.data.sync_revision === existing.data?.sync_revision); } catch(error) { if(error.status)return fail(error.status,error.message);throw error; }
+    let state;try { state = mergeRoutineDoseState(existing.data?.local_data || {}, input.data.local_data, operations, protocol, revisionMatches, nativeSnapshot); } catch(error) { if(error.status)return fail(error.status,error.message);throw error; }
     const patch = { ...input, data: { ...input.data, sync_revision: (existing.data?.sync_revision || 0) + 1, local_data: projectRoutineDoseFields({ ...merged, medlog: state.medlog, trackerDeleted: { ...merged.trackerDeleted, medlog: state.deleted } }) } };
     const time = now();
-    let saved;
-    if (row2) {
-      saved = await env.DB.prepare("UPDATE records SET data = json_patch(data, ?), updated_date = ? WHERE entity = 'CloudDataBackup' AND id = ? AND owner_id = ? AND data = ? RETURNING *").bind(JSON.stringify(patch), time, row2.id, user.id, row2.data).first();
-    } else {
-      saved = await env.DB.prepare("INSERT INTO records (entity,id,owner_id,created_date,updated_date,data) SELECT 'CloudDataBackup',?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM records WHERE entity = 'CloudDataBackup' AND owner_id = ? AND json_extract(data, '$.backup_key') = 'wellnest-local-data') RETURNING *").bind(uuid(), user.id, time, time, JSON.stringify(patch), user.id).first();
-    }
-    if (saved) return json(serialize(saved, user), row2 ? 200 : 201);
+    const value = {...existing,...patch,data:{...existing.data,...patch.data}};
+    delete value._wn_chunk_revision;
+    const saved = await saveBackup(env.DB,user.id,row2?.id || uuid(),row2,value,time);
+    if (saved) return json(await serialize({...saved,data:JSON.stringify(value)},user,env),row2 ? 200 : 201);
   }
   return fail(409, "Your account changed during sync. Please retry.");
 }
@@ -4588,14 +4586,14 @@ export {wellnestIconResponse,WELLNEST_ICON_LINKS};
 // Native account backups can include inline eScript images. Keep the upload
 // bounded below D1's 2 MB value limit; other entity limits stay unchanged.
 async function readAccountBackupBody(request) {
-  const limit = 1800000;
-  const tooLarge = () => Object.assign(new Error('Account backup exceeds 1.8 MB. Reduce embedded images before syncing.'), {status:413});
+  const limit = 8 * 1024 * 1024;
+  const tooLarge = () => Object.assign(new Error('Account backup exceeds 8 MiB. Reduce embedded images before syncing.'), {status:413});
   const declared = Number(request.headers.get('Content-Length'));
   if(Number.isFinite(declared) && declared > limit)throw tooLarge();
   if(!request.body)return {};
   const reader=request.body.getReader(),chunks=[];let total=0;
   try {
-    while(true){const {value,done}=await reader.read();if(done)break;total+=value.byteLength;if(total>limit){await reader.cancel();throw tooLarge();}chunks.push(value);}
+    while(true){const {value,done}=await reader.read();if(done)break;total+=value.byteLength;if(total>limit){void reader.cancel().catch(()=>{});throw tooLarge();}chunks.push(value);}
   } finally {reader.releaseLock();}
   const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
   if(!total)return {};
@@ -4609,7 +4607,8 @@ export {readAccountBackupBody};
 function routineDoseLog(local){return local?.medlog??local?.['wn-medlog']??{};}
 function routineDoseEqual(a,b){return syncSame(a,b);}
 function routineDoseTokens(log){return Object.fromEntries(Object.entries(log||{}).filter(([date,tokens])=>/^\d{4}-\d{2}-\d{2}$/.test(date)&&Array.isArray(tokens)).map(([date,tokens])=>[date,[...new Set(tokens.filter(t=>typeof t==='string'))].sort()]));}
-function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatches){
+function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatches,nativeSnapshot=false){
+ const reconcileSnapshot = (protocol!==2 && protocol!==3) || (nativeSnapshot && revisionMatches && !operations.length);
  const remote=routineDoseTokens(routineDoseLog(current));
  let next=routineDoseTokens(routineDoseLog(incoming));
  const alias=incoming?.['wn-medlog'];
@@ -4617,7 +4616,7 @@ function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatc
   const alternate=routineDoseTokens(alias);
   if(!routineDoseEqual(next,alternate)){
    if(routineDoseEqual(next,remote))next=alternate;
-   else if(!routineDoseEqual(alternate,remote)&&protocol!==2&&protocol!==3)throw Object.assign(Error('Conflicting medication dose fields. Refresh account data before syncing.'),{status:409});
+   else if(!routineDoseEqual(alternate,remote)&&reconcileSnapshot)throw Object.assign(Error('Conflicting medication dose fields. Refresh account data before syncing.'),{status:409});
   }
  }
  const coalesced=new Map();
@@ -4627,7 +4626,7 @@ function mergeRoutineDoseState(current,incoming,operations,protocol,revisionMatc
   coalesced.set(key,first?{...operation,baseTaken:first.baseTaken}:operation);
  }
  let ops=[...coalesced.values()];
- if(protocol!==2&&protocol!==3&&!operations.length){
+ if(reconcileSnapshot&&!operations.length){
   const removed=new Set(current?.trackerDeleted?.medlog||[]),changes=[];
   for(const [date,tokens] of Object.entries(next)){
    const before=new Set(remote[date]||[]),after=new Set(tokens);
