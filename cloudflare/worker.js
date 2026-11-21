@@ -3900,7 +3900,13 @@ function discoveryText(text, path) {
   if (path === "/") text = text.replace("<strong>chronic health tracker</strong>", '<a href="/chronic-illness-tracker" style="color:inherit;text-decoration:underline;text-underline-offset:3px"><strong>chronic health tracker</strong></a>');
   if (app) text = text.replace("(0,R.jsx)(`strong`,{children:`chronic health tracker`})", "(0,R.jsx)(`a`,{href:`/chronic-illness-tracker`,style:{color:`inherit`,textDecoration:`underline`,textUnderlineOffset:`3px`},children:(0,R.jsx)(`strong`,{children:`chronic health tracker`})})");
   if (path === "/chronic-illness-tracker" && !text.includes('id="wn-tracker-application"')) text = text.replace("</head>", WN_DISCOVERY_SCHEMA + "</head>");
-  if (path === "/sitemap.xml") text = text.replace(/<url>[\s\S]*?<\/url>/g, (entry) => /<loc>https:\/\/wellnest\.services\/(?:chronic-illness-tracker)?<\/loc>/.test(entry) ? entry.replace(/<lastmod>[^<]+<\/lastmod>/, "<lastmod>2026-11-12</lastmod>") : entry);
+  const buyerGuide = path === "/chronic-health-tracker-guide" || path === "/best-chronic-illness-tracker-apps";
+  const productLink = '<a href="/chronic-illness-tracker">Explore the WellNest chronic health tracker</a>';
+  if (buyerGuide) text = text.replace('<div class="gp-guide-choice-links">', '<div class="gp-guide-choice-links">' + productLink);
+  if (app) text = text.replace('className:`gp-guide-choice-links`,children:[', 'className:`gp-guide-choice-links`,children:[(0,R.jsx)(`a`,{href:`/chronic-illness-tracker`,children:`Explore the WellNest chronic health tracker`}),');
+  if (app || path === "/chronic-illness-tracker") {
+    text = text.replace("Managing long-term conditions can mean juggling separate notes for pain, peak flow, seizures, medications and appointments. WellNest combines a symptom diary, medication tracker and doctor-ready PDF health summaries in one Australian web and iPhone app, so you can keep a dated health history and prepare information for your care team.", "For example, you can log a pain flare on your iPhone, mark an evening medication as taken, and prepare a dated PDF on the web for your next appointment. The free preview below lets you try a symptom entry and download a sample report before creating an account.");
+  }
   return text;
 }
 __name(discoveryText, "discoveryText");
@@ -3911,7 +3917,7 @@ __name2222(discoveryText, "discoveryText");
 __name22222(discoveryText, "discoveryText");
 __name222222(discoveryText, "discoveryText");
 async function discoveryResponse(request, response, path) {
-  if (request.method !== "GET" || response.status !== 200 || !(["/", "/chronic-illness-tracker", "/sitemap.xml"].includes(path) || /^\/assets\/index-calendar-[^/]+\.js$/.test(path))) return response;
+  if (request.method !== "GET" || response.status !== 200 || !(["/", "/chronic-illness-tracker", "/chronic-health-tracker-guide", "/best-chronic-illness-tracker-apps"].includes(path) || /^\/assets\/index-calendar-[^/]+\.js$/.test(path))) return response;
   const text = await response.text();
   const changed = discoveryText(text, path);
   const out = new Response(changed, response);
