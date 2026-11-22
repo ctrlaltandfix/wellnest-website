@@ -267,3 +267,40 @@
 #root .db-pain-range-row { display: flex; align-items: center; gap: 12px; }
 #root .db-pain-range { flex: 1; accent-color: #2f7a58; border-radius: 999px; height: 8px; padding: 0; }
 #root .db-pain-range-emoji { flex: 0 0 30px; font-size: 24px; line-height: 1; text-align: center; }
+
+/* Apply the severity gradient to the native range track, not just the input box. */
+#root .db-pain-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent !important;
+  border: 0;
+}
+#root .db-pain-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #78c69a 0%, #c9d76f 38%, #f0b15b 68%, #e36f52 100%);
+}
+#root .db-pain-range::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #78c69a 0%, #c9d76f 38%, #f0b15b 68%, #e36f52 100%);
+}
+#root .db-pain-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #255344;
+  box-shadow: 0 2px 7px rgba(22, 55, 47, .25);
+}
+#root .db-pain-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #255344;
+  box-shadow: 0 2px 7px rgba(22, 55, 47, .25);
+}
