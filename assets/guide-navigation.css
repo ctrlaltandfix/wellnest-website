@@ -1,0 +1,46 @@
+/* Guide pages reuse the landing-page header in a light, editorial treatment. */
+.guide-nav.hb-site.wn-public-navigation,
+.guide-nav .hb-site.wn-public-navigation {
+  color: var(--hb-ink);
+  background: var(--hb-paper);
+}
+
+.guide-nav .hb-nav {
+  border-bottom-color: var(--hb-border);
+}
+
+.guide-nav .hb-brand-light {
+  color: var(--hb-ink);
+}
+
+.guide-nav .hb-nav-links a,
+.guide-nav .hb-nav-signin {
+  color: var(--hb-ink);
+}
+
+.guide-nav .hb-nav-links a:hover,
+.guide-nav .hb-nav-signin:hover {
+  color: #16704d;
+}
+
+.guide-nav .hb-menu-toggle {
+  color: var(--hb-ink);
+  border-color: #b7c9bd;
+}
+
+/* Guide navigation keeps the landing-page actions while omitting its section links. */
+.guide-nav .hb-nav-links a[href*="#hb-features"],
+.guide-nav .hb-nav-links a[href*="#hb-how"],
+.guide-nav .hb-nav-links a[href*="#hb-conditions"],
+.guide-nav .hb-nav-links a[href$="/free-tools"],
+.guide-nav .hb-nav-links a[href$="/free-tools.html"] {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .guide-nav .hb-nav-links {
+    background: var(--hb-paper);
+    border: 1px solid var(--hb-border);
+    box-shadow: 0 14px 28px rgba(22, 55, 47, .12);
+  }
+}
