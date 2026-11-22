@@ -44,3 +44,19 @@
     box-shadow: 0 14px 28px rgba(22, 55, 47, .12);
   }
 }
+
+/* Keep the guide actions in the same order as the landing page: Pricing, then Sign in. */
+.guide-nav .hb-nav-pricing {
+  color: var(--hb-ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.guide-nav .hb-nav-pricing:hover {
+  color: #16704d;
+}
+
+/* Nudge the guide wordmark up to align its cap height with the logo mark. */
+.guide-nav .hb-brand > span:last-child {
+  transform: translateY(-2px);
+}
