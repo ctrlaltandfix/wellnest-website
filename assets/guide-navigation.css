@@ -60,3 +60,13 @@
 .guide-nav .hb-brand > span:last-child {
   transform: translateY(-2px);
 }
+
+/* Keep Pricing in the right-side action cluster, immediately before Sign in. */
+.guide-nav .hb-nav-links a[href*="pricing"],
+.guide-nav .hb-nav-links a[href*="wp-plans"] {
+  display: none !important;
+}
+
+.guide-nav .hb-nav-actions {
+  margin-left: auto;
+}
