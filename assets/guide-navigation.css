@@ -70,3 +70,8 @@
 .guide-nav .hb-nav-actions {
   margin-left: auto;
 }
+
+/* Guide pages omit Pricing from the top navigation entirely. */
+.guide-nav .hb-nav-pricing {
+  display: none !important;
+}
