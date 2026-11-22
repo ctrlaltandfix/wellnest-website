@@ -55,3 +55,8 @@
 .guide-nav .hb-nav-pricing:hover {
   color: #16704d;
 }
+
+/* Nudge the guide wordmark up to align its cap height with the logo mark. */
+.guide-nav .hb-brand > span:last-child {
+  transform: translateY(-2px);
+}
