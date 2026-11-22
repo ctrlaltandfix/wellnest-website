@@ -40,3 +40,12 @@
 .db-beta[data-theme=dark] .db-preference-tile[data-space] .db-preference-icon {color:var(--db-ink)}
 @media (width<=650px) {.db-beta .db-customise-panel {padding:18px 16px;gap:16px}.db-beta .db-customise-panel h3 {font-size:21px!important}}
 @media (prefers-reduced-motion:reduce) {.db-beta .db-preference-tile {transition:none}}
+
+/* Keep native date and select controls aligned in the Log Pain form. */
+.db-field input[type="date"],
+.db-field select {
+  box-sizing: border-box;
+  height: 48px;
+  min-height: 48px;
+  line-height: 1.2;
+}
