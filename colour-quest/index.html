@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <script id="gh-pages-base">(function () {
+  var B = "/wellnest-website", L = "https://wellnest.services", R = new RegExp("^/(?:login|start|startfree|signin|signup|register|dashboard(?:-beta)?|chronic-pain|asthma|epilepsy|medications|appointments|care-circle|exercises|reflection|expenses|emergency-plan|emergency-plan-shared|meeting-note-shared|achievements|settings|growth|email-preferences|confirm-free-kit)/?$|^/(?:auth|ios-auth)(?:/|$)", "i"), K = "wn_bridge";
+  var D = document.documentElement, of = window.fetch.bind(window);
+  window.__WN_IDENTITY__ = L + "/api/_identity";
+
+  function rel(p) { return p.indexOf(B) === 0 ? (p.slice(B.length) || "/") : p; }
+  function appUrl(u) {
+    try { var x = new URL(u, location.href); return x.origin === location.origin && R.test(rel(x.pathname)) ? x : null; }
+    catch (e) { return null; }
+  }
+  function liveUrl(x) { return L + rel(x.pathname) + x.search + x.hash; }
+  function fix(u) {
+    return typeof u == "string" && u.charAt(0) == "/" && u.charAt(1) != "/" && u !== B && u.indexOf(B + "/") !== 0 ? B + u : u;
+  }
+  function token() { var m = document.cookie.match(/(?:^|;\s*)nf_jwt=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
+
+  // --- send API + identity calls to the WellNest server -------------------
+  // The server bridge allows only these request headers (plus browser-set ones).
+  var OK_HEADERS = /^(authorization|content-type|x-requested-with|accept|accept-language|content-language)$/i;
+  function trimHeaders(init, input) {
+    var h = new Headers(init.headers || (input instanceof Request ? input.headers : undefined)), out = new Headers();
+    h.forEach(function (v, k) { if (OK_HEADERS.test(k)) out.set(k, v); });
+    init.headers = out;
+    return init;
+  }
+  window.fetch = function (input, init) {
+    try {
+      var s = typeof input == "string" ? input : input instanceof URL ? input.href : input && input.url;
+      var x = new URL(s, location.href);
+      var sameSite = x.origin === location.origin;
+      if (x.origin === new URL(L).origin && !(sameSite && /^\/(?:api\/|\.netlify\/identity)/.test(rel(x.pathname)))) {
+        // direct calls to the server (e.g. Netlify Identity's own client): drop extra headers
+        init = trimHeaders(Object.assign({}, init || {}), input);
+        init.credentials = "omit";
+        return of(input instanceof Request ? new Request(input, init) : input, init);
+      }
+      if (sameSite) {
+        var p = rel(x.pathname);
+        if (p.indexOf("/.netlify/identity") === 0) p = "/api/_identity" + p.slice(18);
+        if (p.indexOf("/api/") === 0) {
+          init = trimHeaders(Object.assign({}, init || {}), input);
+          var h = init.headers, t = token();
+          if (t && !h.has("Authorization") && p.indexOf("/api/_identity") !== 0) h.set("Authorization", "Bearer " + t);
+          init.credentials = "omit"; init.mode = "cors";
+          var target = L + p + x.search;
+          return input instanceof Request ? of(new Request(target, input), init) : of(target, init);
+        }
+      }
+    } catch (e) {}
+    return of(input, init);
+  };
+
+  // --- is the server bridge live? ------------------------------------------
+  var ok = null;
+  try { if (sessionStorage.getItem(K) === "1") ok = true; } catch (e) {}
+  var hide = document.createElement("style");
+  hide.textContent = "html[data-wn-wait] body{visibility:hidden}";
+  D.appendChild(hide);
+  function settle(v) {
+    if (ok !== null) return;
+    ok = v;
+    try { if (v) sessionStorage.setItem(K, "1"); } catch (e) {}
+    if (!v) { var x = appUrl(location.href); if (x) { location.replace(liveUrl(x)); return; } }
+    D.removeAttribute("data-wn-wait");
+  }
+  if (ok === null) {
+    of(L + "/api/_identity/settings", { mode: "cors", credentials: "omit" })
+      .then(function (r) { settle(r.ok && /json/i.test(r.headers.get("content-type") || "")); }, function () { settle(false); });
+    setTimeout(function () { settle(false); }, 6000);
+    if (appUrl(location.href)) D.setAttribute("data-wn-wait", "");
+  }
+
+  // --- navigation ------------------------------------------------------------
+  ["pushState", "replaceState"].forEach(function (k) {
+    var o = history[k];
+    history[k] = function (s, t, u) {
+      var x = u != null && appUrl(String(u));
+      if (x && ok === false) { location.assign(liveUrl(x)); return; }
+      if (x && ok === null) D.setAttribute("data-wn-wait", "");
+      return o.apply(this, arguments);
+    };
+  });
+  document.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest && e.target.closest("a[href]");
+    if (!a) return;
+    var h = a.getAttribute("href"), n = fix(h), x = appUrl(n);
+    if (x && ok === false) {
+      a.setAttribute("href", liveUrl(x));
+      if (!a.target) { e.preventDefault(); e.stopPropagation(); location.assign(liveUrl(x)); }
+      return;
+    }
+    if (n !== h) a.setAttribute("href", n);
+  }, true);
+
+  // --- file previews (<img src="/api/files/...">) load from the server -------
+  function fixSrc(el) {
+    var v = el.getAttribute && el.getAttribute("src");
+    if (v && /^\/(?:[^/]+\/)?api\//.test(v)) { var x = new URL(v, location.href); el.setAttribute("src", L + rel(x.pathname) + x.search); }
+  }
+  new MutationObserver(function (ms) {
+    ms.forEach(function (m) {
+      if (m.type == "attributes") return fixSrc(m.target);
+      m.addedNodes.forEach(function (n) { if (n.nodeType == 1) { fixSrc(n); n.querySelectorAll && n.querySelectorAll("[src]").forEach(fixSrc); } });
+    });
+  }).observe(D, { subtree: true, childList: true, attributes: true, attributeFilter: ["src"] });
+})();</script>
+    <meta charset="UTF-8" />
+    <script id="dashboard-boot-guard">
+      // SPA hosting can return the pre-rendered homepage for dashboard requests.
+      // Hide that fallback before the browser parses or paints its content.
+      if (/^\/(?:dashboard(?:-beta)?|chronic-pain|asthma|epilepsy|medications|appointments|care-circle|exercises|reflection|expenses|emergency-plan|achievements|settings)\/?$/i.test(window.location.pathname.replace(/^\/wellnest-website/,''))) {
+        document.documentElement.setAttribute('data-dashboard-boot', '');
+      }
+    </script>
+    <style>html[data-dashboard-boot],html[data-dashboard-boot] body{background:#081e1b}html[data-dashboard-boot] #root{visibility:hidden}</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"></noscript>
+    <link rel="icon" type="image/svg+xml" href="/wellnest-website/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Colour Quest – Colouring Pages for Flare-Up Days | WellNest</title>
+    <meta name="description" content="Colour Quest is a WellNest Premium bonus: find colouring pages from favourite movies, print them in one tap and give your mind a gentle distraction during a flare-up." />
+    <meta name="apple-itunes-app" content="app-id=6759418128, app-argument=https://wellnest.services/" />
+    <meta name="author" content="WellNest" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <link rel="canonical" href="https://wellnest.services/colour-quest" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="WellNest" />
+    <meta property="og:title" content="Colour Quest – Colouring Pages for Flare-Up Days | WellNest" />
+    <meta property="og:description" content="Colour Quest is a WellNest Premium bonus: find colouring pages from favourite movies, print them in one tap and give your mind a gentle distraction during a flare-up." />
+    <meta property="og:url" content="https://wellnest.services/colour-quest" />
+    <meta property="og:locale" content="en_AU" />
+    <meta property="og:image" content="https://wellnest.services/og/colour-quest.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="Colour Quest – colouring pages for flare-up days" />
+    <meta name="twitter:image" content="https://wellnest.services/og/colour-quest.png" />
+    <meta name="twitter:image:alt" content="Colour Quest – colouring pages for flare-up days" />
+    <meta name="geo.region" content="AU" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Colour Quest – Colouring Pages for Flare-Up Days | WellNest" />
+    <meta name="twitter:description" content="Colour Quest is a WellNest Premium bonus: find colouring pages from favourite movies, print them in one tap and give your mind a gentle distraction during a flare-up." />
+    <script>
+      // Retire older offline app shells. Wait for cleanup before the one-time
+      // refresh, otherwise a phone can reload while its old worker still owns it.
+      (function () {
+        if (!('serviceWorker' in navigator)) return;
+        var hadController = !!navigator.serviceWorker.controller;
+        navigator.serviceWorker.getRegistrations().then(async function (regs) {
+          if (!regs.length && !hadController) return;
+          await Promise.all(regs.map(function (registration) { return registration.unregister(); }));
+          if (typeof caches !== 'undefined') {
+            var keys = await caches.keys();
+            await Promise.all(keys.map(function (key) { return caches.delete(key); }));
+          }
+          try {
+            if (sessionStorage.getItem('wn-current-ui-refresh-v1')) return;
+            sessionStorage.setItem('wn-current-ui-refresh-v1', '1');
+          } catch (error) { return; }
+          window.location.reload();
+        }).catch(function () { /* Offline cleanup must not block the app. */ });
+      })();
+    </script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GTN93JL5LQ"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LCBB6YZSNL"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-GTN93JL5LQ');
+      gtag('config', 'G-LCBB6YZSNL');
+    </script>
+    <script async data-cfasync="false" type="text/javascript" src="https://cdn.seoplatform.io/injector.js?websiteId=28120"></script>
+    <link rel="stylesheet" crossorigin href="/wellnest-website/assets/index-Cj0oiCRe-wn2.css">
+  <script id="wn-static-page-identity" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://wellnest.services/#organization","name":"WellNest","url":"https://wellnest.services/"},{"@type":"WebPage","@id":"https://wellnest.services/colour-quest#webpage","url":"https://wellnest.services/colour-quest","name":"Colour Quest – Colouring Pages for Flare-Up Days | WellNest","description":"Colour Quest is a WellNest Premium bonus: find colouring pages from favourite movies, print them in one tap and give your mind a gentle distraction during a flare-up.","isPartOf":{"@id":"https://wellnest.services/#website"},"publisher":{"@id":"https://wellnest.services/#organization"}}]}</script>
+      <script id="wn-seo-extra" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","@id":"https://wellnest.services/colour-quest#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://wellnest.services/"},{"@type":"ListItem","position":2,"name":"Colour Quest","item":"https://wellnest.services/colour-quest"}]}]}</script>
+    <script id="wn-seo-dedupe">(function(){var own=document.getElementById("wn-seo-extra");if(!own||!window.MutationObserver)return;var have={};try{JSON.parse(own.textContent)["@graph"].forEach(function(n){have[n["@type"]]=1})}catch(e){return}function fix(el){if(el===own||el.type!=="application/ld+json")return;try{var d=JSON.parse(el.textContent),g=d["@graph"]||[d],k=g.filter(function(n){return !have[n["@type"]]});if(k.length===g.length)return;if(!k.length){el.type="application/x-wn-duplicate";return}el.textContent=JSON.stringify(d["@graph"]?Object.assign(d,{"@graph":k}):k[0])}catch(e){}}new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(function(n){if(n.tagName==="SCRIPT")fix(n);else if(n.querySelectorAll)n.querySelectorAll("script").forEach(fix)})})}).observe(document.documentElement,{childList:true,subtree:true})})();</script>
+  
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
+  </head>
+  <body>
+    <div id="root"><style>.gp-page .gp-h1{font-size:clamp(1.9rem,4vw,2.9rem);letter-spacing:-.03em}</style><div class="gp-page"><style>
+.gp-page{background:#f4f1ea;color:#0d1f17;font-family:&#x27;Geist&#x27;,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh;position:relative}
+.gp-page *,.gp-page *::before,.gp-page *::after{box-sizing:border-box;margin:0;padding:0}
+.gp-page a{text-decoration:none}
+.gp-page .gp-nav{position:fixed;top:0;left:0;right:0;transform:none;z-index:100;background:rgba(255,254,250,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(13,31,23,.12);border-radius:0;padding:0 32px;height:68px;display:flex;align-items:center;gap:28px;box-shadow:none;animation:none;white-space:nowrap;max-width:none;transition:background .3s ease,box-shadow .3s ease}
+.gp-page .gp-nav.scrolled{background:rgba(255,254,250,.95);border-bottom-color:rgba(13,31,23,.12);box-shadow:0 4px 24px rgba(13,31,23,.08)}
+.gp-page .gp-nav:hover{background:rgba(255,254,250,.95);box-shadow:none}
+.gp-page .gp-nav-logo{display:flex;align-items:center;gap:0;color:#16241c;font-weight:700;font-size:1rem;letter-spacing:0}
+.gp-page .gp-nav-logo .nest{color:#00a854;margin-left:-.02em}
+.gp-page .gp-nav-logo-mark{width:52px;height:52px;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:0;margin-right:-8px;overflow:visible}
+.gp-page .gp-nav-logo-mark img{width:100%;height:100%;display:block;object-fit:contain;transform:translateY(10px)}
+.gp-page .gp-nav-logo-word{display:inline-block;transform:translateY(6px);margin-left:-2px}
+.gp-page .gp-nav-links{position:absolute;right:32px;display:flex;align-items:center;gap:32px;list-style:none;margin-right:8px}
+.gp-page .gp-nav-links a{color:#6f7a72;text-decoration:none;font-size:.875rem;font-weight:400;transition:color .2s;white-space:nowrap;display:inline-block}
+.gp-page .gp-nav-links a:hover{color:#16241c}
+.gp-page .gp-nav-cta{background:#00cc66;color:#16241c!important;font-weight:600!important;padding:10px 18px;border-radius:100px;font-size:.85rem!important;transition:all .2s!important;flex-shrink:0}
+.gp-page .gp-nav-cta:hover{background:#c8f76b;transform:scale(1.03)}
+.gp-page .gp-hero{padding:150px 32px 30px;max-width:920px;margin:0 auto;text-align:center}
+.gp-page .gp-back{position:absolute;top:104px;left:32px;z-index:5;display:inline-flex;align-items:center;gap:8px;padding:9px 16px 9px 12px;border-radius:999px;border:1px solid rgba(13,31,23,.18);background:#fff;color:#0d1f17;font-size:14px;font-weight:600;text-decoration:none;transition:background .15s,border-color .15s}
+.gp-page .gp-back:hover{background:#f4f1ea;border-color:rgba(13,31,23,.35)}
+.gp-page .gp-h1{font-size:clamp(2rem,5vw,3.6rem);font-weight:800;line-height:1.05;letter-spacing:-.04em;margin-bottom:16px}
+.gp-page .gp-byline{font-size:.85rem;color:#6b7770;margin-bottom:20px}
+.gp-page .gp-intro{font-size:1.1rem;line-height:1.6;color:#2d3b32;max-width:60ch;margin:0 auto}
+.gp-page .gp-article{max-width:720px;margin:0 auto;padding:20px 20px 40px}
+.gp-page .gp-guide-choice{max-width:760px;margin:8px auto 20px;padding:23px 25px;background:#e9f3e9;border:1px solid #b6d3bc;border-radius:19px;color:#163927}
+.gp-page .gp-guide-choice h2{font-size:clamp(1.25rem,2.6vw,1.55rem);line-height:1.25;margin:0 0 7px;letter-spacing:-.025em}
+.gp-page .gp-guide-choice p{font-size:.91rem;line-height:1.65;margin:0 0 13px;color:#385341}
+.gp-page .gp-guide-choice-links{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:0 0 11px}
+.gp-page .gp-guide-choice-links a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid #164b30;border-radius:999px;background:#164b30;color:#fff;font-size:.87rem;font-weight:750}
+.gp-page .gp-guide-choice-links a+a{background:transparent;color:#164b30}
+.gp-page .gp-guide-choice-links a:focus-visible{outline:3px solid #118c56;outline-offset:3px}
+.gp-page .gp-guide-choice .gp-guide-choice-terms{font-size:.79rem;margin:0;color:#45614d}
+.gp-page .gp-wide{max-width:1040px}
+.gp-page .gp-notice{background:rgba(0,204,102,.08);border:1px solid rgba(0,204,102,.35);border-radius:16px;padding:20px 24px;font-size:.95rem;line-height:1.6;color:#2d3b32;margin-bottom:8px;font-weight:500}
+.gp-page .gp-notice-alert{background:rgba(255,107,74,.09);border-color:rgba(255,107,74,.45)}
+.gp-page .gp-p a{color:#0d1f17;font-weight:600;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(13,31,23,.3)}
+.gp-page .gp-sources{margin-top:48px;padding-top:24px;border-top:1px solid rgba(13,31,23,.15)}
+.gp-page .gp-sources-note{font-size:.85rem;color:#6b7770;line-height:1.55;margin-bottom:16px}
+.gp-page .gp-sources-title{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7770;margin-bottom:12px}
+.gp-page .gp-source-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.gp-page .gp-source-list a{color:#0d1f17;font-size:.92rem;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(13,31,23,.3)}
+.gp-page .gp-source-list a:hover{color:#0f5c34}
+.gp-page .gp-h2{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:700;letter-spacing:-.03em;line-height:1.15;margin:48px 0 16px}
+.gp-page .gp-p{font-size:1.02rem;line-height:1.7;color:#2d3b32;margin-bottom:16px}
+.gp-page .gp-ul{list-style:none;display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
+.gp-page .gp-ul li{position:relative;padding-left:26px;font-size:1.02rem;line-height:1.6;color:#2d3b32}
+.gp-page .gp-ul li::before{content:&#x27;&#x27;;position:absolute;left:0;top:.55em;width:12px;height:12px;border-radius:50%;background:#00cc66}
+.gp-page .gp-author-box{display:flex;align-items:center;gap:18px;background:rgba(255,255,255,.65);border:1px solid rgba(13,31,23,.1);border-radius:24px;padding:24px;margin-top:48px}
+.gp-page .gp-author-box img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #0d1f17;flex-shrink:0}
+.gp-page .gp-author-box p{font-size:.95rem;line-height:1.55;color:#2d3b32}
+.gp-page .gp-photo{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #0d1f17;margin-bottom:16px}
+.gp-page .gp-table-wrap{display:none;margin-bottom:8px}
+.gp-page .gp-table{width:100%;border-collapse:collapse;font-size:.92rem}
+.gp-page .gp-table th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#6b7770;padding:12px 14px;border-bottom:2px solid rgba(13,31,23,.2)}
+.gp-page .gp-table td{padding:14px;border-bottom:1px solid rgba(13,31,23,.1);vertical-align:top;line-height:1.5;color:#2d3b32}
+.gp-page .gp-table td:first-child{font-weight:700;color:#0d1f17;white-space:nowrap}
+.gp-page .gp-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:8px}
+.gp-page .gp-card{background:rgba(255,255,255,.65);border:1px solid rgba(13,31,23,.1);border-radius:16px;padding:18px 20px}
+.gp-page .gp-card b{display:block;margin-bottom:6px}
+.gp-page .gp-card span{font-size:.8rem;color:#6b7770;display:block;margin-bottom:8px}
+.gp-page .gp-card p{font-size:.92rem;line-height:1.55;color:#2d3b32}
+.gp-page .gp-small{font-size:.78rem;color:#6b7770;line-height:1.5}
+@media(min-width:700px){.gp-page .gp-table-wrap{display:block}.gp-page .gp-cards{display:none}}
+.gp-page .gp-hub-grid{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.gp-page .gp-hub-card{background:rgba(255,255,255,.65);border:1px solid rgba(13,31,23,.1);border-radius:16px;padding:18px 24px;display:flex;align-items:center;gap:18px;transition:all .3s;color:inherit}
+.gp-page .gp-hub-card:hover{border-color:rgba(0,204,102,.5);box-shadow:0 16px 40px rgba(13,31,23,.08)}
+.gp-page .gp-hub-tag{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#0d1f17;background:#00cc66;border-radius:100px;padding:4px 10px;flex-shrink:0}
+.gp-page .gp-hub-tag-cond{background:#b8d4f0}
+.gp-page .gp-hub-tag-feat{background:#ffb89c}
+.gp-page .gp-hub-card h3{font-size:1.05rem;font-weight:700;letter-spacing:-.02em;line-height:1.25;white-space:nowrap}
+.gp-page .gp-hub-card p{font-size:.85rem;line-height:1.5;color:#2d3b32;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:900px){
+  .gp-page .gp-hub-card{flex-direction:column;align-items:flex-start;gap:8px}
+  .gp-page .gp-hub-card h3,.gp-page .gp-hub-card p{white-space:normal;overflow:visible;text-overflow:clip}
+}
+.gp-page .gp-faq{background:#ede8dc;padding:80px 32px}
+.gp-page .gp-faq-title{font-family:&#x27;Instrument Serif&#x27;,serif;font-style:italic;font-size:clamp(2rem,4.5vw,3rem);letter-spacing:-.02em;text-align:center;margin-bottom:48px}
+.gp-page .faq-list{max-width:820px;margin:0 auto;border-top:1px solid rgba(13,31,23,.2)}
+.gp-page .faq-item{border-bottom:1px solid rgba(13,31,23,.1)}
+.gp-page .faq-item summary{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:24px 0;cursor:pointer;font-weight:600;font-size:1.05rem;list-style:none}
+.gp-page .faq-item summary::-webkit-details-marker{display:none}
+.gp-page .faq-icon{width:28px;height:28px;border-radius:50%;border:1px solid rgba(13,31,23,.2);flex-shrink:0;position:relative;transition:all .3s}
+.gp-page .faq-icon::before,.gp-page .faq-icon::after{content:&#x27;&#x27;;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#0d1f17;transition:transform .3s}
+.gp-page .faq-icon::before{width:12px;height:1.5px}
+.gp-page .faq-icon::after{width:1.5px;height:12px}
+.gp-page .faq-item[open] .faq-icon::after{transform:translate(-50%,-50%) scaleY(0)}
+.gp-page .faq-item[open] .faq-icon{background:#0d1f17}
+.gp-page .faq-item[open] .faq-icon::before,.gp-page .faq-item[open] .faq-icon::after{background:#f4f1ea}
+.gp-page .faq-a{padding:0 44px 28px 0;font-size:.98rem;line-height:1.65;color:#2d3b32;max-width:64ch}
+.gp-page .gp-cta{background:#0d1f17;color:#f4f1ea;text-align:center;padding:100px 32px;position:relative;overflow:hidden}
+.gp-page .gp-cta-heading{font-size:clamp(2.2rem,5.5vw,4rem);font-weight:700;line-height:.95;letter-spacing:-.04em;margin-bottom:24px}
+.gp-page .cta-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.gp-page .btn-primary{display:inline-flex;align-items:center;gap:12px;padding:18px 32px;background:#00cc66;color:#0d1f17;border-radius:100px;font-weight:600;font-size:.95rem;transition:background .2s}
+.gp-page .btn-primary:hover{background:#c8f76b}
+.gp-page .btn-secondary{display:inline-flex;align-items:center;gap:10px;padding:18px 28px;background:transparent;color:#f4f1ea;border:1px solid rgba(244,241,234,.3);border-radius:100px;font-weight:500;font-size:.95rem;transition:all .25s}
+.gp-page .btn-secondary:hover{background:#f4f1ea;color:#0d1f17;border-color:#f4f1ea}
+.gp-page .cta-note{margin-top:28px;font-size:.85rem;color:rgba(244,241,234,.5)}
+.gp-page .gp-footer{background:#0d1f17;color:#f4f1ea;padding:40px 32px 30px;border-top:1px solid rgba(244,241,234,.1)}
+.gp-page .gp-footer-inner{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:28px}
+.gp-page .gp-footer-logo{display:flex;align-items:center;color:#f4f1ea;font-weight:700;font-size:1rem;line-height:1}
+.gp-page .gp-footer-logo img{width:72px;height:72px;object-fit:contain}
+.gp-page .gp-footer-logo .nest{color:#00cc66;margin-left:-.1em}
+.gp-page .footer-heading{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(244,241,234,.5);margin-bottom:10px;font-weight:600}
+.gp-page .footer-links{list-style:none;display:flex;flex-direction:column;gap:8px}
+.gp-page .footer-links-row{flex-direction:row;gap:24px}
+.gp-page .footer-links a{color:rgba(244,241,234,.6);font-size:.85rem;transition:color .2s}
+.gp-page .footer-links a:hover{color:#f4f1ea}
+.gp-page .footer-store{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:8px 16px;border:1px solid rgba(244,241,234,.25);border-radius:100px;color:#f4f1ea;font-size:.78rem;font-weight:600;transition:all .2s}
+.gp-page .footer-store:hover{border-color:#00cc66;color:#00cc66}
+.gp-page .gp-disclaimer{max-width:1280px;margin:28px auto 8px;font-size:.78rem;line-height:1.5;color:rgba(244,241,234,.45)}
+.gp-page .gp-copy{font-size:.8rem;color:rgba(244,241,234,.4);text-align:center}
+.gp-page .reveal{opacity:0;transform:translateY(40px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.gp-page .reveal.visible{opacity:1;transform:translateY(0)}
+@media(max-width:900px){
+/* Mobile nav matches the landing page: logo + &quot;Start free trial&quot; only */
+.gp-page .gp-nav{position:fixed;top:0;left:0;right:0;transform:none;width:100%;max-width:none;border-radius:0;height:56px;padding:0 16px;gap:0;justify-content:space-between;align-items:center;overflow:hidden;animation:none}
+.gp-page .gp-nav-logo{font-size:1rem;gap:2px;letter-spacing:-.01em;margin-left:-8px}
+.gp-page .gp-nav-logo-mark{display:flex!important;width:52px!important;height:52px!important;margin-top:0!important;margin-right:-10px!important}
+.gp-page .gp-nav-links{display:flex!important;position:static;transform:none;gap:0;margin-right:0}
+.gp-page .gp-nav-links li:not(:last-child){display:none}
+.gp-page .gp-nav-cta{display:inline-flex!important;padding:8px 14px!important;font-size:.8rem!important}
+.gp-page .gp-nav-logo-mark img{transform:translateY(5px)}
+.gp-page .gp-nav-logo-word{transform:translateY(0)}
+.gp-page .gp-hero{padding:100px 20px 20px}
+.gp-page .gp-back{top:76px;left:16px;font-size:13px;padding:7px 14px 7px 10px}
+.gp-page .gp-back + .gp-hero{padding-top:128px}
+.gp-page .gp-article{padding:10px 16px 30px}
+.gp-page .gp-faq{padding:50px 20px}
+.gp-page .gp-cta{padding:60px 20px}
+.gp-page .faq-a{padding-right:0}
+}
+      </style><nav id="wn-gp-nav" class="gp-nav"><a class="gp-nav-logo" href="/wellnest-website/"><div class="gp-nav-logo-mark"><img src="/wellnest-website/imported/5b8791d9c9-560935dfd_ChatGPTImageFeb82026at07_05_31PM.png" alt="WellNest"/></div><span class="gp-nav-logo-word">Well<span class="nest">Nest</span></span></a><details class="wn-mobile-site-menu"><summary aria-label="Site navigation"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu" aria-hidden="true"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></summary><nav aria-label="Mobile site navigation"><a href="/wellnest-website/">Home</a><a href="/wellnest-website/#hb-features">Features</a><a href="/wellnest-website/guides">Guides</a><a href="/wellnest-website/free-tools">Free tools</a><a href="/wellnest-website/pricing">Pricing</a><a href="/wellnest-website/dashboard">Log in / Dashboard</a></nav></details><ul class="gp-nav-links"><li><a href="/wellnest-website/#hb-features">Features</a></li><li><a href="/wellnest-website/#hb-conditions">Conditions</a></li><li><a href="/wellnest-website/#hb-how">How it works</a></li><li><a href="/wellnest-website/guides">Guides</a></li><li><a href="/wellnest-website/free-tools">Free tools</a></li><li><a href="/wellnest-website/pricing" class="gp-nav-cta">Start free trial</a></li></ul></nav><style>
+.cqp{--ink:#1b1b2f;--sun:#ffd23f;--red:#ff4d5e;--blue:#3a86ff;--green:#22c55e;--purple:#8b5cf6;--orange:#ff9f1c;color:var(--ink);font-family:Geist,Inter,system-ui,sans-serif;background:#f8f8f3}
+.cqp *{box-sizing:border-box}
+.cqp a{text-decoration:none}
+.cqp .wrap{width:min(100% - 48px,1180px);margin-inline:auto}
+.cqp-hero{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(circle at 14% 22%,#ffe57a 0 15%,transparent 16%),radial-gradient(circle at 88% 82%,#ffc94d 0 17%,transparent 18%),var(--sun);padding:128px 0 96px}
+.cqp-doodles{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+.cqp-hero .wrap{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:40px;align-items:center}
+.cqp-tag{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:var(--sun);border-radius:999px;padding:8px 15px;font-weight:800;font-size:11px;letter-spacing:.14em}
+.cqp h1{margin:20px 0 10px;font:700 clamp(3rem,7vw,5.6rem)/1 Fredoka,"Bricolage Grotesque",sans-serif;letter-spacing:-.01em}
+.cqp h1 span{display:inline-block;transform:rotate(-3deg);text-shadow:3px 3px 0 #fff,-3px -3px 0 #fff,3px -3px 0 #fff,-3px 3px 0 #fff,0 4px 0 #fff,4px 0 0 #fff,0 -4px 0 #fff,-4px 0 0 #fff,7px 8px 0 var(--ink)}
+.cqp h1 span:nth-child(even){transform:rotate(3deg) translateY(-4px)}
+.cqp .c1{color:var(--red)}.cqp .c2{color:var(--blue)}.cqp .c3{color:var(--green)}.cqp .c4{color:var(--purple)}.cqp .c5{color:var(--orange)}
+.cqp-lede{margin:18px 0 0;max-width:560px;font:600 clamp(1.15rem,1.8vw,1.4rem)/1.5 Geist,Inter,sans-serif}
+.cqp-lede em{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-weight:400;font-size:1.15em}
+.cqp-ctas{display:flex;flex-wrap:wrap;gap:14px;margin-top:28px}
+.cqp-btn{display:inline-flex;align-items:center;gap:9px;border:3px solid var(--ink);border-radius:999px;padding:13px 24px;font:700 18px/1 Fredoka,Geist,sans-serif;box-shadow:5px 5px 0 var(--ink);transition:transform .15s,box-shadow .15s}
+.cqp-btn:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink)}
+.cqp-btn:focus-visible{outline:4px solid var(--blue);outline-offset:4px}
+.cqp-btn.red{background:var(--red);color:#fff}.cqp-btn.white{background:#fff;color:var(--ink)}
+.cqp-note{margin-top:16px;font-size:14px;color:#3b3b52}
+.cqp-art{position:relative;justify-self:center;width:min(100%,380px)}
+.cqp-art img{width:100%;height:auto;display:block;transform:rotate(4deg);filter:drop-shadow(10px 12px 0 rgba(27,27,47,.9));animation:cqp-bob 3.4s ease-in-out infinite}
+.cqp-bubble{position:absolute;left:-8%;top:-4%;z-index:1;background:#fff;border:3px solid var(--ink);border-radius:18px;padding:8px 14px;font:700 17px/1.2 Fredoka,sans-serif;box-shadow:4px 4px 0 var(--ink);transform:rotate(-7deg)}
+@keyframes cqp-bob{50%{transform:rotate(1deg) translateY(-10px)}}
+.cqp-wave{position:absolute;left:0;right:0;bottom:-1px;width:100%;height:56px;display:block}
+.cqp-sec{padding:88px 0}
+.cqp-kicker{display:inline-flex;align-items:center;gap:10px;color:#438473;font-size:11px;font-weight:800;letter-spacing:.16em}
+.cqp-kicker::before{content:"";width:24px;height:1px;background:currentColor}
+.cqp h2{margin:18px 0 14px;font:700 clamp(2.1rem,4vw,3.6rem)/1.05 "Bricolage Grotesque",Geist,sans-serif;letter-spacing:-.055em;color:#16372f}
+.cqp h2 em{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-.02em}
+.cqp-intro{max-width:640px;font-size:17px;line-height:1.65;color:#4c6457;margin:0}
+.cqp-why{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:40px}
+.cqp-why article{background:#fff;border:1px solid #dce5dc;border-radius:26px;padding:28px}
+.cqp-why .ico{width:58px;height:58px;border-radius:18px;border:3px solid var(--ink);display:grid;place-items:center;box-shadow:3px 3px 0 var(--ink);margin-bottom:18px}
+.cqp-why .ico svg{width:28px;height:28px}
+.cqp-why h3,.cqp-feat h3{margin:0 0 8px;font:700 20px/1.25 "Bricolage Grotesque",Geist,sans-serif;letter-spacing:-.02em;color:#16372f}
+.cqp-why p,.cqp-feat p{margin:0;font-size:15px;line-height:1.6;color:#4c6457}
+.cqp-play{background:var(--ink);color:#fff;position:relative;overflow:hidden}
+.cqp-play h2{color:#fff}.cqp-play .cqp-kicker{color:var(--sun)}.cqp-play .cqp-intro{color:#c9cbe0}
+.cqp-feat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:40px}
+.cqp-feat{background:#fff;color:var(--ink);border:3px solid #fff;border-radius:24px;padding:24px;border-top:12px solid var(--k)}
+.cqp-feat:nth-child(6n+1){--k:var(--red)}.cqp-feat:nth-child(6n+2){--k:var(--blue)}.cqp-feat:nth-child(6n+3){--k:var(--green)}.cqp-feat:nth-child(6n+4){--k:var(--purple)}.cqp-feat:nth-child(6n+5){--k:var(--orange)}.cqp-feat:nth-child(6n){--k:var(--sun)}
+.cqp-feat .mini{display:flex;gap:6px;margin-bottom:14px}
+.cqp-feat .mini i{width:12px;height:12px;border-radius:50%;background:var(--k);border:2px solid var(--ink)}
+.cqp-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:40px;counter-reset:s;list-style:none;padding:0}
+.cqp-steps li{position:relative;background:#fff;border:3px solid var(--ink);border-radius:24px;padding:30px 24px 24px;box-shadow:6px 6px 0 var(--ink)}
+.cqp-steps li::before{counter-increment:s;content:counter(s);position:absolute;top:-22px;left:22px;width:46px;height:46px;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;font:700 22px/1 Fredoka,sans-serif;color:#fff;background:var(--c)}
+.cqp-steps li:nth-child(1){--c:var(--red)}.cqp-steps li:nth-child(2){--c:var(--blue)}.cqp-steps li:nth-child(3){--c:var(--green)}
+.cqp-steps h3{margin:8px 0 6px;font:700 22px/1.2 Fredoka,sans-serif}
+.cqp-steps p{margin:0;font-size:15px;line-height:1.6;color:#3b3b52}
+.cqp-faq{display:grid;gap:12px;margin-top:32px;max-width:820px}
+.cqp-faq details{background:#fff;border:1px solid #dce5dc;border-radius:18px;padding:18px 22px}
+.cqp-faq summary{cursor:pointer;font:700 17px/1.4 "Bricolage Grotesque",Geist,sans-serif;color:#16372f}
+.cqp-faq p{margin:10px 0 0;font-size:15px;line-height:1.65;color:#4c6457}
+.cqp-final{background:var(--sun);border-top:3px solid var(--ink);border-bottom:3px solid var(--ink);text-align:center;padding:72px 0;position:relative;overflow:hidden}
+.cqp-final h2{color:var(--ink)}
+.cqp-final .cqp-ctas{justify-content:center}
+.cqp-small{margin:26px auto 0;max-width:760px;font-size:13px;line-height:1.6;color:#4c6457;text-align:center}
+@media(max-width:860px){.cqp-hero{padding:112px 0 84px}.cqp-hero .wrap{grid-template-columns:1fr}.cqp-art{grid-row:1;width:210px}.cqp-why,.cqp-feat-grid,.cqp-steps{grid-template-columns:1fr}.cqp-steps{gap:34px}.cqp-sec{padding:64px 0}}
+@media(prefers-reduced-motion:reduce){.cqp-art img{animation:none}.cqp-btn{transition:none}}
+</style>
+<main class="cqp" id="main">
+  <section class="cqp-hero" aria-labelledby="cqp-title">
+    <svg class="cqp-doodles" viewBox="0 0 1200 600" preserveAspectRatio="none" aria-hidden="true"><path d="M-20 90 C140 20 230 160 390 90 S620 30 720 110" fill="none" stroke="#ff9f1c" stroke-width="11" stroke-linecap="round" opacity=".55"/><path d="M700 560 C820 490 920 590 1040 520 S1180 490 1240 540" fill="none" stroke="#3a86ff" stroke-width="11" stroke-linecap="round" opacity=".5"/><path d="M40 470 l30 -30 l30 30 l30 -30 l30 30 l30 -30" fill="none" stroke="#22c55e" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/><circle cx="1120" cy="120" r="28" fill="none" stroke="#ff4d5e" stroke-width="9" opacity=".55"/><path d="M180 260 q20 -30 40 0 q20 30 40 0" fill="none" stroke="#8b5cf6" stroke-width="8" stroke-linecap="round" opacity=".6"/><circle cx="560" cy="70" r="8" fill="#8b5cf6"/><circle cx="1060" cy="330" r="8" fill="#3a86ff"/><circle cx="420" cy="540" r="7" fill="#ff4d5e"/><circle cx="90" cy="200" r="8" fill="#3a86ff"/><path d="M980 60 l12 -24 l12 24 l-24 -15 h24z" fill="#ff4d5e"/><path d="M860 200 c-10 -14 -30 -4 -20 12 l20 20 l20 -20 c10 -16 -10 -26 -20 -12z" fill="#ff4d5e" opacity=".75"/></svg>
+    <div class="wrap">
+      <div>
+        <span class="cqp-tag">BONUS WITH WELLNEST PREMIUM</span>
+        <h1 id="cqp-title" aria-label="Colour Quest"><span class="c1">C</span><span class="c2">o</span><span class="c3">l</span><span class="c4">o</span><span class="c5">u</span><span class="c1">r</span> <span class="c3">Q</span><span class="c4">u</span><span class="c5">e</span><span class="c1">s</span><span class="c2">t</span></h1>
+        <p class="cqp-lede">A gentle distraction for flare-up days. Find colouring pages from your favourite movies, print them in a tap and give your mind <em>somewhere kinder to go.</em></p>
+        <div class="cqp-ctas">
+          <a class="cqp-btn red" href="/colourquest">Open Colour Quest <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+          <a class="cqp-btn white" href="/wellnest-website/pricing">Start a free trial</a>
+        </div>
+        <p class="cqp-note">Included with WellNest Premium, and in the 30-day free trial. Sign in with your WellNest account.</p>
+      </div>
+      <div class="cqp-art"><span class="cqp-bubble" aria-hidden="true">Let's colour!</span><img src="/wellnest-website/landing/colour-quest-logo-512.webp" alt="The Colour Quest app icon: a smiling red crayon holding a magnifying glass" width="512" height="512"></div>
+    </div>
+    <svg class="cqp-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 22 C120 52 240 52 360 26 S600 0 720 24 S960 56 1080 30 S1320 0 1440 24 V60 H0Z" fill="#f8f8f3"/><path d="M0 22 C120 52 240 52 360 26 S600 0 720 24 S960 56 1080 30 S1320 0 1440 24" fill="none" stroke="#1b1b2f" stroke-width="5"/></svg>
+  </section>
+
+  <section class="cqp-sec" aria-labelledby="cqp-why-title">
+    <div class="wrap">
+      <span class="cqp-kicker">WHY COLOURING</span>
+      <h2 id="cqp-why-title">When pain is loud, <em>give it less of your attention.</em></h2>
+      <p class="cqp-intro">Flare-ups can make it hard to think about anything else. Colouring in is a small, low-effort way to shift your focus for a while: no screen to scroll, no decisions to make, just colours and shapes.</p>
+      <div class="cqp-why">
+        <article><div class="ico" style="background:#ffe0e3"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1b2f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5s1.3 1.5 3.5 1.5 3.5-1.5 3.5-1.5"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></div><h3>Somewhere else for your mind to go</h3><p>Choosing colours and filling in shapes gives your attention something gentle to hold on to while you rest.</p></article>
+        <article><div class="ico" style="background:#dbe9ff"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1b2f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></div><h3>No skill, no pressure</h3><p>The outlines are already drawn. Grab whatever pencils or crayons are nearby and stop whenever you need to.</p></article>
+        <article><div class="ico" style="background:#d9f7e3"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1b2f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3 2.2-5 5-5s5 2 5 5"/><path d="M14 20c0-2.4 1.3-4 3-4s3 1.6 3 4"/></svg></div><h3>Something to share with the kids</h3><p>A calm activity for a rest day. Pick their favourite movie, print a few pages and colour side by side.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="cqp-sec cqp-play" aria-labelledby="cqp-feat-title">
+    <div class="wrap">
+      <span class="cqp-kicker">WHAT'S INSIDE</span>
+      <h2 id="cqp-feat-title">Everything you need <em>for a colouring break.</em></h2>
+      <p class="cqp-intro">Colour Quest finds colouring pages from across the web and makes them easy to print, keep and share around the family.</p>
+      <div class="cqp-feat-grid">
+        <article class="cqp-feat"><div class="mini" aria-hidden="true"><i></i><i></i><i></i></div><h3>Search any movie</h3><p>Type a movie or show, or tap a favourite. Colour Quest finds clean black-and-white line drawings first.</p></article>
+        <article class="cqp-feat"><div class="mini" aria-hidden="true"><i></i><i></i><i></i></div><h3>Print in one tap</h3><p>Every picture is sized to fill a single page, on A4 or Letter, with nothing extra around it.</p></article>
+        <article class="cqp-feat"><div class="mini" aria-hidden="true"><i></i><i></i><i></i></div><h3>Favourites</h3><p>Star the pictures you love to keep them close, then download them all at once as a zip.</p></article>
+        <article class="cqp-feat"><div class="mini" aria-hidden="true"><i></i><i></i><i></i></div><h3>A profile for each child</h3><p>Each child picks a name and a friendly avatar, with their own movie buttons and favourites.</p></article>
+        <article class="cqp-feat"><div class="mini" aria-hidden="true"><i></i><i></i><i></i></div><h3>Syncs with your WellNest account</h3><p>Profiles, movies and favourites follow you to any device where you sign in to WellNest.</p></article>
+        <article class="cqp-feat"><div class="mini" aria-hidden="true"><i></i><i></i><i></i></div><h3>Credits the creators</h3><p>Each picture shows the website it came from, and the artist's name when that website lists one.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="cqp-sec" aria-labelledby="cqp-how-title">
+    <div class="wrap">
+      <span class="cqp-kicker">HOW IT WORKS</span>
+      <h2 id="cqp-how-title">Three taps <em>to colouring.</em></h2>
+      <ol class="cqp-steps">
+        <li><h3>Pick a movie</h3><p>Type a name or tap one of your movie buttons.</p></li>
+        <li><h3>Choose a picture</h3><p>Look closer, star your favourites or download a few.</p></li>
+        <li><h3>Print and colour</h3><p>Tap Print, grab your pencils and take a break.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="cqp-sec" style="padding-top:0" aria-labelledby="cqp-faq-title">
+    <div class="wrap">
+      <span class="cqp-kicker">QUESTIONS</span>
+      <h2 id="cqp-faq-title">Good to know</h2>
+      <div class="cqp-faq">
+        <details><summary>Who can use Colour Quest?</summary><p>Colour Quest is a bonus for WellNest Premium members, including anyone on the 30-day free trial. Sign in with your WellNest account to start.</p></details>
+        <details><summary>Where do the pictures come from?</summary><p>Colour Quest is a search tool. The colouring pages are found on and loaded from other websites. Colour Quest doesn't host, own or create them, and all characters and artwork belong to their respective owners. Pictures are for personal, at-home colouring.</p></details>
+        <details><summary>Is it a treatment for pain?</summary><p>No. Colour Quest is a relaxing activity to help pass the time, not a medical treatment. Keep following the advice of your doctor and care team, and get medical help if your symptoms change or worry you.</p></details>
+        <details><summary>Is it suitable for children?</summary><p>Yes. Searches use safe-search filtering, and each child can have their own profile. As with anything online, we recommend a grown-up stays nearby.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="cqp-final" aria-labelledby="cqp-final-title">
+    <div class="wrap">
+      <h2 id="cqp-final-title">Ready for a <em>colouring break?</em></h2>
+      <div class="cqp-ctas">
+        <a class="cqp-btn red" href="/colourquest">Open Colour Quest</a>
+        <a class="cqp-btn white" href="/wellnest-website/pricing">See WellNest Premium</a>
+      </div>
+    </div>
+  </section>
+  <p class="cqp-small">Colour Quest is a distraction and relaxation activity. It doesn't diagnose, treat or monitor any condition. In an emergency call 000.</p>
+</main>
+<footer class="gp-footer"><div class="gp-footer-inner"><a href="/wellnest-website/" class="gp-footer-logo"><img src="/wellnest-website/imported/5b8791d9c9-560935dfd_ChatGPTImageFeb82026at07_05_31PM.png" alt="WellNest"/><span>Well<span class="nest">Nest</span></span></a><div><div class="footer-heading">Conditions</div><ul class="footer-links"><li><a href="/wellnest-website/">Chronic health tracker app</a></li><li><a href="/wellnest-website/symptom-tracker-app">Symptom tracker app</a></li><li><a href="/wellnest-website/chronic-illness-tracker">Chronic illness tracker</a></li><li><a href="/wellnest-website/chronic-pain-diary">Chronic Pain</a></li><li><a href="/wellnest-website/crps-tracker">CRPS</a></li><li><a href="/wellnest-website/asthma-tracker">Asthma</a></li><li><a href="/wellnest-website/seizure-diary">Epilepsy</a></li><li><a href="/wellnest-website/fibromyalgia-tracker">Fibromyalgia</a></li></ul></div><div><div class="footer-heading">Features</div><ul class="footer-links"><li><a href="/wellnest-website/medication-tracker">Medication tracker</a></li><li><a href="/wellnest-website/emergency-action-plan">Emergency action plan</a></li><li><a href="/wellnest-website/medical-expense-tracker">Medical expense tracker</a></li><li><a href="/wellnest-website/colour-quest">Colour Quest (bonus)</a></li></ul></div><div><div class="footer-heading">Guides</div><ul class="footer-links"><li><a href="/wellnest-website/guides">All guides</a></li><li><a href="/wellnest-website/chronic-health-tracker-guide">Choosing a chronic health tracker</a></li><li><a href="/wellnest-website/best-chronic-illness-tracker-apps">Best chronic illness tracker apps</a></li><li><a href="/wellnest-website/flare-up-diary-guide">Chronic illness flare-up diary guide</a></li><li><a href="/wellnest-website/symptom-diary-guide">Symptom diary guide</a></li><li><a href="/wellnest-website/appointment-prep-checklist">Appointment prep checklist</a></li><li><a href="/wellnest-website/asthma-action-plan-guide">Asthma action plans</a></li><li><a href="/wellnest-website/seizure-first-aid-and-diary">Seizure first aid &amp; diary</a></li><li><a href="/wellnest-website/crps-symptoms-guide">CRPS symptoms guide</a></li><li><a href="/wellnest-website/wellnest-vs-bearable">WellNest vs Bearable</a></li><li><a href="/wellnest-website/wellnest-vs-manage-my-pain">WellNest vs Manage My Pain</a></li><li><a href="/wellnest-website/wellnest-vs-careclinic">WellNest vs CareClinic</a></li><li><a href="/wellnest-website/free-tools">All free tools</a></li><li><a href="/wellnest-website/free-medication-list">Free printable medication list</a></li><li><a href="/wellnest-website/free-symptom-summary-maker">Free appointment summary maker</a></li><li><a href="/wellnest-website/pain-scale-chart">Printable pain scale chart</a></li><li><a href="/wellnest-website/how-to-describe-pain-to-your-doctor">How to describe pain to your doctor</a></li><li><a href="/wellnest-website/chronic-pain-diary">Try the interactive preview</a></li></ul></div><div><div class="footer-heading">Company</div><ul class="footer-links"><li><a href="/wellnest-website/about">About WellNest</a></li><li><a href="/wellnest-website/for-clinicians">For clinicians</a></li><li><a href="/wellnest-website/contact">Contact</a></li><li><a href="/wellnest-website/press">Press</a></li></ul><a class="footer-store" href="https://apps.apple.com/au/app/wellnest/id6759418128" target="_blank" rel="noopener noreferrer"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"></path></svg>App Store</a></div><ul class="footer-links footer-links-row"><li><a href="/wellnest-website/pricing">Pricing</a></li><li><a href="/wellnest-website/privacypolicy">Privacy Policy</a></li><li><a href="/wellnest-website/termsofservice">Terms of Service</a></li></ul></div><p class="gp-disclaimer">WellNest is a record-keeping tool. It does not diagnose, treat or monitor any condition and is not an emergency service. In an emergency call 000.</p><p class="gp-copy">© 2026 WellNest. Built with care in Australia.</p></footer></div></div>
+    <noscript><style>.reveal{opacity:1!important;transform:none!important}</style><p>Interactive tracking, printable tools and checkout require JavaScript.</p></noscript>
+  </body>
+</html>
